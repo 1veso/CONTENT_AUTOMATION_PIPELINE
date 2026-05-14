@@ -1,6 +1,6 @@
 ---
 name: provinzial-copy
-description: provinzial, provinzial-copy, Geier Ayhan — German copy rules for Provinzial campaign content (R55/R57/R61); overrides generic marketing skills
+description: provinzial, provinzial-copy, Geier Ayhan, Geier & Ayhan, Geschäftsstelle Geier Ayhan — German copy rules for Provinzial campaign content (R55/R57/R61); voice = NRW neighbourhood advisor, not national brand; overrides generic marketing skills
 ---
 
 # Provinzial Copy Rules (Geier & Ayhan Campaign)
@@ -61,12 +61,45 @@ R57 static images go on Meta/Instagram feed; R55/R61 video goes everywhere. R61 
 
 ## 7. Geier & Ayhan persona rules
 
-> **Gap — needs user input.** I don't have the campaign brief for Geier & Ayhan in the repo. Until the user provides it, treat them as the on-screen talent and write copy that:
-> - lets each speak as a distinct voice (not interchangeable)
-> - keeps their interaction central (they're a duo, not solo presenters)
-> - leaves room for the bit/joke to land before the brand message
+**Who they are:** Geier & Ayhan OHG is a Provinzial Geschäftsstelle (insurance agency) operating in the **NRW region** — real local agents, named on the door. All campaign copy is published under their voice, not as a national-brand spot. Treat the on-screen duo as the same Geier & Ayhan who actually sit across the desk from a customer in NRW.
 
-**TODO:** Replace this section with the actual persona brief (speech patterns, recurring bits, what they each represent in the campaign). Ask the user for: tone differences between the two, signature phrases, what's off-limits.
+**Target audience (catchment-area first):**
+- Local business owners (Handwerk, Gastronomie, kleine Mittelständler)
+- Families with kids, dual-income households
+- Homeowners (Eigenheimbesitzer) and aspirational first-time buyers
+
+**Tone — neighbourhood advisor, not national chain:**
+- Slightly warmer and more personal than corporate Provinzial copy
+- "Wir kennen Sie und Ihre Straße" energy — not "Wir bieten 24/7-Hotlines"
+- Local references are welcome: NRW geography, Vereinsleben, Schützenfeste, Kirmes, "bei uns im Viertel". Specificity > generic regional flavour.
+- Humour is dry and grounded. Never quippy or callcenter-cheerful.
+
+**Signature phrases (use sparingly — overuse turns them into slogans nobody hears):**
+- "Wir kennen Ihre Region."
+- "Persönlich. Lokal. Verlässlich."
+
+These belong at the **end** of an asset (signature/sign-off slot), not in the hook. Hooks still follow §4 rules — pattern interrupt, ≤6 words on screen.
+
+**Du vs Sie:**
+- Default to **Sie** for this persona — local advisor speaking to a real customer (business owners, homeowners) leans formal-warm, not chummy.
+- **Du** is acceptable on TikTok pieces aimed at younger families/first-time-buyers, but only when the asset's overall energy is casual. Don't mix Du/Sie inside a single asset.
+- This is a deliberate override of §1's "Du by default" — Geier & Ayhan are advisors, not influencers.
+
+**Off-limits (anything that breaks the neighbourhood-advisor frame):**
+- Anything that sounds like a call-centre: "Unsere Hotline ist 24/7 für Sie da", "Verfügbar in Sekunden", recorded-voice cadence.
+- National-brand abstraction: "Wir versichern Deutschland", "in jeder Region", "deutschlandweit". Stay in NRW or stay generic — never claim national reach.
+- Anonymous corporate voice: no "Provinzial bietet…" passive constructions when the same line can be Geier or Ayhan saying it directly.
+- Aggressive sales pushes ("Heute noch abschließen!"), urgency tricks ("Nur diese Woche!"), or any urgency claim without a real local deadline.
+- Stock-photo-style scenarios (smiling family in glass office). The agents work out of a real NRW Geschäftsstelle — keep the setting credible.
+
+**When Geier and Ayhan both appear in the same asset:**
+- Let them sound like two different people. One can be the warmer relationship-builder, the other the practical numbers-and-coverage voice — pick a split and keep it consistent across the campaign.
+- Their interaction is the appeal. Don't make either a feed line for the other.
+- Leave room for the bit/joke to land before the brand message arrives.
+
+**When only one is on camera:**
+- Reference the agency, not the brand: "Hier in unserer Geschäftsstelle…" beats "Bei Provinzial…".
+- Sign-off still carries both names if it's a campaign-branded piece.
 
 ## 8. Output checklist (apply before handing back copy)
 
@@ -78,6 +111,9 @@ R57 static images go on Meta/Instagram feed; R55/R61 video goes everywhere. R61 
 - [ ] One CTA, appropriate to funnel stage
 - [ ] Caption + hashtag count matches platform
 - [ ] Geier & Ayhan voices are distinct (when both appear)
+- [ ] Voice is neighbourhood-advisor, not national-chain (§7 off-limits)
+- [ ] If signature phrase used, it's in sign-off slot, not hook
+- [ ] No national-reach or callcentre framing
 
 ## 9. Related project memory
 
