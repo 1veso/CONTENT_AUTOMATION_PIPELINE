@@ -2,8 +2,8 @@
 
 Vault root for the CONTENT_PIPELINE knowledge base. Every file in the vault is linked from this page.
 
-**Last updated:** 2026-05-13
-**Repo:** `C:\CONTENT_PIPELINE\`
+**Last updated:** 2026-05-14
+**Repo:** `C:\CONTENT_PIPELINE\` — checked into GitHub at `1veso/CONTENT_AUTOMATION_PIPELINE` (private) on `main` and `dev`
 **Active client:** Provinzial / Geier & Ayhan
 
 ## Pipeline status at a glance
@@ -11,8 +11,8 @@ Vault root for the CONTENT_PIPELINE knowledge base. Every file in the vault is l
 | Pipeline | Purpose | Status | Output to date |
 |----------|---------|--------|----------------|
 | [[pipelines/R55_clipper]] | Long-form → Shorts (Vizard + Telegram) | 🟢 **Deployed on Modal, running** | Live in steady-state |
-| [[pipelines/R57_content_engine]] | Daily static images (Fal.ai) | 🟡 **Generation done — scheduling on hold** | 30 images shipped |
-| [[pipelines/R61_video_pipeline]] | Daily cinematic ad videos | 🟠 **In active build — partial** | 30 clips, 8 final v2 videos, 8 scheduled in Blotato |
+| [[pipelines/R57_content_engine]] | Daily static images (Fal.ai) | 🟢 **Deployed on Modal (2026-05-14), 30 images scheduled** | 30 images shipped |
+| [[pipelines/R61_video_pipeline]] | Daily cinematic ad videos | 🟢 **Deployed on Modal (2026-05-14, functions-only), all 30 final v3 scheduled** | 30 clips, 30 final v3 videos, 30 scheduled in Blotato |
 | [[pipelines/R46_ultimate_extract]] | Reverse-engineer source video | ⚪ Template only |  |
 | [[pipelines/R51_creative_cloner]] | Clone proven creative N times | ⚪ Template only |  |
 | [[pipelines/R34_veorobo]] | 3-scene Veo template | ⚪ Template only |  |
@@ -76,14 +76,16 @@ Composition layer on top of pipelines. Pick a framework by output class.
 
 ## Next actions
 
-1. **ElevenLabs unblock** → swap `voiceover_gen.py`, re-stitch all 30, replace v1 Gemini renders (preserved, never overwritten — see golden rule)
-2. **Captions** — port [[pipelines/integrations/n16.1_auto_subtitled_videos]] flow into `hf_stitch.py`
-3. **Remaining 22 R61 records** — voiceover → stitch → schedule
-4. **Schedule grids** — 1-week (3-5 posts/day) and 1-month
-5. **R2 filename slug cleanup** — strip bracket characters
-6. **Version-increment rule** — codify in IO table + all gen tools
-7. **Geier & Ayhan persona** for `provinzial-copy` skill — awaits user brief
-8. **Per-pipeline agents** — choose host, write system prompts, wire OpenClaw
+1. **Re-deploy R61 HTTP endpoints** once Modal plan is upgraded past the 8-endpoint cap (the 6 `*_http` wrappers in `R61_video_pipeline/modal_app.py` are commented but ready)
+2. **n8n ↔ Modal tunnel/reverse-proxy** — wire `ops.getautomata.ai`'s `/webhook/r57` and `/webhook/r61` to the Modal endpoints (see [[knowledge/webhook_registry#Phase 7]])
+3. **n30 live canvas patch** — manually update 2 nodes in UI per [[../n30_product_videography/MIGRATION_NOTES]], or `cleanStaleConnections` then re-attempt API patch
+4. **Captions** — port [[pipelines/integrations/n16.1_auto_subtitled_videos]] flow into `hf_stitch.py`
+5. **Geier & Ayhan persona** for `provinzial-copy` skill — awaits user brief
+6. **Per-pipeline agents** — choose host, write system prompts, wire OpenClaw
+7. ✅ ~~ElevenLabs unblock~~ done (v3 renders shipped)
+8. ✅ ~~Schedule grids~~ done (30 records scheduled in Blotato)
+9. ✅ ~~R2 filename slug cleanup~~ done — see [[knowledge/r2_filename_cleanup]]
+10. ✅ ~~Version-increment rule~~ done — `check_output_path` wired across tools, `R61_VERSION_TAG` env var
 
 ## Rules (non-negotiable)
 

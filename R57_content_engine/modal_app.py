@@ -49,6 +49,9 @@ r57_image = (
     .pip_install_from_requirements(
         str(LOCAL_PROJECT / "tools" / "requirements.txt")
     )
+    # FastAPI is required for `@modal.fastapi_endpoint` in Modal 1.4+;
+    # it's no longer auto-installed.
+    .pip_install("fastapi[standard]")
     # Mount the tools/ package and providers/ subpackage into the image.
     .add_local_dir(
         str(LOCAL_PROJECT / "tools"),

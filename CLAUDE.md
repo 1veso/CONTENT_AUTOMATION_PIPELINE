@@ -79,8 +79,8 @@ C:\CONTENT_PIPELINE\
 | Pipeline | Purpose | Status |
 |---|---|---|
 | **R55** | Vizard takes long-form video, slices into Shorts, Telegram bot for review, Blotato schedule | **Deployed (Modal), running** |
-| **R57** | Fal.ai static image gen → Airtable → Blotato schedule. 30 images generated. | **Complete — all 30 images scheduled in Blotato** |
-| **R61** | Fal frames → Higgsfield first/last-frame video → ElevenLabs TTS → HyperFrames hybrid stitch | **Complete — all 30 records `Scheduled` in Blotato (8 v2 finals May 15–22; 22 v3 finals June 1–30)** |
+| **R57** | Fal.ai static image gen → Airtable → Blotato schedule. 30 images generated. | **Complete — all 30 images scheduled in Blotato. Deployed (Modal) 2026-05-14, app `r57-content-engine`.** |
+| **R61** | Fal frames → Higgsfield first/last-frame video → ElevenLabs TTS → HyperFrames hybrid stitch | **Complete — all 30 records `Scheduled` in Blotato (8 v2 finals May 15–22; 22 v3 finals June 1–30). Deployed (Modal) 2026-05-14, app `r61-video-pipeline` (functions only; HTTP endpoints parked on free-tier 8-endpoint cap).** |
 
 ## Shared Resources
 

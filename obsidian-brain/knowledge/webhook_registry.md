@@ -53,43 +53,51 @@ The respond is immediate; pipeline body work happens after. Operator wires the b
 
 ## Phase 7 — Modal serverless endpoints (2026-05-14)
 
-R57 and R61 pipelines have been wrapped as Modal apps. **URLs are emitted by `modal deploy` and recorded here once the apps are deployed.** Until then, the URLs below are placeholders.
+R57 and R61 pipelines deployed as Modal apps. Workspace: `hello-58046` (Modal owner).
 
-**Important:** these endpoints are NOT yet wired into n8n webhook nodes. Wiring waits for the `ops.getautomata.ai ↔ Modal` tunnel/reverse-proxy work (planned for a later phase). Calling them from n8n today would still hit them, but the canvas-side webhooks listed above (`/webhook/r57`, `/webhook/r61`, etc.) currently target localhost shims, not Modal.
+**Important:** these endpoints are NOT yet wired into n8n webhook nodes. Wiring waits for the `ops.getautomata.ai ↔ Modal` tunnel/reverse-proxy work (planned for a later phase). The canvas-side webhooks listed above (`/webhook/r57`, `/webhook/r61`, etc.) still target their original shims, not Modal.
 
-### r57-content-engine (Modal app)
+### r57-content-engine (deployed)
 
 App file: `R57_content_engine/modal_app.py`
-Required secret: `r57-secrets`
+Secret: `r57-secrets`
+Dashboard: https://modal.com/apps/hello-58046/main/deployed/r57-content-engine
 
-| Endpoint | Method | Modal URL (after deploy) |
+| Endpoint | Method | Modal URL |
 |---|---|---|
-| `generate_images_http` | POST | `https://<account>--r57-content-engine-generate-images-http.modal.run` |
-| `schedule_blotato_http` | POST | `https://<account>--r57-content-engine-schedule-blotato-http.modal.run` |
+| `generate_images_http`  | POST | `https://hello-58046--r57-content-engine-generate-images-http.modal.run` |
+| `schedule_blotato_http` | POST | `https://hello-58046--r57-content-engine-schedule-blotato-http.modal.run` |
 
-Payload: `{record_ids?: [string], dry_run?: bool}` → returns `{requested, ok, failed, ids, errors?}`.
+Payload: `{record_ids?: [string], dry_run?: bool}` → `{requested, ok, failed, ids, errors?}`.
 
-### r61-video-pipeline (Modal app)
+Functions also callable via `modal run`:
+- `modal run R57_content_engine/modal_app.py::generate_images`
+- `modal run R57_content_engine/modal_app.py::schedule_blotato`
+
+### r61-video-pipeline (deployed — functions only, HTTP endpoints parked)
 
 App file: `R61_video_pipeline/modal_app.py`
-Required secret: `r61-secrets`
-Required volume: `r61-work` (auto-created on first deploy via `Volume.from_name(..., create_if_missing=True)`)
+Secret: `r61-secrets`
+Volume: `r61-work` (auto-created)
+Dashboard: https://modal.com/apps/hello-58046/main/deployed/r61-video-pipeline
 
-| Endpoint | Method | Modal URL (after deploy) |
-|---|---|---|
-| `frame_gen_http`         | POST | `https://<account>--r61-video-pipeline-frame-gen-http.modal.run` |
-| `video_gen_http`         | POST | `https://<account>--r61-video-pipeline-video-gen-http.modal.run` |
-| `voiceover_gen_http`     | POST | `https://<account>--r61-video-pipeline-voiceover-gen-http.modal.run` |
-| `hf_stitch_http`         | POST | `https://<account>--r61-video-pipeline-hf-stitch-http.modal.run` |
-| `blotato_schedule_http`  | POST | `https://<account>--r61-video-pipeline-blotato-schedule-http.modal.run` |
-| `sync_r57_to_video_http` | POST | `https://<account>--r61-video-pipeline-sync-r57-to-video-http.modal.run` |
+| Function (no HTTP yet) | Invocation |
+|---|---|
+| `frame_gen`         | `modal run R61_video_pipeline/modal_app.py -- stage=frame record_id=rec...` |
+| `video_gen`         | `modal run R61_video_pipeline/modal_app.py -- stage=video record_id=rec...` |
+| `voiceover_gen`     | `modal run R61_video_pipeline/modal_app.py -- stage=vo record_id=rec...` |
+| `hf_stitch`         | `modal run R61_video_pipeline/modal_app.py -- stage=stitch record_id=rec...` |
+| `blotato_schedule`  | `modal run R61_video_pipeline/modal_app.py -- stage=blotato record_id=rec...` |
+| `sync_r57_to_video` | `modal run R61_video_pipeline/modal_app.py -- stage=sync` |
 
-Common payload keys (vary by endpoint): `record_id?`, `dry_run?`, `limit?`, `confirm?`, `all_voiceover_done?`, `skip_publish?`.
+**HTTP endpoints for R61 are intentionally not deployed in this rollout** — the Modal free-tier workspace caps at 8 web endpoints total and `r57-content-engine` + the older `vizard-clipper` app already consume 4. The six R61 wrappers (`*_http`) are commented out in `modal_app.py`; uncomment them and re-deploy after upgrading the Modal plan (or after retiring an unused endpoint elsewhere).
 
-### Operator setup before first deploy
+R61 image build is ~2GB (Debian + ffmpeg + Node 20 + Playwright chromium + HyperFrames CLI + Python deps). First deploy: ~5-10 min; rebuilds (no Dockerfile changes): seconds.
+
+### Operator setup commands
 
 ```powershell
-# Create secrets from R57 .env values (run from a shell where .env is readable)
+# Create secrets from .env values (one-time per pipeline; secrets persist)
 modal secret create r57-secrets `
     FAL_KEY=<value> FAL_API_KEY=<value> AIRTABLE_API_KEY=<value> `
     BLOTATO_API_KEY=<value> GOOGLE_API_KEY=<value>
@@ -103,8 +111,8 @@ modal secret create r61-secrets `
     R61_VERSION_TAG=v3
 
 # Deploy
-modal deploy R57_content_engine/modal_app.py
-modal deploy R61_video_pipeline/modal_app.py
+$env:PYTHONIOENCODING="utf-8"; modal deploy R57_content_engine/modal_app.py
+$env:PYTHONIOENCODING="utf-8"; modal deploy R61_video_pipeline/modal_app.py
 ```
 
-The R61 image is ~2GB (Debian + ffmpeg + Node 20 + Playwright chromium + HyperFrames CLI + Python deps) — first deploy will take 5-10 minutes to build.
+`PYTHONIOENCODING=utf-8` is required on Windows — modal CLI emits unicode-heavy build logs that crash the default cp1252 console mid-deploy.
