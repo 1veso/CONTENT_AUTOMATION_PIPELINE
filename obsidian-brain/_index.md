@@ -12,7 +12,7 @@ Vault root for the CONTENT_PIPELINE knowledge base. Every file in the vault is l
 |----------|---------|--------|----------------|
 | [[pipelines/R55_clipper]] | Long-form → Shorts (Vizard + Telegram) | 🟢 **Deployed on Modal, running** | Live in steady-state |
 | [[pipelines/R57_content_engine]] | Daily static images (Fal.ai) | 🟢 **Deployed on Modal (2026-05-14), 30 images scheduled** | 30 images shipped |
-| [[pipelines/R61_video_pipeline]] | Daily cinematic ad videos | 🟢 **Deployed on Modal (2026-05-14, functions-only), all 30 final v3 scheduled** | 30 clips, 30 final v3 videos, 30 scheduled in Blotato |
+| [[pipelines/R61_video_pipeline]] | Daily cinematic ad videos | 🟢 **Deployed on Modal (2026-05-14, +3 HTTP endpoints), captions flag added, all 30 final v3 scheduled** | 30 clips, 30 final v3 videos, 30 scheduled in Blotato |
 | [[pipelines/R46_ultimate_extract]] | Reverse-engineer source video | ⚪ Template only |  |
 | [[pipelines/R51_creative_cloner]] | Clone proven creative N times | ⚪ Template only |  |
 | [[pipelines/R34_veorobo]] | 3-scene Veo template | ⚪ Template only |  |
@@ -76,12 +76,13 @@ Composition layer on top of pipelines. Pick a framework by output class.
 
 ## Next actions
 
-1. **Re-deploy R61 HTTP endpoints** once Modal plan is upgraded past the 8-endpoint cap (the 6 `*_http` wrappers in `R61_video_pipeline/modal_app.py` are commented but ready)
-2. **n8n ↔ Modal tunnel/reverse-proxy** — wire `ops.getautomata.ai`'s `/webhook/r57` and `/webhook/r61` to the Modal endpoints (see [[knowledge/webhook_registry#Phase 7]])
-3. **n30 live canvas patch** — manually update 2 nodes in UI per [[../n30_product_videography/MIGRATION_NOTES]], or `cleanStaleConnections` then re-attempt API patch
-4. **Captions** — port [[pipelines/integrations/n16.1_auto_subtitled_videos]] flow into `hf_stitch.py`
-5. **Geier & Ayhan persona** for `provinzial-copy` skill — awaits user brief
-6. **Per-pipeline agents** — choose host, write system prompts, wire OpenClaw
+1. **Re-deploy remaining R61 HTTP endpoints** (3/6 now live: voiceover_gen_http, hf_stitch_http, blotato_schedule_http). The other 3 (frame_gen_http, video_gen_http, sync_r57_to_video_http) stay parked until Modal plan upgrade past the 8-endpoint cap.
+2. **n8n ↔ Modal tunnel** — blocked on operator decision. See [[knowledge/n8n_modal_tunnel_blocker]] — n8n receivers need *new* HTTP Request nodes added downstream of `WH-Log`, not URL patches. Decision items: payload mapping, sync vs async firing.
+3. **n30 live canvas patch** — manual UI path documented in [[../n30_product_videography/MANUAL_PATCH_INSTRUCTIONS]] (~5 min). API path stays parked because `cleanStaleConnections` would wipe 30 documented TODO-sticky connection refs.
+4. ✅ ~~Captions in `hf_stitch.py`~~ done — `--add-captions` flag, ASS burn-in, captioned variant goes to `final/<tag>/captions/` (commit `2facccc`).
+5. ✅ ~~Geier & Ayhan persona for `provinzial-copy` skill~~ done — NRW Geschäftsstelle brief landed in §7 (commit `d369498`).
+6. **Schaden campaign kickoff** — preflight checklist at [[../campaigns/Provinzial_Schaden_Campaign/PREFLIGHT_CHECKLIST]]. ~$50 cost, 120 posts, 30 days. Operator approval gates listed in checklist §5 and §10.
+7. **Per-pipeline agents** — choose host, write system prompts, wire OpenClaw
 7. ✅ ~~ElevenLabs unblock~~ done (v3 renders shipped)
 8. ✅ ~~Schedule grids~~ done (30 records scheduled in Blotato)
 9. ✅ ~~R2 filename slug cleanup~~ done — see [[knowledge/r2_filename_cleanup]]
