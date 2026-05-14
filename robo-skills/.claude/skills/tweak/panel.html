@@ -1,0 +1,928 @@
+<!-- TWEAK:START · injected by .claude/skills/tweak · safe to remove between markers -->
+<style id="tweak-styles">
+.tweak-panel {
+  position: fixed;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  width: 296px;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  background: rgba(10, 10, 10, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 107, 26, 0.22);
+  border-radius: 16px;
+  padding: 20px;
+  z-index: 99990;
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: #e0e0e0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tweak-panel.collapsed {
+  transform: translateY(-50%) translateX(calc(100% + 32px));
+  opacity: 0;
+  pointer-events: none;
+}
+.tweak-toggle {
+  position: fixed;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 107, 26, 0.32);
+  color: #ff6b1a;
+  cursor: pointer;
+  z-index: 99991;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s, border-color 0.2s;
+}
+.tweak-toggle.show { opacity: 1; pointer-events: auto; }
+.tweak-toggle:hover { background: rgba(255, 107, 26, 0.12); border-color: #ff6b1a; }
+.tweak-toggle svg { width: 20px; height: 20px; }
+.tweak-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.tweak-title {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #ff6b1a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tweak-title-level {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: #888;
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+.tweak-close, .tweak-level-toggle {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  transition: background 0.2s, color 0.2s;
+}
+.tweak-close:hover, .tweak-level-toggle:hover { background: rgba(255, 255, 255, 0.05); color: #e0e0e0; }
+.tweak-close svg, .tweak-level-toggle svg { width: 14px; height: 14px; }
+.tweak-target-name {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  color: #f1ece0;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 1.2em;
+  word-break: break-word;
+}
+.tweak-target-name .badge {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: #888;
+  text-transform: uppercase;
+  margin-right: 6px;
+}
+.tweak-row {
+  margin-bottom: 12px;
+}
+.tweak-row:last-of-type { margin-bottom: 6px; }
+.tweak-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+}
+.tweak-row-label {
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+.tweak-row-label.dirty::before {
+  content: '●';
+  color: #ff6b1a;
+  font-size: 8px;
+  margin-right: 5px;
+  vertical-align: 1px;
+}
+.tweak-row-value {
+  color: #ff6b1a;
+  font-weight: 600;
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+}
+.tweak-row-value:hover { color: #fff; }
+input[type="range"].tweak-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #ff6b1a 0%, #ff6b1a var(--fill, 50%), rgba(255, 255, 255, 0.08) var(--fill, 50%), rgba(255, 255, 255, 0.08) 100%);
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+}
+input[type="range"].tweak-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ff6b1a;
+  border: 2px solid #fff;
+  cursor: grab;
+  box-shadow: 0 0 12px rgba(255, 107, 26, 0.5);
+  transition: transform 0.15s;
+}
+input[type="range"].tweak-slider::-webkit-slider-thumb:active { transform: scale(1.18); cursor: grabbing; }
+input[type="range"].tweak-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ff6b1a;
+  border: 2px solid #fff;
+  cursor: grab;
+  box-shadow: 0 0 12px rgba(255, 107, 26, 0.5);
+}
+.tweak-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.tweak-btn {
+  flex: 1;
+  padding: 8px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.tweak-btn:hover { background: rgba(255, 107, 26, 0.08); border-color: #ff6b1a; color: #ff6b1a; }
+.tweak-btn.primary { color: #ff6b1a; border-color: rgba(255, 107, 26, 0.3); }
+.tweak-btn.primary:hover { background: rgba(255, 107, 26, 0.16); }
+.tweak-hint {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #555;
+  text-transform: uppercase;
+  text-align: center;
+  margin-top: 10px;
+  opacity: 0.7;
+}
+.tweak-hint kbd {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 9px;
+  margin: 0 1px;
+}
+#tweak-toast {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  padding: 10px 16px;
+  background: rgba(255, 107, 26, 0.16);
+  border: 1px solid #ff6b1a;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ff6b1a;
+  z-index: 99992;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#tweak-bake-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 99995;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#tweak-bake-modal.show { display: flex; }
+#tweak-bake-modal .box {
+  width: 100%;
+  max-width: 640px;
+  background: #0a0a0a;
+  border: 1px solid rgba(255,107,26,0.3);
+  border-radius: 16px;
+  padding: 28px;
+  font-family: 'Outfit', system-ui, sans-serif;
+  color: #e0e0e0;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+#tweak-bake-modal h2 {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: #f1ece0;
+}
+#tweak-bake-modal p {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+#tweak-bake-modal pre {
+  background: #000;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 14px;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: #ff6b1a;
+  overflow-x: auto;
+  white-space: pre;
+  user-select: all;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+#tweak-bake-modal .row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.tweak-row.is-disabled { opacity: 0.35; pointer-events: none; }
+.tweak-row.is-disabled .tweak-row-label::after {
+  content: ' · n/a';
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+@media (max-width: 900px) {
+  .tweak-panel, .tweak-toggle { right: 12px; }
+  .tweak-panel { width: 248px; padding: 16px; }
+}
+@media print {
+  .tweak-panel, .tweak-toggle, #tweak-toast, #tweak-bake-modal { display: none !important; }
+}
+</style>
+
+<button class="tweak-toggle" id="tweak-toggle" aria-label="Open tweak panel" title="Open tweak panel (T)">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="4" y1="6" x2="14" y2="6"/><circle cx="18" cy="6" r="2"/>
+    <line x1="4" y1="12" x2="8" y2="12"/><circle cx="12" cy="12" r="2"/><line x1="16" y1="12" x2="20" y2="12"/>
+    <line x1="4" y1="18" x2="16" y2="18"/><circle cx="20" cy="18" r="2"/>
+  </svg>
+</button>
+
+<aside class="tweak-panel" id="tweak-panel" data-tweak-level="light" aria-label="Tweak panel">
+  <div class="tweak-head">
+    <span class="tweak-title">Tweak <span class="tweak-title-level" id="tweak-level-badge">light</span></span>
+    <div style="display:flex;gap:2px">
+      <button class="tweak-level-toggle" id="tweak-level-toggle" aria-label="Toggle level (light/max)" title="Toggle level (light ⇄ max)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 11 21 7 17 3"/><line x1="21" y1="7" x2="9" y2="7"/>
+          <polyline points="7 13 3 17 7 21"/><line x1="3" y1="17" x2="15" y2="17"/>
+        </svg>
+      </button>
+      <button class="tweak-close" id="tweak-close" aria-label="Hide panel" title="Hide panel (T)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div class="tweak-target-name" id="tweak-target-name"><span class="badge">Page</span>&nbsp;</div>
+  <div id="tweak-rows"></div>
+  <div class="tweak-actions">
+    <button class="tweak-btn" id="tweak-reset" title="Reset all on current target (R)">Reset</button>
+    <button class="tweak-btn primary" id="tweak-bake" title="Bake values back to source (B)">Bake</button>
+  </div>
+  <div class="tweak-hint">
+    <kbd>T</kbd> toggle · <kbd>R</kbd> reset · <kbd>B</kbd> bake
+  </div>
+</aside>
+
+<div id="tweak-toast"></div>
+
+<div id="tweak-bake-modal" role="dialog" aria-label="Bake tweak values">
+  <div class="box">
+    <h2>Bake your changes</h2>
+    <p id="tweak-bake-summary">Copy the JSON below and paste it back to Claude. Claude will apply the changes to your source file's CSS and remove the tweak panel.</p>
+    <pre id="tweak-bake-json"></pre>
+    <div class="row">
+      <button class="tweak-btn primary" id="tweak-bake-copy">Copy patch</button>
+      <button class="tweak-btn" id="tweak-bake-download">Download baked HTML</button>
+      <button class="tweak-btn" id="tweak-bake-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script id="tweak-script">
+(function () {
+  'use strict';
+
+  /* ============================================================
+     CONFIG · slider definitions, in priority order
+     ============================================================ */
+  const SLIDER_DEFS = [
+    {
+      id: 'speed',
+      label: 'Speed',
+      min: 0.3, max: 2, step: 0.05, def: 1, suffix: '×',
+      tier: 'light', priority: 1,
+      detect: (root) => {
+        let any = false;
+        root.querySelectorAll('*').forEach((el) => {
+          if (any) return;
+          const a = getComputedStyle(el).animationName;
+          if (a && a !== 'none') any = true;
+        });
+        return any;
+      },
+      apply: (root, mult, ctx) => {
+        if (!ctx.cached) {
+          ctx.cached = true;
+          root.querySelectorAll('*').forEach((el) => {
+            const dur = getComputedStyle(el).animationDuration;
+            if (dur && dur !== '0s' && dur !== 'none') el.dataset.tweakOrigDur = dur;
+          });
+        }
+        root.querySelectorAll('[data-tweak-orig-dur]').forEach((el) => {
+          const orig = el.dataset.tweakOrigDur.split(',').map((d) => parseFloat(d) || 0);
+          const scaled = orig.map((s) => (s / mult).toFixed(3) + 's').join(', ');
+          el.style.animationDuration = scaled;
+        });
+      }
+    },
+    {
+      id: 'titleSize',
+      label: 'Title Size',
+      min: 0.7, max: 1.5, step: 0.02, def: 1, suffix: '×',
+      tier: 'light', priority: 2,
+      sel: 'h1, h1.display, .hero-title, .title-display, .display, .scene-title',
+      detect: (root) => root.querySelector('h1, h1.display, .hero-title, .title-display, .display, .scene-title') != null,
+      apply: (root, mult, ctx) => {
+        if (!ctx.cached) {
+          ctx.cached = true;
+          root.querySelectorAll(ctx.def.sel).forEach((el) => {
+            el.dataset.tweakOrigFs = getComputedStyle(el).fontSize;
+          });
+        }
+        root.querySelectorAll('[data-tweak-orig-fs]').forEach((el) => {
+          const orig = parseFloat(el.dataset.tweakOrigFs);
+          el.style.fontSize = (orig * mult).toFixed(2) + 'px';
+        });
+      }
+    },
+    {
+      id: 'bodySize',
+      label: 'Body Size',
+      min: 0.7, max: 1.4, step: 0.02, def: 1, suffix: '×',
+      tier: 'light', priority: 3,
+      sel: 'p, .body, .body-text, li, .slash-desc, .iso-text .body-text',
+      detect: () => true,
+      apply: (root, mult, ctx) => {
+        if (!ctx.cached) {
+          ctx.cached = true;
+          // Cache body first
+          const body = document.body;
+          body.dataset.tweakOrigFs = getComputedStyle(body).fontSize;
+          root.querySelectorAll(ctx.def.sel).forEach((el) => {
+            if (!el.dataset.tweakOrigFs) el.dataset.tweakOrigFs = getComputedStyle(el).fontSize;
+          });
+        }
+        const body = document.body;
+        if (body.dataset.tweakOrigFs) {
+          body.style.fontSize = (parseFloat(body.dataset.tweakOrigFs) * mult).toFixed(2) + 'px';
+        }
+        root.querySelectorAll(ctx.def.sel).forEach((el) => {
+          if (el.dataset.tweakOrigFs) {
+            el.style.fontSize = (parseFloat(el.dataset.tweakOrigFs) * mult).toFixed(2) + 'px';
+          }
+        });
+      }
+    },
+    {
+      id: 'density',
+      label: 'Density',
+      min: 0.5, max: 1.5, step: 0.02, def: 1, suffix: '×',
+      tier: 'light', priority: 4,
+      sel: '.slide-content, section.slide, section, main, .container, .layout, .stack, .iso-stage, .grid',
+      detect: (root) => root.querySelector('.slide-content, section, main, .container') != null,
+      apply: (root, mult, ctx) => {
+        if (!ctx.cached) {
+          ctx.cached = true;
+          root.querySelectorAll(ctx.def.sel).forEach((el) => {
+            const cs = getComputedStyle(el);
+            el.dataset.tweakOrigPad = [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft].join('|');
+            el.dataset.tweakOrigGap = cs.gap || cs.rowGap || '';
+          });
+        }
+        root.querySelectorAll('[data-tweak-orig-pad]').forEach((el) => {
+          const [t, r, b, l] = el.dataset.tweakOrigPad.split('|').map((x) => parseFloat(x) || 0);
+          el.style.padding = `${t * mult}px ${r * mult}px ${b * mult}px ${l * mult}px`;
+          if (el.dataset.tweakOrigGap) {
+            const g = parseFloat(el.dataset.tweakOrigGap) || 0;
+            if (g) el.style.gap = (g * mult) + 'px';
+          }
+        });
+      }
+    },
+    {
+      id: 'visualScale',
+      label: 'Visual Scale',
+      min: 0.6, max: 1.4, step: 0.02, def: 1, suffix: '×',
+      tier: 'light', priority: 5,
+      sel: 'svg:not(.icon):not([data-bg]):not(.tweak-toggle svg):not(.tweak-close svg):not(.tweak-level-toggle svg), canvas:not(#hexBg):not([data-bg]), .hero-image, .visual, .slash-visual, .iso-stage > *:not(.iso-text), img.hero',
+      detect: (root) => root.querySelector('svg:not(.icon), .visual, .slash-visual, .iso-stage, .hero-image, img.hero') != null,
+      apply: (root, mult, ctx) => {
+        root.querySelectorAll(ctx.def.sel).forEach((el) => {
+          if (el.closest('.tweak-panel') || el.closest('.tweak-toggle') || el.closest('#tweak-bake-modal')) return;
+          el.style.transform = `scale(${mult})`;
+          el.style.transformOrigin = 'center';
+          el.style.transition = 'transform 0.18s ease-out';
+        });
+      }
+    },
+    {
+      id: 'glow',
+      label: 'Accent Glow',
+      min: 0, max: 2, step: 0.05, def: 1, suffix: '×',
+      tier: 'max', priority: 6,
+      sel: 'h1, h1.display, .hero-title, .display, .scene-title, .accent, [data-accent], .slash-name',
+      detect: (root) => root.querySelector('h1, .display, .accent, [data-accent], .slash-name') != null,
+      apply: (root, mult, ctx) => {
+        root.querySelectorAll(ctx.def.sel).forEach((el) => {
+          if (el.closest('.tweak-panel') || el.closest('#tweak-bake-modal')) return;
+          el.style.filter = mult === 1
+            ? ''
+            : `brightness(${0.7 + 0.3 * mult}) drop-shadow(0 0 ${20 * mult}px rgba(255, 107, 26, ${Math.min(0.4, 0.12 * mult)}))`;
+        });
+      }
+    },
+    {
+      id: 'background',
+      label: 'Background',
+      min: 0, max: 2, step: 0.05, def: 1, suffix: '×',
+      tier: 'max', priority: 7,
+      sel: '#hexBg, .bg-layer, .pixel-agent, [data-bg], .cursor-glow',
+      detect: (root) => root.querySelector('#hexBg, .bg-layer, .pixel-agent, [data-bg], .cursor-glow') != null,
+      apply: (root, mult, ctx) => {
+        if (!ctx.cached) {
+          ctx.cached = true;
+          root.querySelectorAll(ctx.def.sel).forEach((el) => {
+            el.dataset.tweakOrigOpacity = getComputedStyle(el).opacity || '1';
+          });
+        }
+        root.querySelectorAll('[data-tweak-orig-opacity]').forEach((el) => {
+          const orig = parseFloat(el.dataset.tweakOrigOpacity) || 1;
+          el.style.opacity = Math.min(1, orig * mult).toFixed(3);
+        });
+      }
+    },
+    {
+      id: 'letterSpacing',
+      label: 'Letter Spacing',
+      min: -0.04, max: 0.06, step: 0.002, def: 0, suffix: 'em',
+      tier: 'max', priority: 8,
+      sel: 'h1, h2, .display, .hero-title, .scene-title',
+      detect: (root) => root.querySelector('h1, h2, .display, .hero-title, .scene-title') != null,
+      apply: (root, val, ctx) => {
+        root.querySelectorAll(ctx.def.sel).forEach((el) => {
+          if (el.closest('.tweak-panel') || el.closest('#tweak-bake-modal')) return;
+          if (!el.dataset.tweakOrigLs) el.dataset.tweakOrigLs = getComputedStyle(el).letterSpacing;
+          const orig = el.dataset.tweakOrigLs === 'normal' ? 0 : parseFloat(el.dataset.tweakOrigLs) || 0;
+          const fs = parseFloat(getComputedStyle(el).fontSize) || 16;
+          el.style.letterSpacing = (orig + val * fs).toFixed(2) + 'px';
+        });
+      }
+    },
+    {
+      id: 'roundness',
+      label: 'Roundness',
+      min: 0, max: 2.5, step: 0.05, def: 1, suffix: '×',
+      tier: 'max', priority: 9,
+      detect: (root) => {
+        const sample = root.querySelectorAll('*');
+        let count = 0;
+        for (let i = 0; i < Math.min(sample.length, 200); i++) {
+          const r = parseFloat(getComputedStyle(sample[i]).borderRadius);
+          if (r > 0) count++;
+          if (count >= 3) return true;
+        }
+        return count >= 3;
+      },
+      apply: (root, mult, ctx) => {
+        if (!ctx.cached) {
+          ctx.cached = true;
+          root.querySelectorAll('*').forEach((el) => {
+            if (el.closest('.tweak-panel') || el.closest('#tweak-bake-modal') || el.closest('.tweak-toggle')) return;
+            const cs = getComputedStyle(el);
+            const r = cs.borderRadius;
+            if (r && r !== '0px' && parseFloat(r) > 0) el.dataset.tweakOrigRadius = r;
+          });
+        }
+        root.querySelectorAll('[data-tweak-orig-radius]').forEach((el) => {
+          const orig = parseFloat(el.dataset.tweakOrigRadius) || 0;
+          el.style.borderRadius = (orig * mult).toFixed(2) + 'px';
+        });
+      }
+    },
+    {
+      id: 'saturation',
+      label: 'Saturation',
+      min: 0, max: 2, step: 0.05, def: 1, suffix: '×',
+      tier: 'max', priority: 10,
+      detect: () => true,
+      apply: (root, mult) => {
+        if (root === document.body || root === document.documentElement) {
+          document.body.style.filter = mult === 1 ? '' : `saturate(${mult})`;
+        } else {
+          // For per-slide, apply to slide root
+          root.style.filter = mult === 1 ? '' : `saturate(${mult})`;
+        }
+      }
+    }
+  ];
+
+  /* ============================================================
+     STATE
+     ============================================================ */
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const isPerSlide = slides.length >= 2 && (
+    getComputedStyle(document.documentElement).scrollSnapType !== 'none' ||
+    getComputedStyle(document.body).scrollSnapType !== 'none' ||
+    slides.some((s) => getComputedStyle(s).scrollSnapAlign !== 'none')
+  );
+
+  let level = 'light'; // toggled to 'max'
+  let activeIdx = 0; // for per-slide mode
+  let activeSliders = []; // current set of slider defs being shown
+  // values[targetKey] = { sliderId: number, ... }
+  const values = {};
+  // ctx[targetKey] = { sliderId: {cached, def}, ... } — apply contexts per slider per target
+  const ctx = {};
+
+  function targetKey(idx) {
+    return isPerSlide ? `slide:${idx}` : 'page';
+  }
+  function targetRoot(idx) {
+    return isPerSlide ? slides[idx] : document.body;
+  }
+  function targetLabel(idx) {
+    if (!isPerSlide) return { badge: 'Page', name: document.title || '—' };
+    const s = slides[idx];
+    return { badge: 'Slide ' + String(idx + 1).padStart(2, '0'), name: s?.dataset.title || `Slide ${idx + 1}` };
+  }
+
+  function ensureValues(key) {
+    if (!values[key]) values[key] = {};
+    if (!ctx[key]) ctx[key] = {};
+    return values[key];
+  }
+
+  /* ============================================================
+     SLIDER SELECTION (auto-scan)
+     ============================================================ */
+  function pickSliders() {
+    const cap = level === 'max' ? 10 : 5;
+    const root = targetRoot(activeIdx);
+    const survivors = SLIDER_DEFS
+      .filter((def) => level === 'max' ? true : def.tier === 'light')
+      .filter((def) => {
+        try { return def.detect(root); } catch (_) { return false; }
+      })
+      .sort((a, b) => a.priority - b.priority)
+      .slice(0, cap);
+    return survivors;
+  }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+  const rowsEl = document.getElementById('tweak-rows');
+  const targetNameEl = document.getElementById('tweak-target-name');
+  const levelBadgeEl = document.getElementById('tweak-level-badge');
+
+  function renderRows() {
+    activeSliders = pickSliders();
+    const key = targetKey(activeIdx);
+    const v = ensureValues(key);
+    rowsEl.innerHTML = '';
+    activeSliders.forEach((def) => {
+      const row = document.createElement('div');
+      row.className = 'tweak-row';
+      row.dataset.sliderId = def.id;
+      const cur = v[def.id] !== undefined ? v[def.id] : def.def;
+      row.innerHTML = `
+        <div class="tweak-row-head">
+          <span class="tweak-row-label${cur !== def.def ? ' dirty' : ''}">${def.label}</span>
+          <span class="tweak-row-value" data-action="reset-one">${formatVal(cur, def)}</span>
+        </div>
+        <input type="range" class="tweak-slider"
+               min="${def.min}" max="${def.max}" step="${def.step}" value="${cur}"
+               aria-label="${def.label}" />
+      `;
+      rowsEl.appendChild(row);
+      const input = row.querySelector('input');
+      const valueEl = row.querySelector('.tweak-row-value');
+      const labelEl = row.querySelector('.tweak-row-label');
+      paintFill(input, def);
+      input.addEventListener('input', () => {
+        const num = parseFloat(input.value);
+        v[def.id] = num;
+        if (!ctx[key][def.id]) ctx[key][def.id] = { def };
+        try { def.apply(targetRoot(activeIdx), num, ctx[key][def.id]); } catch (e) { console.warn('[tweak]', def.id, e); }
+        valueEl.textContent = formatVal(num, def);
+        labelEl.classList.toggle('dirty', num !== def.def);
+        paintFill(input, def);
+        toast(`${def.label} ${formatVal(num, def)}`);
+      });
+      valueEl.addEventListener('click', () => {
+        input.value = def.def;
+        v[def.id] = def.def;
+        if (!ctx[key][def.id]) ctx[key][def.id] = { def };
+        try { def.apply(targetRoot(activeIdx), def.def, ctx[key][def.id]); } catch (_) {}
+        valueEl.textContent = formatVal(def.def, def);
+        labelEl.classList.remove('dirty');
+        paintFill(input, def);
+      });
+    });
+    const lbl = targetLabel(activeIdx);
+    targetNameEl.innerHTML = `<span class="badge">${lbl.badge}</span>${lbl.name}`;
+    levelBadgeEl.textContent = level;
+  }
+
+  function paintFill(input, def) {
+    const v = parseFloat(input.value);
+    const pct = ((v - def.min) / (def.max - def.min) * 100).toFixed(1);
+    input.style.setProperty('--fill', pct + '%');
+  }
+
+  function formatVal(v, def) {
+    if (def.suffix === 'em') return (v >= 0 ? '+' : '') + v.toFixed(3) + 'em';
+    return v.toFixed(2) + def.suffix;
+  }
+
+  /* ============================================================
+     PER-SLIDE TRACKING
+     ============================================================ */
+  if (isPerSlide) {
+    const obs = new IntersectionObserver((entries) => {
+      let best = null;
+      entries.forEach((e) => {
+        if (e.isIntersecting && e.intersectionRatio > 0.55) {
+          const i = slides.indexOf(e.target);
+          if (i !== -1) best = i;
+        }
+      });
+      if (best != null && best !== activeIdx) {
+        activeIdx = best;
+        renderRows();
+      }
+    }, { threshold: [0, 0.55, 0.9] });
+    slides.forEach((s) => obs.observe(s));
+  }
+
+  /* ============================================================
+     PANEL CONTROLS
+     ============================================================ */
+  const panel = document.getElementById('tweak-panel');
+  const toggle = document.getElementById('tweak-toggle');
+  document.getElementById('tweak-close').addEventListener('click', () => {
+    panel.classList.add('collapsed');
+    toggle.classList.add('show');
+  });
+  toggle.addEventListener('click', () => {
+    panel.classList.remove('collapsed');
+    toggle.classList.remove('show');
+  });
+  document.getElementById('tweak-level-toggle').addEventListener('click', () => {
+    level = level === 'light' ? 'max' : 'light';
+    panel.dataset.tweakLevel = level;
+    renderRows();
+    toast('Level: ' + level);
+  });
+  document.getElementById('tweak-reset').addEventListener('click', () => {
+    const key = targetKey(activeIdx);
+    values[key] = {};
+    ctx[key] = {};
+    // Clear inline styles from prior applies on this target
+    const root = targetRoot(activeIdx);
+    activeSliders.forEach((def) => {
+      try { def.apply(root, def.def, ctx[key][def.id] = { def }); } catch (_) {}
+    });
+    renderRows();
+    toast('Reset');
+  });
+
+  /* ============================================================
+     KEYBOARD SHORTCUTS
+     ============================================================ */
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea, select, [contenteditable="true"]')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 't') {
+      e.preventDefault();
+      const isCol = panel.classList.contains('collapsed');
+      panel.classList.toggle('collapsed', !isCol);
+      toggle.classList.toggle('show', !isCol);
+    } else if (k === 'r') {
+      e.preventDefault();
+      document.getElementById('tweak-reset').click();
+    } else if (k === 'b') {
+      e.preventDefault();
+      openBakeModal();
+    }
+  });
+
+  /* ============================================================
+     TOAST
+     ============================================================ */
+  const toastEl = document.getElementById('tweak-toast');
+  let toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.style.opacity = '1';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toastEl.style.opacity = '0'; }, 700);
+  }
+
+  /* ============================================================
+     BAKE
+     ============================================================ */
+  const bakeModal = document.getElementById('tweak-bake-modal');
+  const bakeJsonEl = document.getElementById('tweak-bake-json');
+  const bakeSummaryEl = document.getElementById('tweak-bake-summary');
+
+  function buildBakePayload() {
+    const payload = {
+      mode: isPerSlide ? 'slide' : 'page',
+      values: {},
+      perSlide: {}
+    };
+    if (isPerSlide) {
+      Object.keys(values).forEach((key) => {
+        if (!key.startsWith('slide:')) return;
+        const idx = parseInt(key.split(':')[1], 10);
+        const v = values[key];
+        const dirty = {};
+        Object.keys(v).forEach((sid) => {
+          const def = SLIDER_DEFS.find((d) => d.id === sid);
+          if (def && v[sid] !== def.def) dirty[sid] = v[sid];
+        });
+        if (Object.keys(dirty).length === 0) return;
+        const slideTitle = slides[idx]?.dataset.title || `Slide ${idx + 1}`;
+        payload.perSlide[slideTitle] = dirty;
+      });
+    } else {
+      const v = values['page'] || {};
+      Object.keys(v).forEach((sid) => {
+        const def = SLIDER_DEFS.find((d) => d.id === sid);
+        if (def && v[sid] !== def.def) payload.values[sid] = v[sid];
+      });
+    }
+    return payload;
+  }
+
+  function openBakeModal() {
+    const payload = buildBakePayload();
+    const dirtyCount = Object.keys(payload.values).length + Object.keys(payload.perSlide).length;
+    if (dirtyCount === 0) {
+      toast('Nothing to bake');
+      return;
+    }
+    const text = 'BAKE_TWEAK_v1\n' + JSON.stringify(payload, null, 2);
+    bakeJsonEl.textContent = text;
+    bakeSummaryEl.textContent = `${dirtyCount} ${dirtyCount === 1 ? 'change' : 'changes'} ready. Copy and paste back to Claude — Claude will apply them and remove this panel.`;
+    bakeModal.classList.add('show');
+  }
+
+  document.getElementById('tweak-bake').addEventListener('click', openBakeModal);
+  document.getElementById('tweak-bake-cancel').addEventListener('click', () => bakeModal.classList.remove('show'));
+  document.getElementById('tweak-bake-copy').addEventListener('click', () => {
+    const text = bakeJsonEl.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      toast('Copied · paste to Claude');
+      const btn = document.getElementById('tweak-bake-copy');
+      const orig = btn.textContent;
+      btn.textContent = 'Copied ✓';
+      setTimeout(() => { btn.textContent = orig; }, 1400);
+    }).catch(() => {
+      toast('Copy failed — select manually');
+    });
+  });
+  document.getElementById('tweak-bake-download').addEventListener('click', () => {
+    downloadBaked();
+  });
+
+  function downloadBaked() {
+    const clone = document.documentElement.cloneNode(true);
+    // Remove tweak block (markers + everything in between)
+    const html = clone.outerHTML;
+    const rx = /<!--\s*TWEAK:START[\s\S]*?TWEAK:END[\s\S]*?-->/;
+    let baked = html.replace(rx, '');
+    // Inject overrides as a style block right before </head>
+    const payload = buildBakePayload();
+    const overrideCss = bakedToCss(payload);
+    if (overrideCss) {
+      baked = baked.replace(/<\/head>/i, `<style id="tweak-baked">\n${overrideCss}\n</style>\n</head>`);
+    }
+    // Wrap with doctype
+    const fullHtml = '<!DOCTYPE html>\n' + baked;
+    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const a = document.createElement('a');
+    const fname = (location.pathname.split('/').pop() || 'page.html').replace(/\.html$/, '') + '-baked.html';
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 200);
+    toast('Downloaded ' + fname);
+  }
+
+  function bakedToCss(payload) {
+    // Best-effort CSS overrides from the bake payload — not as precise as Claude's in-place edits,
+    // but good for the standalone download path.
+    const lines = [];
+    function emit(scope, vals) {
+      Object.keys(vals).forEach((sid) => {
+        const v = vals[sid];
+        if (sid === 'titleSize') {
+          lines.push(`${scope} h1, ${scope} h1.display, ${scope} .display { font-size: calc(1em * ${v}) !important; }`);
+        } else if (sid === 'bodySize') {
+          lines.push(`${scope} { font-size: calc(1em * ${v}) !important; }`);
+        } else if (sid === 'density') {
+          lines.push(`${scope} .slide-content, ${scope} section, ${scope} .container { padding: calc(var(--slide-padding, 4rem) * ${v}) !important; }`);
+        } else if (sid === 'roundness') {
+          lines.push(`/* roundness ${v}× — apply manually for precision */`);
+        } else if (sid === 'saturation') {
+          lines.push(`${scope || 'body'} { filter: saturate(${v}); }`);
+        } else if (sid === 'background') {
+          lines.push(`${scope} #hexBg, ${scope} .pixel-agent, ${scope} .bg-layer { opacity: calc(var(--bg-orig-opacity, 0.08) * ${v}) !important; }`);
+        }
+        // Speed, glow, letter-spacing, visualScale: leave for Claude to handle precisely
+      });
+    }
+    if (payload.mode === 'page') {
+      emit('', payload.values);
+    } else {
+      Object.keys(payload.perSlide).forEach((title) => {
+        emit(`[data-title="${title}"]`, payload.perSlide[title]);
+      });
+    }
+    return lines.join('\n');
+  }
+
+  /* ============================================================
+     INIT
+     ============================================================ */
+  renderRows();
+  toast(isPerSlide ? `Tweak ready · per-slide · ${activeSliders.length} sliders` : `Tweak ready · ${activeSliders.length} sliders`);
+})();
+</script>
+<!-- TWEAK:END -->

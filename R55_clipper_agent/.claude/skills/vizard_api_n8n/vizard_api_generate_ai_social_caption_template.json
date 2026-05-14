@@ -1,0 +1,197 @@
+{
+  "name": "vizard_api_generate_ai_social_caption_template",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## How to use\nThis API helps you automatically generate a social media post caption for any final video clip using AI. The caption is short, engaging, and tailored for platforms like TikTok, Instagram, YouTube Shorts, and more. It’s best suited for users who want more control or are building custom automation workflows using tools like make.com or n8n.( https://docs.vizard.ai/docs/generate-ai-social-caption )\n\nIf you’re using the API in Publish Clips to Social Media workflow, you don’t need to call this endpoint manually—Vizard will generate a social caption for you automatically before publishing to TikTok.\n\nNote: This API only works for videos with spoken dialogue. Silent or voiceless videos are not supported.\n##",
+        "height": 208,
+        "width": 1024,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1408,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "c04d991d-e15d-4d56-84ec-76a4a954df69",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"finalVideoId\": 39416085,\n  \"aiSocialPlatform\":2,\n  \"tone\": 2,\n  \"voice\": 0\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1376,
+        128
+      ],
+      "id": "356f7ebc-7c07-4287-9fe8-c033941ed941",
+      "name": "Create_Input_Param"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -864,
+        128
+      ],
+      "id": "eca8dd5a-d917-4a03-8a45-0559a6f7c4df",
+      "name": "Wait4Create",
+      "webhookId": "b307ed77-9cc6-4549-98e2-4539a4a10e26"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c726338b-00db-43c5-bfeb-f7cd1c122c2c",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 2000,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c6c1a672-f6c3-4daa-a2a1-63556d9b16e8",
+              "leftValue": "={{ $json.projectId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8384df88-eace-400c-a5fe-ca4e11132572",
+              "leftValue": "={{ $json.shareLink }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -608,
+        128
+      ],
+      "id": "13d382d4-0443-4cd9-9287-1eea2607aa3d",
+      "name": "If_create_success",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/ai-social",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "your_api_key"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n$json\n}}",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1136,
+        128
+      ],
+      "id": "25cf77f2-4ef9-4cd0-937e-54f7dcc0fbc8",
+      "name": "Api_Vizard_AI_Generate_AI_Social_Caption",
+      "retryOnFail": true,
+      "maxTries": 5
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Create_Input_Param": {
+      "main": [
+        [
+          {
+            "node": "Api_Vizard_AI_Generate_AI_Social_Caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4Create": {
+      "main": [
+        [
+          {
+            "node": "If_create_success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If_create_success": {
+      "main": [
+        []
+      ]
+    },
+    "Api_Vizard_AI_Generate_AI_Social_Caption": {
+      "main": [
+        [
+          {
+            "node": "Wait4Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c82a4044-6a57-4e1c-9453-3449f9937790",
+  "meta": {
+    "instanceId": "7001cc76918c56e72ad4c7b1f8c14642b92bec405b12704d9c367625fa72d9b0"
+  },
+  "id": "MUVvNGiEeJYYMg8m",
+  "tags": [
+    {
+      "updatedAt": "2026-01-16T09:12:04.984Z",
+      "createdAt": "2026-01-16T09:12:04.984Z",
+      "id": "wJ4eXBbiAusBwBeK",
+      "name": "20260116"
+    }
+  ]
+}

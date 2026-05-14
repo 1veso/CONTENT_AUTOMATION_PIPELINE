@@ -1,0 +1,92 @@
+{
+  "name": "vizard_api_retrieve_output_videos_template",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        -416
+      ],
+      "id": "a7069198-6ba8-4bcb-9dd5-014401aa88eb",
+      "name": "Wait4Create",
+      "webhookId": "736b05a3-d181-46e3-b938-5960cb1a59bb"
+    },
+    {
+      "parameters": {
+        "content": "## How to use（In this section, show an example to retrieve output videos via API）\nOnce your project finishes processing, you can retrieve the output videos — whether they were generated in Clipping Mode (multiple short clips extracted from a long video) or Editing Mode (send a short video for clipping).( https://docs.vizard.ai/docs/retrieve-video-clips )\n\nPlease replace parameter {projectId} in request URL with the actual projectId returned in previous step.\n\n##",
+        "height": 144,
+        "width": 1248
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -80,
+        -656
+      ],
+      "typeVersion": 1,
+      "id": "1805bea5-c261-4219-99ca-25254516903c",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "url": "https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/query/{projectId}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "your_api_key"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        -416
+      ],
+      "id": "29c40ba0-85d6-4123-bd50-67d99906604e",
+      "name": "Api_Vizard_AI_Retrieve_Output_Videos",
+      "retryOnFail": true,
+      "maxTries": 5
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Api_Vizard_AI_Retrieve_Output_Videos": {
+      "main": [
+        [
+          {
+            "node": "Wait4Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5c5f56d2-1dd0-457b-8799-1e28eff5b2c2",
+  "meta": {
+    "instanceId": "7001cc76918c56e72ad4c7b1f8c14642b92bec405b12704d9c367625fa72d9b0"
+  },
+  "id": "W9Af6Bge2ZpvcIUp",
+  "tags": [
+    {
+      "updatedAt": "2026-01-16T09:12:04.984Z",
+      "createdAt": "2026-01-16T09:12:04.984Z",
+      "id": "wJ4eXBbiAusBwBeK",
+      "name": "20260116"
+    }
+  ]
+}

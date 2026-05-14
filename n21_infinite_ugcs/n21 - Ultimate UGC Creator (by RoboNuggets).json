@@ -1,0 +1,1684 @@
+{
+  "name": "n21 - Ultimate UGC Creator (by RoboNuggets)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        496,
+        -400
+      ],
+      "id": "6868532c-8df1-4656-b951-ee6107347a8c",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        -400
+      ],
+      "id": "c337e2e1-06f5-4d11-a4b0-b46b597b5b81",
+      "name": "GPT",
+      "credentials": {
+        "openAiApi": {
+          "id": "zDZ32auFKuRIohXt",
+          "name": "OpenAi account 5"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        752,
+        -416
+      ],
+      "id": "e4749a63-2a6c-4ff5-9457-33145cafc023",
+      "name": "Execute"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.image_model }}",
+                    "rightValue": "seedream",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "994e05bf-d44d-4a26-a76e-6d04dbe1583b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "seedream"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4fb5322b-4439-47ee-801a-d4fe013cd5f1",
+                    "leftValue": "={{ $json.image_model }}",
+                    "rightValue": "nanobanana",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "nanobanana"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3f9b3aed-4cc3-4a3b-9b46-df4ea010bf00",
+                    "leftValue": "={{ $json.image_model }}",
+                    "rightValue": "chatgpt",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "chatgpt"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": 0
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        544,
+        64
+      ],
+      "id": "26a85c0d-c315-495f-a2bf-0815a5717fb0",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "content": "# Step 1:\n## Create Prompts",
+        "height": 144,
+        "width": 368,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        -272
+      ],
+      "id": "0f67ba51-a25c-4fc7-bd27-b136dbefa96e",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "# Step 2: \n\n# Create with \n\n# 🎵 Seedream 4.0\n# 🍌 Nanobanana\n# 🌀  ChatGPT ",
+        "height": 480,
+        "width": 320,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        -112
+      ],
+      "id": "c24f4870-f1c2-47e9-9b8a-5c234eac1086",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "# INPUT Section",
+        "height": 144,
+        "width": 432,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        -432
+      ],
+      "id": "d30ea924-89a6-4352-bffd-e886d5c6170b",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "# Step 3:\n## Create Video",
+        "height": 144,
+        "width": 368,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        384
+      ],
+      "id": "583d143a-d7b2-4b88-a298-320df13ce8d5",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "# OUTPUT Section",
+        "height": 144,
+        "width": 432,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        544
+      ],
+      "id": "ac42b13d-080f-40ce-8838-cf051cd31081",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E",
+          "mode": "list",
+          "cachedResultName": "n21 | RoboNuggets UGC creator (Seedream or Nanobanana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1843364312,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit#gid=1843364312"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "image_model": "={{ $('Get Sheet Inputs').first().json.image_model }}",
+            "prompt": "={{ $json.prompt }}",
+            "scene_number": "={{ $json.scene }}",
+            "video_title": "={{ $('Get Sheet Inputs').first().json.title }}",
+            "execution_id": "={{ $execution.id }}",
+            "execution_time": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "video_title",
+              "displayName": "video_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "scene_number",
+              "displayName": "scene_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_model",
+              "displayName": "image_model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "images",
+              "displayName": "images",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "videos",
+              "displayName": "videos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_time",
+              "displayName": "execution_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        -272
+      ],
+      "id": "c4f8bfd2-8dc8-46e6-9c90-f7d4bb8cd14b",
+      "name": "Store Prompts",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E",
+          "mode": "list",
+          "cachedResultName": "n21 | RoboNuggets UGC creator (Seedream or Nanobanana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1843364312,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U4sZTn7kVCQQlVYRak0XLuaDHqGSxzbC-ukJnat01-A/edit#gid=1843364312"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "video_title",
+              "lookupValue": "={{ $('Get Sheet Inputs').first().json.title }}"
+            },
+            {
+              "lookupColumn": "execution_id",
+              "lookupValue": "={{ $json.execution_id }}"
+            },
+            {
+              "lookupColumn": "scene_number",
+              "lookupValue": "0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        368,
+        80
+      ],
+      "id": "0dd98460-7fe2-492d-b9bb-f54e65702bbb",
+      "name": "Get Prompts",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "text": "Analyze the given image and determine if it primarily depicts a product or a character, or BOTH.\n\n- If the image is of a product, return the analysis in YAML format with the following fields:\n\nbrand_name: (Name of the brand shown in the image, if visible or inferable)\ncolor_scheme:\n  - hex: (Hex code of each prominent color used)\n    name: (Descriptive name of the color)\nfont_style: (Describe the font family or style used: serif/sans-serif, bold/thin, etc.)\nvisual_description: (A full sentence or two summarizing what is seen in the image, ignoring the background)\nIf the product has written details, describe those as well.\n\n- If the image is of a character, return the analysis in YAML format with the following fields:\n\ncharacter_name: (Name of the character if visible or inferable)\ncolor_scheme:\n  - hex: (Hex code of each prominent color used on the character)\n    name: (Descriptive name of the color)\noutfit_style: (Description of clothing style, accessories, or notable features)\nvisual_description: (A full sentence or two summarizing what the character looks like, ignoring the background)\n\nOnly return the YAML. Do not explain or add any other comments.\n\n\n- if it is BOTH, return both descriptions as guided above in YAML format\n",
+        "imageUrls": "={{ $('Get Sheet Inputs').item.json.image_reference }}",
+        "simplify": false,
+        "options": {
+          "detail": "high"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        368,
+        -272
+      ],
+      "id": "b35fdee0-df12-46ee-a1d1-aba5797ca5ec",
+      "name": "Analyze Image",
+      "credentials": {
+        "openAiApi": {
+          "id": "zDZ32auFKuRIohXt",
+          "name": "OpenAi account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Your task: Create 1 image prompt and {{ $('Get Sheet Inputs').item.json.scenes }}  video prompts as guided by your system guidelines. Scene 0 will be the image prompt, and Scenes 1 onward will be the video prompts. \n\nMake sure that the reference product image is depicted as ACCURATELY as possible in the resulting images, especially all text.\n\n***\n\n\nCharacter description: {{ $('Get Sheet Inputs').item.json.character_description }}\n\nSetting description: {{ $('Get Sheet Inputs').item.json.setting_description }}\n\nVoice description: {{ $('Get Sheet Inputs').item.json.voice_description }}\n\nScript description: {{ $('Get Sheet Inputs').item.json.script_description }}\n\nOther requests: {{ $('Get Sheet Inputs').item.json.other_requests }}\n\nAspect ratio: {{ $('Get Sheet Inputs').item.json.aspect_ratio }}\n\n\n***\nDescription of the reference images are given below. Most likely these are descriptions of a character advertising the product, or the product to be advertised itself. \n\n{{ $('Analyze Image').item.json.choices[0].message.content }}\n\n\n***\nUse the Think tool to double check your output. Especially to check that the number of image prompts you generated align to the requested number above.\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=system_prompt: |\n  ## SYSTEM PROMPT: UGC Image + Video Prompt Generator 🎥🖼️\n\nHave Scene 0 as the image prompt\nand Scenes 1 onward are the video prompts\n\nAt the beginning of each image prompt, use this prefix, but replace the (verb) with an appropriate word depending on the product. Example: show it to the camera, wear it on camera, etc\n\"Take the product in the image and have the character (verb) it to the camera. Place them at the center of the image with both the product and character visible\"\n\n***\n\nIf the user wants UGC authentic casual content: Use **UGC-style casual realism** as instructed below, unless the user specifies otherwise.\n\nIf the user explicitly requests a different style or a more professional setting, follow their instructions.\n\n*********\n\n\n   🟠 A – Ask:\n\nYou task: Take the reference image or the product in the reference image and place it into realistic, casual scenes as if captured by  content creators or influencers.  \n\n    Your task is to generate **both image and video prompts** based on the user’s request.\n\n\n    - Use the number of scenes explicitly stated by the user. If not specified, default to **2 scenes**.\n\n\n\n    - Output must be an array of scene objects, each containing:\n\n      - `scene`: A number starting from 0 and incrementing by 1\n\nHave Scene 0 as the image prompt\nand Scenes 1 onward are the video prompts\n\n      - `prompt`: A stringified YAML describing the scene\n\n*********\n\n  🟠 G – Guidance:\n    - Always follow **UGC-style casual realism** principles unless the users asks otherwise:\n\n      - Everyday realism with authentic, relatable environments\n      - amateur iPhone photo/video style\n      - Slightly imperfect framing and natural lighting\n      - Candid poses, genuine expressions\n\n\n      - Imperfections allowed unless otherwise specified by the user or unless image reference shows otherwise. (blemishes, uneven skin)\n\n    - **Camera parameter** must include casual descriptors:\n      - “amateur iPhone selfie”,  “uneven framing”, etc.\n      - have the camera movement be fixed unless otherwise stated\n\n    - If dialogue is needed:\n      - Use the EXACT dialogue in the script description given by the user if it looks like a dialogue. Note that each scene will only be 8 seconds long, so split the dialogue between scene 1 and onward if it's too long \n      - But if the user asks you to think of the dialogue - keep it casual, spontaneous, under 150 characters\n      - Natural tone (as if talking to a friend)\n      - Avoid formal, salesy, or scripted language\n      - Use ellipses (…) to signal pauses\n      - Describe the accent and style of voice and keep it consistent across scenes. Use the voice description as basis to keep it consistent across scenes\n      - always describe the accent and voice of the character in the video prompts\n      - prefix the video prompt with: \"dialogue, the character in the video says:\"\n\n\n      - Default age range: 21 to 38 unless stated otherwise by the user\n\n    - **Avoid**:\n      - Using double quotes inside prompts\n      - Mentioning copyrighted characters\n      - Generating more or fewer scenes than requested\n      - Overly describing the product in the image prompt and video prompts. If you need to describe it, just say to refer to the reference image provided\n      - For the video prompt, avoid having the character use the product unless otherwise stated\n      - For the dialogue, avoid having words in all caps\n      - For the video prompts, don't refer back to previous scenes\n\n\n*********\n\n  🟠  – Examples:\n    good_example:\n      - |\n        {\n          \"scene\": 0,\n          \"prompt\": \"action: character holds product casually\\ncharacter: inferred from image\\nproduct: the product in the reference image\\nsetting: casual everyday environment, such as a kitchen or car\\ncamera: amateur iPhone selfie, slightly uneven framing, casual vibe\\nstyle: UGC, unfiltered, realistic\"\n\"scene\": 1,\n          \"video_prompt\": \"dialogue, the character in the video says: this stuff’s actually pretty good… and it's got protein too\\nvoice_type: Australian accent, deep female voice\\nemotion: chill, upbeat\\nsetting: car, parked\\ncamera: amateur iPhone selfie video\\n camera movement: fixed\n        }\n\nand so on depending on how many scenes\n\n\n*********\n\n\n  🟠 N – Notation:\n    format: JSON\n    example_output: |\n{\n  \"scenes\": [\n    {\n      \"scene\": 0,\n      \"prompt\": \"image prompt in stringified YAML\"\n    },\n    {\n      \"scene\": 1,\n      \"prompt\": \"video prompt in stringified YAML\"\n    },\n    {\n      \"scene\": 2,\n      \"prompt\": \"video prompt in stringified YAML\"\n    }\n  ]\n}\n\nand so on depending on how many scenes the userneeds\n\n\n*********\n\n  🟠 T – Tools:\n    - Think Tool: Use this to validate:\n      - Total scene count matches the user request\n      - That each scene has complete and coherent prompts\n      - That the user's request and user prompt is followed\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -272
+      ],
+      "id": "629e1f2b-b13e-4d44-84b9-9d8ddc566f80",
+      "name": "UGCRobo - Prompts AI Agent"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"scenes\": [\n    {\n      \"scene\": 0,\n      \"prompt\": \"image prompt in stringified YAML\"\n    },\n    {\n      \"scene\": 1,\n      \"prompt\": \"video prompt in stringified YAML\"\n    },\n    {\n      \"scene\": 2,\n      \"prompt\": \"video prompt in stringified YAML\"\n    }\n  ]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        -400
+      ],
+      "id": "99d22184-3c63-4cb7-8744-15af33f25a33",
+      "name": "Structure"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "iv7ClNQ0l2HRdyi0",
+          "mode": "list",
+          "cachedResultName": "🍳 Create Video (Veo3-fast via Kie AI)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "video_prompt": "={{ $json.prompt }}",
+            "aspect_ratio": "={{ $('Get Sheet Inputs').first().json.aspect_ratio }}",
+            "image_reference": "={{ $('Get Images').first().json.images }}"
+          },
+          "matchingColumns": [
+            "images",
+            "video_prompt",
+            "aspect_ratio"
+          ],
+          "schema": [
+            {
+              "id": "video_prompt",
+              "displayName": "video_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "aspect_ratio",
+              "displayName": "aspect_ratio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "image_reference",
+              "displayName": "image_reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        400
+      ],
+      "name": "Call Create Video",
+      "id": "f7c5cbaf-f6d0-4e00-8a5b-d718780b9ff1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E",
+          "mode": "list",
+          "cachedResultName": "n21 | RoboNuggets UGC creator (Seedream or Nanobanana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1843364312,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit#gid=1843364312"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "video_title",
+              "lookupValue": "={{ $('Get Prompts').first().json.video_title }}"
+            },
+            {
+              "lookupColumn": "execution_id",
+              "lookupValue": "={{ $('Get Prompts').first().json.execution_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        368,
+        400
+      ],
+      "id": "e1ad57e4-6355-4117-9dc5-68ee9bc1ca23",
+      "name": "Get Images",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E",
+          "mode": "list",
+          "cachedResultName": "n21 | RoboNuggets UGC creator (Seedream or Nanobanana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1843364312,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit#gid=1843364312"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Get Images').item.json.row_number }}",
+            "videos": "={{ $json.video_result }}",
+            "execution_time": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "video_title",
+              "displayName": "video_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "scene_number",
+              "displayName": "scene_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_model",
+              "displayName": "image_model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "images",
+              "displayName": "images",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "videos",
+              "displayName": "videos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_time",
+              "displayName": "execution_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        400
+      ],
+      "id": "4eda2716-156c-40c6-b4db-c996b5b4f116",
+      "name": "Store Videos",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E",
+          "mode": "list",
+          "cachedResultName": "n21 | RoboNuggets UGC creator (Seedream or Nanobanana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1843364312,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit#gid=1843364312"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "video_title",
+              "lookupValue": "={{ $('Get Prompts').first().json.video_title }}"
+            },
+            {
+              "lookupColumn": "execution_id",
+              "lookupValue": "={{ $('Get Prompts').first().json.execution_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        368,
+        544
+      ],
+      "id": "f243ec06-d51c-43a2-981d-149cad7ab391",
+      "name": "Get Videos",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E",
+          "mode": "list",
+          "cachedResultName": "n21 | RoboNuggets UGC creator (Seedream or Nanobanana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 772279596,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit#gid=772279596"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Get Sheet Inputs').first().json.row_number }}",
+            "production_status": "done",
+            "final_output": "={{ $json.combined_video_result }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_reference",
+              "displayName": "image_reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "character_description",
+              "displayName": "character_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "setting_description",
+              "displayName": "setting_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "voice_description",
+              "displayName": "voice_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "script_description",
+              "displayName": "script_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "other_requests",
+              "displayName": "other_requests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "scenes",
+              "displayName": "scenes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "aspect_ratio",
+              "displayName": "aspect_ratio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_model",
+              "displayName": "image_model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "production_status",
+              "displayName": "production_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_output",
+              "displayName": "final_output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        544
+      ],
+      "id": "093873b5-7d83-4eeb-9460-cadcfe96fd3c",
+      "name": "Final Video",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E",
+          "mode": "list",
+          "cachedResultName": "n21 | RoboNuggets UGC creator (Seedream or Nanobanana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1843364312,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit#gid=1843364312"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Get Prompts').item.json.row_number }}",
+            "images": "={{ $json.image_result }}",
+            "image_model": "={{ $('Get Sheet Inputs').first().json.image_model }}",
+            "execution_time": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "video_title",
+              "displayName": "video_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "scene_number",
+              "displayName": "scene_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_model",
+              "displayName": "image_model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "images",
+              "displayName": "images",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "videos",
+              "displayName": "videos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_time",
+              "displayName": "execution_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        80
+      ],
+      "id": "b141e8e3-57a7-44db-a843-31a6cdec3d03",
+      "name": "Store Image",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1d0425b7-6eb5-4c41-88fd-f37fca814332",
+              "leftValue": "={{ $json.scene_number }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        400
+      ],
+      "id": "3baff0f3-917a-4f71-8513-684398d99b53",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "DaIbrXSzbXzzNEeT",
+          "mode": "list",
+          "cachedResultName": "🍳 Create Image (Nanobanana via Kie AI)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "image_prompt": "={{ $json.prompt }}",
+            "image_reference": "={{ $('Get Sheet Inputs').first().json.image_reference }}",
+            "aspect_ratio": "={{ $('Get Sheet Inputs').item.json.aspect_ratio }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "image_prompt",
+              "displayName": "image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "image_reference",
+              "displayName": "image_reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "aspect_ratio",
+              "displayName": "aspect_ratio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        80
+      ],
+      "name": "Nanobanana 🍌",
+      "id": "ca1c48b7-e881-41d2-a834-60faba38c496"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "ZB7YlEPrgXU2LO7p",
+          "mode": "list",
+          "cachedResultName": "🍳 Create Image (Seedream 4.0 via Kie AI)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "image_prompt": "={{ $json.prompt }}",
+            "aspect_ratio": "={{ $('Get Sheet Inputs').item.json.aspect_ratio }}",
+            "image_reference": "={{ $('Get Sheet Inputs').first().json.image_reference }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "image_prompt",
+              "displayName": "image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "image_reference",
+              "displayName": "image_reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "aspect_ratio",
+              "displayName": "aspect_ratio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        -64
+      ],
+      "name": "Seedream 🎵",
+      "id": "96d76a4a-bc23-4e89-93e2-4ba6b9b2a151"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "cZutyNSAyWcprXtg",
+          "mode": "list",
+          "cachedResultName": "🍳 Create Image (GPT-image-1 via Kie AI)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "image_prompt": "={{ $json.prompt }}",
+            "aspect_ratio": "={{ $('Get Sheet Inputs').item.json.aspect_ratio }}",
+            "image_reference": "={{ $('Get Sheet Inputs').first().json.image_reference }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "image_prompt",
+              "displayName": "image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "image_reference",
+              "displayName": "image_reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "aspect_ratio",
+              "displayName": "aspect_ratio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        224
+      ],
+      "name": "ChatGPT 🌀",
+      "id": "ab16c685-609c-448e-b01c-79f11f7b5072"
+    },
+    {
+      "parameters": {
+        "content": "# 🍳 Ultimate UGC Creator (by RoboNuggets) \n## by Jay E | n21",
+        "height": 192,
+        "width": 1392,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        272,
+        -592
+      ],
+      "id": "3fb485cb-58e6-45fd-a51f-212fa65afaf8",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E",
+          "mode": "list",
+          "cachedResultName": "n21 | RoboNuggets UGC creator (Seedream or Nanobanana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 772279596,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit#gid=772279596"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "production_status",
+              "lookupValue": "=create"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        -416
+      ],
+      "id": "91646dd5-4286-476a-8665-54399e61dc0c",
+      "name": "Get Sheet Inputs",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.scenes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        752,
+        -272
+      ],
+      "id": "3b230b76-b582-4091-b594-dcbea6d49c24",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "r83kRFIt1gR8mFk8",
+          "mode": "list",
+          "cachedResultName": "🍳 Combine Clips (FFMPEG via Fal AI)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "video_urls": "={{ $json.videos.slice(1) }}\n"
+          },
+          "matchingColumns": [
+            "video_urls"
+          ],
+          "schema": [
+            {
+              "id": "video_urls",
+              "displayName": "video_urls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        544
+      ],
+      "id": "bfec348b-330c-4962-879c-b80628d369ca",
+      "name": "Combine Clips"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "videos"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        544,
+        544
+      ],
+      "id": "b66b0712-3a3e-417c-a0d0-127e82f73c48",
+      "name": "Aggregate"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "UGCRobo - Prompts AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "UGCRobo - Prompts AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute": {
+      "main": [
+        [
+          {
+            "node": "Get Sheet Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Seedream 🎵",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nanobanana 🍌",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ChatGPT 🌀",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Prompts": {
+      "main": [
+        [
+          {
+            "node": "Get Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prompts": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Image": {
+      "main": [
+        [
+          {
+            "node": "UGCRobo - Prompts AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UGCRobo - Prompts AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structure": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "UGCRobo - Prompts AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Images": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Create Video": {
+      "main": [
+        [
+          {
+            "node": "Store Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Videos": {
+      "main": [
+        [
+          {
+            "node": "Get Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Videos": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Image": {
+      "main": [
+        [
+          {
+            "node": "Get Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Call Create Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nanobanana 🍌": {
+      "main": [
+        [
+          {
+            "node": "Store Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seedream 🎵": {
+      "main": [
+        [
+          {
+            "node": "Store Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChatGPT 🌀": {
+      "main": [
+        [
+          {
+            "node": "Store Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sheet Inputs": {
+      "main": [
+        [
+          {
+            "node": "Analyze Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Store Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Clips": {
+      "main": [
+        [
+          {
+            "node": "Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Combine Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e49bf63a-742c-4ecb-98ce-fb6033fac5d8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "addaa68bf5af965c06c3765c811549851eb65db8df4677e0c6253726ffcac493"
+  },
+  "id": "bZQVkiHMYdG6XLwy",
+  "tags": []
+}

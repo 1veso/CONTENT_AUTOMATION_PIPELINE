@@ -1,0 +1,1618 @@
+{
+  "name": "n3 | Monetizable Tiktoks AI Machine (with voice and subs)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b23ea5ad-b016-4d80-afc6-433549beb82b",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=SYSTEM PROMPT  \nYou are an AI designed to generate 1 immersive, viral animal trivia video idea. Your output must be formatted as a JSON array (single line) and follow all the rules below exactly.\n\nRULES:\n\n1. Only return 1 idea at a time.  \n2. The Idea must:  \n   - Be under 13 words.  \n   - Tease a compelling fact or curiosity about one specific animal.  \n   - Use phrasing like “Things you didn’t know about [animal]” or similar.  \n   - Do not include actual trivia — just the hook.  \n   - Must be grounded in real, observable animal behavior or biology.  \n   - No fantasy, jokes, or made-up facts.  \n3. The Title must be:  \n   - Short, punchy, and viral-friendly.  \n   - Include one relevant emoji.  \n   - Include exactly 12 hashtags in this order:  \n     ** 4 hashtags relevant to the animal  \n     ** 4 all-time most popular hashtags  \n     ** 4 most trending hashtags today (based on live research)  \n   - All hashtags must be lowercase.  \n4. Set Status to \"for production\" (always).  \n5. The Environment must:  \n   - Be under 20 words.  \n   - Match the animal in the Idea exactly.  \n   - Clearly describe:  \n     - Where the animal lives (mangrove swamp, desert cliff, coral reef, etc.)  \n     - Visual/sound details (golden light, distant calls, clear waters, etc.)  \n     - Style of scene (cinematic realism, slow-motion, macro, drone, etc.)  \n   - No fantasy elements.\n\nOUTPUT FORMAT (single-line JSON array):\n\n[\n  {\n    \"Title\": \"Summarized viral animal title with emoji #4_relevant_hashtags #4_all_time_popular_hashtags #4_trending_hashtags\",\n    \"Idea\": \"Short teaser like 'Things you didn’t know about flamingos'\",\n    \"Environment\": \"Brief vivid setting under 20 words matching the animal\",\n    \"Status\": \"for production\"\n  }\n]\n"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        140,
+        0
+      ],
+      "id": "25790ecb-8f42-49c5-ba97-a92f2f30228c",
+      "name": "Create New Idea",
+      "credentials": {
+        "openAiApi": {
+          "id": "NyuhXI96tWK9dR2J",
+          "name": "OpenAi account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## INPUT: Starting Idea",
+        "height": 100,
+        "width": 500,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -540,
+        0
+      ],
+      "id": "ebf56104-77de-42f8-949d-a73e73d2852d",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1FgwtfdRV3WqRo_nrGOYjmV2zqvb2MY_oAxCDi3HgeZA",
+          "mode": "list",
+          "cachedResultName": "R29 | Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FgwtfdRV3WqRo_nrGOYjmV2zqvb2MY_oAxCDi3HgeZA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FgwtfdRV3WqRo_nrGOYjmV2zqvb2MY_oAxCDi3HgeZA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "idea": "={{ $json.message.content.Idea }}",
+            "caption": "={{ $json.message.content.Title }}",
+            "environment_prompt": "={{ $json.message.content.Environment }}",
+            "production": "for production",
+            "id": "==ROW()-1"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "idea",
+              "displayName": "idea",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "caption",
+              "displayName": "caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "production",
+              "displayName": "production",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "environment_prompt",
+              "displayName": "environment_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_output",
+              "displayName": "final_output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -120,
+        140
+      ],
+      "id": "328148f0-554b-492d-9b5f-f77c6cd9a80b",
+      "name": "Log the Idea",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a prompt-generation AI specializing in cinematic, third-person, still-image prompts. Your task is to generate a **13-scene photo sequence** showing frozen moments of one specific animal in its natural environment, based on an animal trivia video idea.\n\nYour writing must match the following style:\n- Highly detailed, colorful cinematic realism.\n- Each scene must focus on the animal, showing it in different positions, behaviors, or surroundings.\n- Backgrounds should be vivid, dynamic, and full of texture: reflections, clouds, leaves, water ripples, dust, terrain, fur detail, feathers, skin texture, etc.\n- No anthropomorphism, fantasy, humor, or storytelling language.\n- Do not use camera terms (e.g., “lens,” “shot,” “frame,” “POV”).\n\nEach prompt must:\n- Describe **only one frozen visual moment** per scene (no movement, no transitions).\n- Be written in **cinematic third-person** style.\n- Stay **under 500 characters** per scene.\n- Match the provided **Idea** and **Environment** exactly.\n\n---\n\nCore Inputs:\n\n**Idea:** \"{{ $('Create New Idea').item.json.message.content.Idea }}\"\n**Environment:** \"{{ $('Create New Idea').first().json.message.content.Environment }}\"\n\n---\n\n### Format:\n\nIdea: \"...\"\nEnvironment: \"...\"\n\nScene 1: \"...\"\nScene 2: \"...\"\nScene 3: \"...\"\nScene 4: \"...\"\nScene 5: \"...\"\nScene 6: \"...\"\nScene 7: \"...\"\nScene 8: \"...\"\nScene 9: \"...\"\nScene 10: \"...\"\nScene 11: \"...\"\nScene 12: \"...\"\nScene 13: \"...\"\n\n---\n\n### Embedded Example Output (TRUE STYLE):\n\nIdea: \"Things you didn’t know about flamingos\"  \nEnvironment: \"Shallow saltwater lake at sunrise, pink flamingos wading through rippling reflections, vivid sky and distant hills\"\n\nScene 1:  \nA lone flamingo stands still in glassy water, its reflection sharp beneath pink clouds and distant hills.\n\nScene 2:  \nA flamingo arches its neck to groom feathers, fine plumes catching orange sunrise light.\n\nScene 3:  \nTwo flamingos cross paths in shallow water, their legs mirrored in the clear, rippling surface.\n\nScene 4:  \nA group of flamingos stands in a V-formation, surrounded by scattered reeds and morning fog.\n\nScene 5:  \nClose view of a flamingo’s curved beak skimming water, tiny ripples forming in its path.\n\nScene 6:  \nWider view of the lake with dozens of flamingos, pale blue sky glowing behind soft mountain outlines.\n\nScene 7:  \nA flamingo lifts its wings mid-stretch, deep red and black feathers exposed beneath pastel sky.\n\nScene 8:  \nA chick nestles beside an adult, fine gray fluff contrasted against smooth pink legs.\n\nScene 9:  \nA tight grouping of flamingos turns in unison, water flicking up in tiny arcs.\n\nScene 10:  \nA flamingo stands on one leg near shore, backed by distant reflections and scattered driftwood.\n\nScene 11:  \nA splash near the group sends up droplets, caught frozen against the golden horizon.\n\nScene 12:  \nSeveral flamingos wade slowly across the lake, long shadows trailing behind in orange-tinted water.\n\nScene 13:  \nOne flamingo tilts its head upward, beak open slightly, framed by a glowing, cloud-streaked sky.\n"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        20,
+        140
+      ],
+      "id": "096ab753-207e-423f-b2ae-759858450f4a",
+      "name": "Generate Prompts",
+      "credentials": {
+        "openAiApi": {
+          "id": "NyuhXI96tWK9dR2J",
+          "name": "OpenAi account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let story;\ntry {\n  const sceneObject = items[0].json.message.content;\n  if (sceneObject && typeof sceneObject === \"object\") {\n    story = Object.entries(sceneObject)\n      .filter(([key, value]) => key.startsWith(\"Scene\"))\n      .map(([key, value]) => value); // <<<< ADD THIS .map() TO GET ONLY SCENE TEXTS\n  } else {\n    throw new Error(\"No valid scene object found.\");\n  }\n} catch (e2) {\n  throw new Error(\"Could not extract scenes properly.\");\n}\n\nlet output = [];\n\nfor (const scene of story) {\n  output.push({ description: scene });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        140
+      ],
+      "id": "bda22deb-e7f8-4509-9e4b-42e5ff3eb357",
+      "name": "Unbundle Prompts"
+    },
+    {
+      "parameters": {
+        "content": "## | Step 1: Generate Prompts\n",
+        "height": 100,
+        "width": 540,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -680,
+        140
+      ],
+      "id": "327bf50f-a658-478f-bc94-1366b5efb729",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/flux-pro",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"prompt\": \"{{ $json.description }}\",\n  \"image_size\": \"portrait_16_9\"\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 500
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        280
+      ],
+      "id": "8aa3f6cf-a0a8-481f-8ea0-ae8e1ab694ca",
+      "name": "Create Images",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/flux-pro/requests/{{ $json.request_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        280
+      ],
+      "id": "515823c8-0901-45d7-8843-8a67c168150a",
+      "name": "Get Images",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## | Step 2: Generate Images",
+        "height": 100,
+        "width": 560,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -820,
+        280
+      ],
+      "id": "921cc95f-4c8a-4954-a56e-d48885402428",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "text": "=You are a prompt-generation AI trained to create short, cinematic, third-person video prompts based on animal trivia content.\n\nYou will analyze an uploaded image and create one clear, realistic prompt describing a dynamic, natural moment involving a specific animal in its real environment.\n\nEach prompt must reflect the visual tone of wildlife documentaries and natural history footage — grounded, vivid, and realistic.\n\n**Original photo-generation prompt for context:**  \n\"{{ $('Unbundle Prompts').item.json.description }}\"  \nUse this only to understand the role, setting, or tone. Do not copy or repeat it.\n\n---\n\n### Rules\n\n- No \"I\" or \"POV\" phrasing.\n- Write in third-person.\n- One dynamic animal action per sentence (running, gliding, diving, turning, pecking, etc.).\n- Stay under 300 characters.\n- Mention visual details and natural textures (sunlight, feathers, water, dust, fur, reflections, ripples).\n- Avoid emotional, poetic, or fantasy language.\n- Avoid film jargon like \"camera pans\" or \"lens focus.\"\n- Must match the animal and environment shown in the image.\n\n---\n\n### Example Outputs\n\n- A flamingo steps slowly through pink water, its curved beak skimming the surface.  \n- A sea turtle pushes through seagrass, light patterns shifting across its shell.  \n- A jaguar leaps over a mossy log, droplets trailing from its wet fur.  \n- An octopus coils around a coral branch, its skin pulsing with subtle color changes.  \n- A red fox trots through dry leaves, ears twitching at the distant rustle.  \n- A penguin slides belly-first down an icy slope, snow crystals scattering behind it.\n\n---\n\nUse the uploaded image and matching description to generate one short, realistic animal behavior prompt in this style.\n",
+        "imageUrls": "={{ $json.images[0].url }}",
+        "options": {
+          "detail": "auto"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -460,
+        420
+      ],
+      "id": "8f98531f-1b9d-4eb6-8a61-6ee2876d051b",
+      "name": "Video Prompts",
+      "credentials": {
+        "openAiApi": {
+          "id": "NyuhXI96tWK9dR2J",
+          "name": "OpenAi account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/kling-video/v1.6/pro/image-to-video",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"prompt\": \"{{ $json.content }}\",\n  \"image_url\": \"{{ $('Get Images').item.json.images[0].url }}\",\n  \"duration\": \"5\",\n  \"aspect_ratio\": \"9:16\",\n  \"negative_prompt\": \"bad quality\",\n  \"cfg_scale\": 0.5\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        420
+      ],
+      "id": "0bc1ae0c-3f1d-4b4a-a3a3-aa66a198bacf",
+      "name": "Create Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/kling-video/requests/{{ $json.request_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        420
+      ],
+      "id": "2c623e1d-b33e-4d83-94c4-dfa279c4d4a2",
+      "name": "Get Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## | Step 3: Generate Videos",
+        "height": 100,
+        "width": 500,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -980,
+        420
+      ],
+      "id": "7eed1f1d-7742-40d1-b641-2d47c01013c6",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Generate a concise, immersive sound description for Eleven Labs based on the given environment. Remove unnecessary words and limit the output to 250 characters max, including spaces and symbols. The description must be precise, clear, and logically match the environment. No extra details, just essential sound characteristics.\n\nEnvironment Idea: {{ $('Log the Idea').item.json.environment_prompt }}\nPhoto Idea: {{ $('Get Images').item.json.prompt }}\nVideo Idea: {{ $('Video Prompts').item.json.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -620,
+        560
+      ],
+      "id": "5aee45fd-944f-44ef-960f-39f0ca48ebb9",
+      "name": "Sound Prompts",
+      "credentials": {
+        "openAiApi": {
+          "id": "NyuhXI96tWK9dR2J",
+          "name": "OpenAi account 4"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/mmaudio-v2 ",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "= {\n        \"prompt\": \"ambient musical background sounds for this image: {{ $('Get Images').item.json.prompt }} the action is: {{ $json.message.content }}\",\n        \"duration\": 5,\n        \"video_url\": \"{{ $('Get Video').item.json.video.url }}\"\n  }\n",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        560
+      ],
+      "id": "25e83c4f-f188-44f7-8250-74116af95c35",
+      "name": "Create Sounds",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/mmaudio-v2/requests/{{ $json.request_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        560
+      ],
+      "id": "066f7598-7774-45a0-a5e4-e34097379cb8",
+      "name": "Get Sounds",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "## | Step 4: Generate Sounds",
+        "height": 100,
+        "width": 480,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        560
+      ],
+      "id": "b14adbcd-19c7-4691-89f4-6e2bc6c03748",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        -740,
+        700
+      ],
+      "id": "dbe3f5ae-2e0d-4bfc-8462-8772d742e142",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    video_urls: items.map(item => item.json.video.url)\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        700
+      ],
+      "id": "a5780c65-f30e-4a6c-9ff7-8855ae554090",
+      "name": "List Elements"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/ffmpeg-api/compose",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"tracks\": [\n    {\n      \"id\": \"1\",\n      \"type\": \"video\",\n      \"keyframes\": [\n        { \"url\": \"{{ $json.video_urls[0] }}\", \"timestamp\": 0, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[1] }}\", \"timestamp\": 5, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[2] }}\", \"timestamp\": 10, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[3] }}\", \"timestamp\": 15, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[4] }}\", \"timestamp\": 20, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[5] }}\", \"timestamp\": 25, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[6] }}\", \"timestamp\": 30, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[7] }}\", \"timestamp\": 35, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[8] }}\", \"timestamp\": 40, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[9] }}\", \"timestamp\": 45, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[10] }}\", \"timestamp\": 50, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[11] }}\", \"timestamp\": 55, \"duration\": 5 },\n        { \"url\": \"{{ $json.video_urls[12] }}\", \"timestamp\": 60, \"duration\": 5 }\n      ]\n    }\n  ]\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        700
+      ],
+      "id": "6795b9f7-44ff-4cf5-b49d-6b4b35e6ad2d",
+      "name": "Sequence Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/ffmpeg-api/requests/{{ $json.request_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Key Add-Your-API-KEY-Here"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        700
+      ],
+      "id": "d06a31b1-d7a7-4765-88d5-feac662b1784",
+      "name": "Get Final Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## OUTPUT: Final Video",
+        "height": 100,
+        "width": 420,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1180,
+        700
+      ],
+      "id": "0ebdd301-77c3-490c-861d-009a56a85e4f",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1FgwtfdRV3WqRo_nrGOYjmV2zqvb2MY_oAxCDi3HgeZA",
+          "mode": "list",
+          "cachedResultName": "R29 | Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FgwtfdRV3WqRo_nrGOYjmV2zqvb2MY_oAxCDi3HgeZA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FgwtfdRV3WqRo_nrGOYjmV2zqvb2MY_oAxCDi3HgeZA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "idea": "={{ $('Log the Idea').first().json.idea }}",
+            "production": "done",
+            "final_output": "={{ $json.video_url }}"
+          },
+          "matchingColumns": [
+            "idea"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "idea",
+              "displayName": "idea",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "caption",
+              "displayName": "caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "production",
+              "displayName": "production",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "environment_prompt",
+              "displayName": "environment_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_output",
+              "displayName": "final_output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -880,
+        1220
+      ],
+      "id": "d09f3d69-e75b-4b27-bcec-31718308c648",
+      "name": "Log Final Video",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        40,
+        420
+      ],
+      "id": "2228f940-c843-4035-8e2a-6689bd5f2b43",
+      "name": "Wait for Video",
+      "webhookId": "4341ccf1-c1d0-4f10-b24b-8bb56f9ef75a"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        40,
+        560
+      ],
+      "id": "46a39dc1-6a08-4958-816e-0172c27a5e46",
+      "name": "Wait for Sounds",
+      "webhookId": "e8f621a2-912d-43ad-ac67-0f135a441870",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        40,
+        700
+      ],
+      "id": "5bdb3103-4102-4aad-ba7e-7dd6ae091b59",
+      "name": "Wait for Final Video",
+      "webhookId": "4d45095b-ac57-450c-a05c-0fba53294131"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        40,
+        280
+      ],
+      "id": "3b7b1941-15c7-4f0f-8e31-90ce45dddb96",
+      "name": "Wait for Images",
+      "webhookId": "3ef8e370-50cf-489e-8775-bf502ce60a26"
+    },
+    {
+      "parameters": {
+        "content": "## | Bonus Step: Generate Voice",
+        "height": 100,
+        "width": 480,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        940
+      ],
+      "id": "a36a7627-3f5b-4fea-9fb1-88d730058cf0",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=SYSTEM PROMPT\n\nYou are a voiceover script generator for Eleven Labs.\n\nYour task is to generate a single-paragraph, high-impact, documentary-style voiceover about one specific animal. The animal name will be passed dynamically. Your response must follow the rules below:\n\nRULES:\n\n1. Begin with the most shocking or unusual fact about the animal.\n2. Follow with 4–5 other fascinating, **true** points — focused on biology, behavior, or adaptations.\n3. Use **clear, memorable analogies** and **vivid phrasing** that help everyday people understand complex traits.\n4. Do **not** use line breaks, slashes, or paragraph spacing. The entire output must be one paragraph only.\n5. Write for a **short-form video audience** — keep it fast, punchy, and loaded with visual hooks.\n6. Avoid basic or generic phrasing (e.g., “Octopuses are smart”). Use specific, concrete language (e.g., “They've escaped sealed jars and vanished from labs!”).\n7. Use **intermittent exclamation points** when facts are truly surprising — but no more than 2.\n8. Stay between **900 and 1000 characters**, including spaces and punctuation.\n9. Stick 100% to scientifically accurate facts — no myths, fantasy, or exaggeration.\n10. Match the animal mentioned in:  \n    **Animal:** {{ $('Create New Idea').first().json.message.content.Title }}\n\n---\n\nEXAMPLE OUTPUT (no title, no labels — just the paragraph):\n\nThe octopus can taste with its arms — each sucker has sensors that detect chemicals like a tongue! Their blood is literally blue, powered by copper instead of iron, and their bodies are boneless enough to squeeze through holes the size of a coin. Some species have skin so adaptive they can mimic sea snakes, flounders, even coral textures. They've escaped labs, opened childproof jars, and disappeared from locked tanks. And here's the wild part: even after losing an arm, they can regrow a new one that works just as well — no doctor required.\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -620,
+        940
+      ],
+      "id": "d3db50e6-d9bd-438f-a6b0-d1e75ef2b336",
+      "name": "Voiceover Prompt",
+      "executeOnce": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "NyuhXI96tWK9dR2J",
+          "name": "OpenAi account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/elevenlabs/tts/turbo-v2.5",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"text\": \"{{ $json.message.content }}\",\n  \"voice\": \"2EiwWnXFnvU5JabPnv8n\",\n  \"stability\": 0.5,\n  \"similarity_boost\": 0.75,\n  \"speed\": 1\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        940
+      ],
+      "id": "7e62f58e-8036-4b15-9ac1-49fb6ac3370a",
+      "name": "Create Voice",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "OLFUcGebSI77ITzJ",
+          "name": "Fal AI Credential"
+        },
+        "httpHeaderAuth": {
+          "id": "MoVKuObFFfwkK2yq",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        40,
+        940
+      ],
+      "id": "462d5668-df7a-4b3e-af3e-80bd9ed1cf7e",
+      "name": "Wait",
+      "webhookId": "67cdb815-0a57-411b-bd63-40bffc9abcac"
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/elevenlabs/requests/{{ $json.request_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        940
+      ],
+      "id": "26a764cf-591e-44af-a20d-0d4c21e2b336",
+      "name": "Get Voice",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/auto-caption",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"video_url\": \"{{ $json.video_url }}\",\n  \"txt_color\": \"white\",\n  \"txt_font\": \"Standard\",\n  \"font_size\": 52,\n  \"stroke_width\": 1,\n  \"left_align\": \"0.1\",\n  \"top_align\": \"0.8\",\n  \"refresh_interval\": 1\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        1220
+      ],
+      "id": "2873c2cd-800b-4cf7-9436-4c0f05aaec67",
+      "name": "Create Subtitles",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "OLFUcGebSI77ITzJ",
+          "name": "Fal AI Credential"
+        },
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## | Bonus Step: Add Voice to Video",
+        "height": 100,
+        "width": 680,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -940,
+        1080
+      ],
+      "id": "dc1dc38d-e726-49cb-a6d8-29a3bdf25fe5",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## | Bonus Step: Add Subtitles to Video",
+        "height": 100,
+        "width": 480,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -740,
+        1220
+      ],
+      "id": "c43558ad-0ffa-4736-a001-f02d959faced",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/ffmpeg-api/compose",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"tracks\": [\n    {\n      \"id\": \"1\",\n      \"type\": \"video\",\n      \"keyframes\": [\n        {\n          \"url\": \"{{ $('Get Final Video').item.json.video_url }}\",\n          \"timestamp\": 0,\n          \"duration\": 65\n        }\n      ]\n    },\n    {\n      \"id\": \"2\",\n      \"type\": \"audio\",\n      \"keyframes\": [\n        {\n          \"url\": \"{{ $json.audio.url }}\",\n          \"timestamp\": 0,\n          \"duration\": 65\n        }\n      ]\n    }\n  ]\n}\n",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        1080
+      ],
+      "id": "8e77a620-f64c-4e12-9347-013486cc855e",
+      "name": "Add Voice",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        40,
+        1080
+      ],
+      "id": "c84a544a-e436-47da-b442-8ba441f25c91",
+      "name": "Wait 2",
+      "webhookId": "4d45095b-ac57-450c-a05c-0fba53294131"
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/ffmpeg-api/requests/{{ $json.request_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        1080
+      ],
+      "id": "08fdb773-b529-4904-8cdd-857b886edc4c",
+      "name": "Get Video with Voice",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        40,
+        1220
+      ],
+      "id": "91bf5e44-6ea1-41d0-b55c-918a783a117a",
+      "name": "Wait 3",
+      "webhookId": "67cdb815-0a57-411b-bd63-40bffc9abcac"
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/auto-caption/requests/{{ $json.request_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        1220
+      ],
+      "id": "317bf994-69b5-4b7a-8681-afc9e7bdc677",
+      "name": "Get Final Video with Subs",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fLJXjcjJjHekzjid",
+          "name": "Fal AI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# 🍳 How to Set Up for Your Own Space  \n**Author:** Jay E from [robonuggets.com](https://robonuggets.com)\n\nThis guide shows you how to set up your space using OpenAI for scripting, Fa ai for rendering, and ChatGPT for custom prompt generation.\n\n---\n\n## 🔳 Step 1: Set Up OpenAI for Scripting  \n1. Go to [OpenAI API Platform](https://platform.openai.com/api-keys)  \n2. Create an account (if you don’t have one).  \n3. Generate an API key.  \n4. Create a credential using that key.  \n\n\n---\n\n## 🔳 Step 2: Set Up Fal AI\n1. Visit [fal.ai](https://fal.ai)  \n2. Sign up and get your API key.  \n3. Create a Head Auth HTTP credential using your Fal key.  \n4. Replace any HTTP request nodes in your flow to use your credential\n\n---\n\n## 🔳 Step 3: Customize the System Prompts  \n1. Choose the niche or theme for your content (e.g. animal trivia, space facts, sports analysis).  \n2. Copy the system prompts within the node you want to edit\n3. Paste it into ChatGPT and instruct:  \n   *“Keep the format, but rewrite this for [your niche].”*  \n4. You’ll get a clean, structured version of the prompt that’s adapted to your content style.\n\n---\n\n## ⏱️ Final Note on Wait Times  \nAfter testing the nodes and before setting your workflow as Active, adjust your **wait times** based on how long each service takes to respond.  \n- Most steps can be set to **3 minutes (180 seconds)**  \n- The create video step should be set to **10 minutes (600 seconds)** to allow enough time for processing\n",
+        "height": 1380,
+        "width": 400,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        500,
+        20
+      ],
+      "id": "8714ecff-7560-4523-a3b2-fe5c6a62096d",
+      "name": "Sticky Note12"
+    }
+  ],
+  "pinData": {
+    "Get Video": [
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/koala/J07INFkXcwxf91KCElAT9_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 18573727
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/zebra/6w2LvfR-dRvZEIh6Mx7q0_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 17167271
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/kangaroo/O7WXYCjOHqF7nOXgskHMt_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 11687205
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/tiger/wCvml0-6oXsyXVz3fosj0_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 14077648
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/elephant/BHcMETtOiuOKaAufCQbnd_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 15736190
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/lion/H2AXhWWBKPcAUDWj4loOn_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 20797237
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/elephant/nBDlnPdTS3iYDMrlG_pDn_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 13802670
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/koala/1c3U3r7Yqlwckt0WMJB5s_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 12895575
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/panda/DGn1qsk1orrTRbnkI1yAt_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 9014205
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/tiger/S3wglfY970Yhnwg5KzZhr_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 19061183
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/tiger/G3SH3_ukrtqBUQvgtrY7P_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 11641444
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/lion/ElV6jJdKHsvFDnamh-NcL_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 11454981
+          }
+        }
+      },
+      {
+        "json": {
+          "video": {
+            "url": "https://v3.fal.media/files/elephant/0GwqjOUzuw2zPmK6iBUrc_output.mp4",
+            "content_type": "video/mp4",
+            "file_name": "output.mp4",
+            "file_size": 15825078
+          }
+        }
+      }
+    ],
+    "Get Final Video": [
+      {
+        "json": {
+          "video_url": "https://v3.fal.media/files/panda/nVkR4Iib_YS8mNfh5eXTA_output.mp4",
+          "thumbnail_url": "https://v3.fal.media/files/monkey/gDaDbMNNIKzPObDzf7j_6_first_frame.jpg"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Create New Idea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create New Idea": {
+      "main": [
+        [
+          {
+            "node": "Log the Idea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log the Idea": {
+      "main": [
+        [
+          {
+            "node": "Generate Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Prompts": {
+      "main": [
+        [
+          {
+            "node": "Unbundle Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unbundle Prompts": {
+      "main": [
+        [
+          {
+            "node": "Create Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Images": {
+      "main": [
+        [
+          {
+            "node": "Wait for Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Images": {
+      "main": [
+        [
+          {
+            "node": "Video Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video Prompts": {
+      "main": [
+        [
+          {
+            "node": "Create Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Video": {
+      "main": [
+        [
+          {
+            "node": "Wait for Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video": {
+      "main": [
+        [
+          {
+            "node": "Sound Prompts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Sound Prompts": {
+      "main": [
+        [
+          {
+            "node": "Create Sounds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Sounds": {
+      "main": [
+        [
+          {
+            "node": "Wait for Sounds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sounds": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "List Elements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Elements": {
+      "main": [
+        [
+          {
+            "node": "Sequence Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sequence Video": {
+      "main": [
+        [
+          {
+            "node": "Wait for Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Final Video": {
+      "main": [
+        [
+          {
+            "node": "Voiceover Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Video": {
+      "main": [
+        [
+          {
+            "node": "Get Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Sounds": {
+      "main": [
+        [
+          {
+            "node": "Get Sounds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Final Video": {
+      "main": [
+        [
+          {
+            "node": "Get Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Images": {
+      "main": [
+        [
+          {
+            "node": "Get Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voiceover Prompt": {
+      "main": [
+        [
+          {
+            "node": "Create Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Voice": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Subtitles": {
+      "main": [
+        [
+          {
+            "node": "Wait 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Voice": {
+      "main": [
+        [
+          {
+            "node": "Add Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Voice": {
+      "main": [
+        [
+          {
+            "node": "Wait 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2": {
+      "main": [
+        [
+          {
+            "node": "Get Video with Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video with Voice": {
+      "main": [
+        [
+          {
+            "node": "Create Subtitles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 3": {
+      "main": [
+        [
+          {
+            "node": "Get Final Video with Subs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Final Video with Subs": {
+      "main": [
+        [
+          {
+            "node": "Log Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "81e6c753-8998-4e35-a7c3-b7330a48910c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "addaa68bf5af965c06c3765c811549851eb65db8df4677e0c6253726ffcac493"
+  },
+  "id": "yEaUVfYgr6fgUiXt",
+  "tags": []
+}

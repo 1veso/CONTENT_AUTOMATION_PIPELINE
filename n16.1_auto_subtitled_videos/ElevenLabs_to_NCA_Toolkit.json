@@ -1,0 +1,564 @@
+{
+  "name": "ElevenLabs to NCA Toolkit",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "d1804ce5-8718-45c5-809a-2fb6c70a6935",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        160
+      ],
+      "id": "4b1cb2f2-421c-4063-a336-fad355a6ccc7",
+      "name": "Webhook",
+      "webhookId": "d1804ce5-8718-45c5-809a-2fb6c70a6935"
+    },
+    {
+      "parameters": {
+        "text": "={{ $('Webhook').item.json.inputs.text }}",
+        "include_timing": true,
+        "voice_id": {
+          "__rl": true,
+          "value": "={{ $json.voice_id }}",
+          "mode": "id"
+        },
+        "additionalFields": {
+          "file_name": "={{ $('Webhook').item.json.inputs.filename }}",
+          "optimize_streaming_latency": 0,
+          "model_id": "eleven_multilingual_v2",
+          "stability": 0.5,
+          "similarity_boost": 0.2,
+          "style": 0,
+          "use_speaker_boost": true
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-elevenlabs-enhanced.elevenLabs",
+      "typeVersion": 1,
+      "position": [
+        460,
+        160
+      ],
+      "id": "9f06213e-e4e1-4494-b630-de5c3c74e341",
+      "name": "ElevenLabs",
+      "credentials": {
+        "elevenLabsApi": {
+          "id": "iOvpLcJK0VkN7XCL",
+          "name": "ElevenLabs account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-piapi.fileUpload",
+      "typeVersion": 1,
+      "position": [
+        680,
+        160
+      ],
+      "id": "61d1e5df-de78-49b5-91a8-5c553a972a2a",
+      "name": "File Upload",
+      "credentials": {
+        "piAPIApi": {
+          "id": "tLdUHTT1TxJrmvCo",
+          "name": "PiAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Enhanced ElevenLabs v3 Text-to-Speech Prompt\n\nYou are tasked with enhancing input text for use with the ElevenLabs v3 text-to-speech system to create more expressive and emotionally rich voice outputs.\n\n## Instructions:\n\nCarefully read, analyze and understand the input text:\n<input_text>\n{{ $json.inputs.text }}\n</input_text>\n\nAnalyze the text for the following elements:\n- Overall emotional tone and changes throughout\n- Key phrases indicating emotion or action\n- Context and situation described\n- Natural conversation flow and pacing needs\n- Potential for sound effects or physical actions\n\n## Available Audio Tags:\n\n### Emotional States & Delivery:\n- **Emotions**: [happy], [sad], [angry], [excited], [calm], [worried], [surprised], [frustrated], [sarcastic], [curious], [crying], [mischievously], [warmly], [nervously], [sheepishly], [desperately], [amazed], [impressed], [delighted], [sympathetic], [questioning], [reassuring], [professional], [dismissive], [cute], [dramatically]\n- **Laughter**: [laughs], [laughs harder], [starts laughing], [wheezing], [laughing hysterically], [giggles], [giggling], [cracking up], [stifling laughter], [with genuine belly laugh]\n- **Voice Modulation**: [whispers], [whispering], [shouting], [neutral], [cheerful], [robotic voice], [binary beeping]\n- **Physical Actions**: [sighs], [exhales], [frustrated sigh], [happy gasp], [snorts], [swallows], [gulps]\n\n### Pacing & Timing:\n- **Speed**: [fast], [slow], [singing quickly]\n- **Pauses**: [pause:XXXms] (e.g., [pause:200ms], [pause:100ms]), do not use a higher pause value.\n- **Interruptions**: [overlapping], [jumping in], [interrupting], [starting to speak]\n\n### Special Effects:\n- **Sound Effects**: [gunshot], [applause], [clapping], [explosion], [fart]\n- **Musical**: [sings], [woo], [dancing]\n- **Accents**: [strong X accent] (e.g., [strong French accent], [strong Russian accent])\n\n### Multi-Speaker (for dialogues):\n- [speaker_1], [speaker_2], etc.\n\n## Punctuation Guidelines:\n- Use **ellipses (...)** to add natural pauses and weight\n- Use **CAPITALIZATION** for strong emphasis\n- Use standard punctuation for natural speech rhythm\n- Use **!** for excitement and **?** for questions\n\n## Key Rules:\n1. Insert tags at the beginning of sentences or phrases where emotion/delivery changes\n2. Do not alter, remove, or repeat the original text\n3. Consider voice character - match tags appropriately (e.g., don't use [whispers] for a shouting voice)\n4. Combine tags when needed for complex emotions (e.g., [nervous][whispers])\n5. Use natural speech patterns and avoid over-tagging\n6. Place tags logically - emotional tags before the emotional content, action tags where actions occur\n\n## Output Format:\nOutput only the enhanced text with appropriate tags. No explanations or summaries. No emoticons.\n\nExample structure:\n[tag] Enhanced text here. [tag][tag] More text with appropriate emotional context. [pause:XXXms] Final portion with suitable tags.\n\nRemember: Tags should enhance expressiveness while maintaining natural flow. Quality over quantity - use tags purposefully, not excessively.",
+        "options": {
+          "systemMessage": ""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        160
+      ],
+      "id": "25854ef3-95dd-4113-a7e8-c9c27053c4c4",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const voiceMap = {\n  \"Man\": \"uAkqgWZwdEumpOt0Olcr\",\n  \"Women\": \"esy0r39YPLQjOczyOib8\",\n};\n\nconst voice = $('Webhook').first().json.inputs.voice;\nconst voice_id = voiceMap[voice];\n\nif (!voice_id) {\n  throw new Error(`Unknown voice: ${voice}`);\n}\n\nreturn [{\n  json: {\n    text: $input.first().json.output,\n    filename: $json.filename,\n    return_webhook: $json.return_webhook,\n    voice_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        160
+      ],
+      "id": "1aab67ee-80f9-4bab-83c0-f3812f6c831c",
+      "name": "Map Voice to Voice ID"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input data (adapt as needed for your JSON structure)\nconst chars = $('ElevenLabs').first().json.alignment.characters;\nconst starts = $('ElevenLabs').first().json.alignment.character_start_times_seconds;\nconst ends = $('ElevenLabs').first().json.alignment.character_end_times_seconds;\n\n// Helper: group characters into words with start/end times\nfunction groupWords(chars, starts, ends) {\n  let words = [];\n  let word = '';\n  let wordStart = null;\n  let wordEnd = null;\n  for (let i = 0; i < chars.length; i++) {\n    if (word === '') wordStart = starts[i];\n    word += chars[i];\n    wordEnd = ends[i];\n    // At space or last char: commit word (excluding spaces)\n    if (chars[i] === ' ' || i === chars.length - 1) {\n      let cleanText = word.trim();\n      if (cleanText.length > 0) {\n        words.push({\n          start: wordStart,\n          end: wordEnd,\n          text: cleanText\n        });\n      }\n      word = '';\n    }\n  }\n  return words;\n}\n\n// Call the grouping function\nconst wordObjs = groupWords(chars, starts, ends);\n\n// Convert to n8n output format: array of { json: { ... } }\nreturn wordObjs.map(w => ({ json: w }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        160
+      ],
+      "id": "a5c8a211-0742-4700-9424-d5efbb3aba77",
+      "name": "prepare_captions"
+    },
+    {
+      "parameters": {
+        "jsCode": "function formatASSTime(t) {\n  // ASS expects: H:MM:SS.cs (centiseconds, 2 digits)\n  const h = String(Math.floor(t / 3600)).padStart(1, '0');\n  const m = String(Math.floor((t % 3600) / 60)).padStart(2, '0');\n  const s = String(Math.floor(t % 60)).padStart(2, '0');\n  const cs = String(Math.floor((t % 1) * 100)).padStart(2, '0');\n  return `${h}:${m}:${s}.${cs}`;\n}\n\n// Romanian to Latin-1 replacement (no diacritics)\nfunction toLatin1(str) {\n  return str\n    .replace(/ă|â|î|ä/g, 'a')\n    .replace(/Ă|Â|Î|Ä/g, 'A')\n    .replace(/ș|ş/g, 's')\n    .replace(/Ș|Ş/g, 'S')\n    .replace(/ț|ţ/g, 't')\n    .replace(/Ț|Ţ/g, 'T')\n    .replace(/é|è|ê|ë/g, 'e')\n    .replace(/É|È|Ê|Ë/g, 'E')\n    .replace(/ó|ò|ô|õ|ö/g, 'o')\n    .replace(/Ó|Ò|Ô|Õ|Ö/g, 'O')\n    .replace(/ú|ù|û|ü/g, 'u')\n    .replace(/Ú|Ù|Û|Ü/g, 'U')\n    .replace(/ç/g, 'c')\n    .replace(/Ç/g, 'C')\n    .replace(/ă/g, 'a')\n    .replace(/Ă/g, 'A')\n    .replace(/î/g, 'i')\n    .replace(/Î/g, 'I');\n}\n\n// Get your words array from previous node\nconst arr = items.map(item => item.json);\n\n// Standard ASS header (Latin-1, no BOM, Arial, 48pt, white on black)\nconst assHeader = `\n[Script Info]\nScriptType: v4.00+\nCollisions: Normal\nPlayResY: 1080\nPlayResX: 1920\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Arial,48,&H00FFFFFF,&H000000FF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,2,2,2,30,30,50,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n`.trim();\n\n// Create dialogue lines, escaping curly braces and converting to Latin-1\nconst assEvents = arr.map(entry =>\n  `Dialogue: 0,${formatASSTime(entry.start)},${formatASSTime(entry.end)},Default,,0,0,0,,${toLatin1(entry.text).replace(/}/g, '\\\\}').replace(/{/g, '\\\\{')}`\n).join('\\n');\n\n// Full ASS content\nconst ass = assHeader + '\\n' + assEvents;\n\n// Generate random filename\nconst rand = Math.floor(Math.random() * 1e7); // 7 digits\nconst filename = `subtitles_${rand}.ass`;\n\n// Return as both plain text and n8n file, encoded Latin-1\nreturn [{\n  json: {\n    ass_text: ass,           // Plain ASS text (Latin-1, no BOM)\n    ass_filename: filename   // Random filename for reference\n  },\n  binary: {\n    data: {\n      data: Buffer.from(ass, 'latin1'), // Latin-1 buffer, NO BOM!\n      mimeType: 'text/plain',\n      fileName: filename\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        160
+      ],
+      "id": "8661f585-d449-4453-93a7-b3f8446b3e7c",
+      "name": "Create ASS"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "temporary",
+        "fileName": "={{ $json.ass_filename }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        160
+      ],
+      "id": "2959a7d7-dbb2-412a-87c9-1ae87662276a",
+      "name": "S3",
+      "credentials": {
+        "s3": {
+          "id": "gc6DZPBfhyeGhoyN",
+          "name": "S3 cLOUDFLARE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        380
+      ],
+      "id": "7852ec99-2424-4f52-9622-2fd5bffd6fff",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "QPZnBdHx3ZTb2QZi",
+          "name": "OpenAi account MILL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "textprompt",
+              "value": "={{ $('Webhook').first().json.inputs.text }}"
+            },
+            {
+              "name": "image_url",
+              "value": "={{ $('Webhook').first().json.inputs.image_url }}"
+            },
+            {
+              "name": "=audio_url",
+              "value": "={{ $('File Upload').first().json.data.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Input Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        720
+      ],
+      "id": "cab525ee-2b05-4d9e-ab23-30fc2af69692"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_URL/v1/image/transform/video",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"image_url\":\"{{ $('Set Input Data').item.json.image_url }}\",\n    \"length\": {{ $json.response.duration }},\n    \"frame_rate\": 25,\n    \"zoom_speed\": 3,\n    \"id\": \"local-extract\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        720
+      ],
+      "id": "e31b3045-8302-403d-a68a-6c4072f92dfd",
+      "name": "Create Video from image",
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "W64g12bHEW1Ujb9b",
+          "name": "NCA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_URL/v1/ffmpeg/compose",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"inputs\": [\n        {\n            \"file_url\": \"{{ $json.response }}\"\n        },\n        {\n            \"file_url\": \"{{ $('Set Input Data').item.json.audio_url }}\"\n        }\n    ],\n    \"filters\": [\n        {\n          \"filter\": \"[1:a]volume=0.60[audio2];[audio2]anull[outa]\"        \n        }\n    ],\n    \"outputs\": [\n    {\n      \"options\": [\n        {\n          \"option\": \"-map\",\n          \"argument\": \"0:v\"\n        },\n        {\n          \"option\": \"-map\",\n          \"argument\": \"[outa]\"\n        },\n        {\n          \"option\": \"-c:v\",\n          \"argument\": \"copy\"\n        },\n        {\n          \"option\": \"-c:a\",\n          \"argument\": \"aac\"\n        }\n      ]\n    }\n  ],\n  \"id\": \"audio-layering\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        720
+      ],
+      "id": "ca759ba9-8946-402f-b489-a493dad36344",
+      "name": "Micer MP3 and MP4",
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "W64g12bHEW1Ujb9b",
+          "name": "NCA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_URL/v1/media/metadata",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"media_url\": \"{{ $json.audio_url }}\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        180,
+        720
+      ],
+      "id": "5ec728a4-978f-4843-8e82-aa456f6975db",
+      "name": "Create Video from image1",
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "W64g12bHEW1Ujb9b",
+          "name": "NCA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_URL/v1/video/caption",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\"video_url\": \"{{ $json.response[0].file_url }}\",\n   \"captions\": \"https://cdntmp.scuzaperfecta.ro/{{ $('Create ASS').item.json.ass_filename }}\",\n      \"settings\": {\n    \"line_color\": \"#FFFFFF\",\n    \"word_color\": \"#FFFF00\",\n    \"all_caps\": false,\n    \"max_words_per_line\": 3,\n    \"font_size\": 60,\n    \"bold\": false,\n    \"italic\": false,\n    \"underline\": false,\n    \"strikeout\": false,\n    \"outline_width\": 3,\n    \"shadow_offset\": 4,\n    \"style\": \"highlight\",\n    \"font_family\": \"The Bold Font\",\n    \"position\": \"bottom_center\"\n  }\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        720
+      ],
+      "id": "8956e0a0-501b-45a0-ac82-1c71b844d01b",
+      "name": "Create Video",
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "W64g12bHEW1Ujb9b",
+          "name": "NCA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -300,
+        720
+      ],
+      "id": "7730c988-8be6-44de-96c6-e6f7d4d64b11",
+      "name": "Wait",
+      "webhookId": "5f42ec72-08dc-432d-9c1b-de15d2df455f"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [
+        1060,
+        720
+      ],
+      "id": "db9d35e6-133b-4183-94e4-fa55855735bd",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "content": "## NCA toolkit",
+        "height": 280,
+        "width": 2020,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -500,
+        640
+      ],
+      "typeVersion": 1,
+      "id": "153781db-de6a-4695-a784-69a41d3e0f4d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Generating audio and ASS file for captioning",
+        "height": 420,
+        "width": 2020
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -500,
+        100
+      ],
+      "typeVersion": 1,
+      "id": "7caaa0e9-6104-4090-84f7-ff91e7178d9e",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "executionId": "exec_1750446067600",
+          "inputs": {
+            "text": "WHA-BOOM! I got caught in a storm of ideas playing tag in my head! 😱 My dreams floated away like colorful balloons, and my determination put on pajamas! HA-HA!",
+            "voice": "Man",
+            "voice_type": "Man",
+            "style": "standup",
+            "filename": "Man-8-1750446067600-eist3y.mp3",
+            "type": "audio_generation",
+            "image_url": "https://YOUR_URL/standup_20250519194454_1b77de685a14.png"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ElevenLabs": {
+      "main": [
+        [
+          {
+            "node": "File Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Upload": {
+      "main": [
+        [
+          {
+            "node": "prepare_captions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Map Voice to Voice ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Voice to Voice ID": {
+      "main": [
+        [
+          {
+            "node": "ElevenLabs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prepare_captions": {
+      "main": [
+        [
+          {
+            "node": "Create ASS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create ASS": {
+      "main": [
+        [
+          {
+            "node": "S3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S3": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Data": {
+      "main": [
+        [
+          {
+            "node": "Create Video from image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Video from image": {
+      "main": [
+        [
+          {
+            "node": "Micer MP3 and MP4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Micer MP3 and MP4": {
+      "main": [
+        [
+          {
+            "node": "Create Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Video from image1": {
+      "main": [
+        [
+          {
+            "node": "Create Video from image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Video": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Set Input Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6a4ab625-330e-4234-a682-df1d5ce3ea85",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "306de76e4b7b868087c011f08075d5bdab5fdc016494a71df11c97368feac0db"
+  },
+  "id": "9ziBi24oupooIby2",
+  "tags": []
+}

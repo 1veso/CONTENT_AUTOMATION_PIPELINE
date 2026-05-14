@@ -1,0 +1,429 @@
+{
+  "name": "vizard_api_short_video_editing_template",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n    \"getClips\": 0,\n    \"videoUrl\": \"https://www.youtube.com/watch?v=OqLfw-TzzfI\",\n    \"videoType\": 2,\n    \"ext\": \"mp4\",\n    \"lang\": \"auto\", \n    \"ratioOfClip\": 1,\n    \"subtitleSwitch\": 1,\n    \"emojiSwitch\": 0,\n    \"highlightSwitch\": 1,\n    \"autoBrollSwitch\": 1,\n    \"headlineSwitch\": 1,\n    \"removeSilenceSwitch\": 1,\n    \"projectName\": \"My Edited Video Project\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        -160
+      ],
+      "id": "9ee29c9e-d243-4a69-8d47-e6562505c2a6",
+      "name": "Create_Input_Param"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1408,
+        -176
+      ],
+      "id": "b467c82b-2d86-4ff4-a4bc-ad7ba92d4f79",
+      "name": "Wait4Query",
+      "webhookId": "d82519d2-7db9-4faa-9911-6c0b804ccf27"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        544,
+        -160
+      ],
+      "id": "c8d1192a-1121-4ae9-bebd-4772e0d63193",
+      "name": "Wait4Create",
+      "webhookId": "b738c1e7-889a-40a8-8375-0f1d06a5177d"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2160,
+        -176
+      ],
+      "id": "8f3f6748-1ae9-4781-af71-597a18f4879c",
+      "name": "Wait4Query2",
+      "webhookId": "e89444f6-1f26-4017-8a46-b913536f6927"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3b9b3040-a884-4d19-bda2-073410740edd",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 2000,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        -176
+      ],
+      "id": "f4021533-02bf-45e4-8785-a266e6d9455d",
+      "name": "If_query_success",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c726338b-00db-43c5-bfeb-f7cd1c122c2c",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 2000,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c6c1a672-f6c3-4daa-a2a1-63556d9b16e8",
+              "leftValue": "={{ $json.projectId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8384df88-eace-400c-a5fe-ca4e11132572",
+              "leftValue": "={{ $json.shareLink }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        -160
+      ],
+      "id": "f4b91f92-7fa3-4457-8fb0-eb49dc1ada27",
+      "name": "If_create_success",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3b9b3040-a884-4d19-bda2-073410740edd",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 1000,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1856,
+        -160
+      ],
+      "id": "2ccca8fc-ac3c-4abf-90ad-78bb75639ace",
+      "name": "If_query_wait_or_failed",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "content": "## video editing create workflow\nediting  ",
+        "height": 592,
+        "width": 672
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        272,
+        -336
+      ],
+      "typeVersion": 1,
+      "id": "8421fd0a-ad5a-4985-bdb0-a9840518cc8c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## video edit create input parameters\n**Double click**",
+        "height": 592,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -96,
+        -336
+      ],
+      "typeVersion": 1,
+      "id": "5fe33fa2-d313-4a06-894b-3057904c49ec",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## vizard video editing query workflow\n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/components/sticky-notes/)",
+        "height": 592,
+        "width": 1280
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1072,
+        -336
+      ],
+      "typeVersion": 1,
+      "id": "70d62fad-8d26-4f2c-bf21-e368abba3718",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## How to use（In this section, show an example to submit a short video (less than 3 minutes) for editing via API）\n1.  Obtain Your API Key, and repalce VIZARDAI_API_KEY of headers of node 'video editing create workflow' and ' vizard video editing query workflow'.\n2. Submit a Video for Editing ( https://docs.vizard.ai/docs/submit-a-short-video-for-editing ).\n3. Retrieve Your Clips（ https://docs.vizard.ai/docs/retrieve-video-clips ）.\n4. Check clip status by polling, or configure a webhook URL in workspace before submitting a video.\n##\n\nWhen you send a short video to Vizard for editing, there are 3 core settings you need in your API request.\n1. Tell Vizard You Want “Editing,” Not “Clipping”: \"getClips\": 0\n2. Tell Vizard Where Your Video Lives:\nvideoUrl + videoType\nWhen using a direct video file (videoType = 1) and Include the file extension: \"ext\": \"mp4\"( Supported extensions: mp4, 3gp, avi, mov )\n3. Tell Vizard What Language Is Spoken in the Video:\"lang\": \"auto\"( Most of the time, automatic detection is the easiest choice )\nsupport_language_list: https://vizard.readme.io/docs/supported-languages#/\n\n\n",
+        "height": 352,
+        "width": 1248
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -96,
+        -816
+      ],
+      "typeVersion": 1,
+      "id": "4057eaae-e7f7-445f-840d-33011cfebb80",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/create",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "your_vizard_api_key"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n$json\n}}",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        336,
+        -160
+      ],
+      "id": "c6224a58-a9ca-4dc3-be11-a1c0a2dcd410",
+      "name": "Api_Vizard_AI_Video_Editing_Create",
+      "retryOnFail": true,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "url": "=https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/query/{{ $json.projectId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "your_vizard_api_key"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1168,
+        -176
+      ],
+      "id": "eda9b7a4-b153-44d6-b35d-730f251e3340",
+      "name": "Vizard_AI_Videoe_Editing_Query",
+      "retryOnFail": false,
+      "waitBetweenTries": 2000,
+      "maxTries": 5
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Create_Input_Param": {
+      "main": [
+        [
+          {
+            "node": "Api_Vizard_AI_Video_Editing_Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4Query": {
+      "main": [
+        [
+          {
+            "node": "If_query_success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4Create": {
+      "main": [
+        [
+          {
+            "node": "If_create_success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4Query2": {
+      "main": [
+        [
+          {
+            "node": "Vizard_AI_Videoe_Editing_Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If_query_success": {
+      "main": [
+        [],
+        [
+          {
+            "node": "If_query_wait_or_failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If_create_success": {
+      "main": [
+        [
+          {
+            "node": "Vizard_AI_Videoe_Editing_Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "If_query_wait_or_failed": {
+      "main": [
+        [
+          {
+            "node": "Wait4Query2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Api_Vizard_AI_Video_Editing_Create": {
+      "main": [
+        [
+          {
+            "node": "Wait4Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vizard_AI_Videoe_Editing_Query": {
+      "main": [
+        [
+          {
+            "node": "Wait4Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8fe0d04b-7219-46cc-9ad6-a6e8321a0e39",
+  "meta": {
+    "instanceId": "7001cc76918c56e72ad4c7b1f8c14642b92bec405b12704d9c367625fa72d9b0"
+  },
+  "id": "fO202t1mrJoJNo1z",
+  "tags": [
+    {
+      "updatedAt": "2026-01-16T09:12:04.984Z",
+      "createdAt": "2026-01-16T09:12:04.984Z",
+      "id": "wJ4eXBbiAusBwBeK",
+      "name": "20260116"
+    }
+  ]
+}

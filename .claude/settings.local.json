@@ -1,0 +1,58 @@
+{
+  "env": {
+    "TELEGRAM_STATE_DIR": "C:/CONTENT_PIPELINE/.claude/telegram",
+    "TELEGRAM_BOT_TOKEN": "8937217698:AAFopXYoKCrqE9LGjISWuK_buWCwnpOON9M"
+  },
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Process *)",
+      "PowerShell(New-Item *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(ffprobe *)",
+      "PowerShell(npx hyperframes render --help 2>&1 | Select-Object -First 40)",
+      "mcp__n8n-mcp__n8n_list_workflows"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Write(**/.env)",
+      "Write(**/.env.*)",
+      "Edit(**/references/outputs/**)",
+      "Write(**/references/outputs/**)",
+      "Edit(./n8n_backups/**)",
+      "Write(./n8n_backups/**)",
+      "Edit(./obsidian-brain/clients/**)",
+      "Write(./obsidian-brain/clients/**)",
+      "Bash(rm -rf:*)",
+      "Bash(rm -r /:*)",
+      "Bash(rm -r ~:*)",
+      "Bash(rm -rf .:*)",
+      "Bash(rm -rf *:*)",
+      "Bash(del /s:*)",
+      "Bash(del /q:*)",
+      "Bash(rd /s:*)",
+      "Bash(rmdir /s:*)",
+      "PowerShell(Remove-Item -Recurse -Force:*)",
+      "PowerShell(Remove-Item * -Recurse:*)",
+      "PowerShell(rm -r -Force:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -fd:*)",
+      "Bash(git clean -f:*)",
+      "Bash(git checkout -- .:*)",
+      "Bash(sudo:*)",
+      "Bash(format:*)",
+      "Bash(mkfs:*)",
+      "Bash(dd if:*)",
+      "Bash(chmod -R 777:*)"
+    ]
+  },
+  "enabledPlugins": {
+    "everything-claude-code@everything-claude-code": false
+  }
+}

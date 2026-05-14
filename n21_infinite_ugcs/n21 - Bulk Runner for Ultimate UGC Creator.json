@@ -1,0 +1,202 @@
+{
+  "name": "n21 - Bulk Runner for Ultimate UGC Creator",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        80
+      ],
+      "id": "6a65e353-8525-4c76-a292-b22df57ae510",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E",
+          "mode": "list",
+          "cachedResultName": "n21 | RoboNuggets UGC creator (Seedream or Nanobanana",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 772279596,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mxpTRFrYKQAG6Fbwr1yjwOaHJn5tpxC8U6aA2b3NT8E/edit#gid=772279596"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "production_status",
+              "lookupValue": "create"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        128,
+        80
+      ],
+      "id": "9e5ecfcb-a386-4274-966d-2ea5b4dd1f9d",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WmDBwEhcrLeG9D67",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# 🍳 Ultimate UGC Creator (by RoboNuggets) - Bulk Runner\n## by Jay E | n21",
+        "height": 128,
+        "width": 1072,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        -80
+      ],
+      "id": "d2a6d892-3ff8-4a85-a45b-9ba4a03970ee",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        352,
+        80
+      ],
+      "id": "06532375-e44c-4893-848d-0c65bbd74d40",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        576,
+        272
+      ],
+      "id": "c73123ec-ea82-49d9-b15c-b8256a682c3c",
+      "name": "Wait",
+      "webhookId": "766e45ac-fa46-495a-9a30-86da18e372d7"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "bZQVkiHMYdG6XLwy",
+          "mode": "list",
+          "cachedResultName": "n21 - Seedream UGC"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        80
+      ],
+      "id": "8f0e34bd-f50c-4d97-b881-f04f6ba47a04",
+      "name": "UGC Creator Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "UGC Creator Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UGC Creator Workflow": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "55fd5066-96a1-4497-9935-51af3f2fb3e7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "addaa68bf5af965c06c3765c811549851eb65db8df4677e0c6253726ffcac493"
+  },
+  "id": "HzOQ85xNg1ITDgJ1",
+  "tags": []
+}

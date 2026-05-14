@@ -1,0 +1,429 @@
+{
+  "name": "vizard_api_long_video_clip_template",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n    \"projectName\": \"project_name\",\n    \"videoUrl\": \"https://www.youtube.com/watch?v=jx6Zx4cI-RY\",\n    \"lang\": \"en\",\n    \"preferLength\": \"[2]\",\n    \"subtitleSwitch\": 1,\n    \"headlineSwitch\": 1,\n    \"videoType\": 2,\n    \"maxClipNumber\": 6,\n    \"ratioOfClip\": 4,\n    \"removeSilenceSwitch\":1,\n    \"keywords\": \"AI,spark,vizard\",\n    \"subtitleSwitch\":1,\n    \"emojiSwitch\":1,\n    \"highlightSwitch\":1,\n    \"autoBrollSwitch\":1,\n    \"headlineSwitch\":1\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        -160
+      ],
+      "id": "59c2d437-07ae-4cba-b0c3-3cbd91b19677",
+      "name": "Create_Input_Param"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/create",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "your_api_key"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n$json\n}}",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        336,
+        -160
+      ],
+      "id": "68930207-35ee-40f6-b9de-b9bff4035b7b",
+      "name": "Api_Vizard_AI_Video_Clip_Create",
+      "retryOnFail": true,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "url": "=https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/query/{{ $json.projectId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "your_api_key"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1168,
+        -176
+      ],
+      "id": "6cd0427f-5872-400b-a4b8-1ff86033241e",
+      "name": "Vizard_AI_Video_Clip_Query",
+      "retryOnFail": false,
+      "waitBetweenTries": 2000,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1408,
+        -176
+      ],
+      "id": "ad29c9d2-d01c-4c2a-bfa3-8a46fcf34470",
+      "name": "Wait4Query",
+      "webhookId": "1921c07c-7999-4a4d-9baa-378bc5e9c911"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        544,
+        -160
+      ],
+      "id": "bc1dff8f-0299-4c61-ae75-079725be18c8",
+      "name": "Wait4Create",
+      "webhookId": "1195b3be-711e-4faa-8b80-d952b9d728b9"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2160,
+        -176
+      ],
+      "id": "d1db87c6-efc2-4327-8976-972caf844b20",
+      "name": "Wait4Query2",
+      "webhookId": "5908e075-87ee-40d7-987f-0d6cb4e46ccc"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3b9b3040-a884-4d19-bda2-073410740edd",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 2000,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        -176
+      ],
+      "id": "e43a5d23-f977-4ed1-bce0-4a02b84ee8b2",
+      "name": "If_query_success",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c726338b-00db-43c5-bfeb-f7cd1c122c2c",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 2000,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c6c1a672-f6c3-4daa-a2a1-63556d9b16e8",
+              "leftValue": "={{ $json.projectId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8384df88-eace-400c-a5fe-ca4e11132572",
+              "leftValue": "={{ $json.shareLink }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        -160
+      ],
+      "id": "aae84ef0-f05f-4afb-b82a-4c8132054f56",
+      "name": "If_create_success",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3b9b3040-a884-4d19-bda2-073410740edd",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 1000,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1856,
+        -160
+      ],
+      "id": "889b98ef-a432-466c-af06-d6c33bd52cff",
+      "name": "If_query_wait_or_failed",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "content": "## video clip create workflow\n",
+        "height": 592,
+        "width": 640
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        288,
+        -336
+      ],
+      "typeVersion": 1,
+      "id": "01f2b701-77e8-45c9-8091-68c598f6b72f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## video clip create input parameters\n",
+        "height": 592,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -96,
+        -336
+      ],
+      "typeVersion": 1,
+      "id": "65a97ec2-4fc9-48cc-bb8f-5da7f740db9f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## vizard video clip query workflow\n",
+        "height": 592,
+        "width": 1280
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1072,
+        -336
+      ],
+      "typeVersion": 1,
+      "id": "7d07f49f-1700-45f7-9112-c3993b281dba",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## How to use（In this section, show an example to submit a long video (at least 1 minute) for getting AI clips via API）\n1.  Obtain Your API Key, and repalce VIZARDAI_API_KEY of headers of node 'video clip create workflow' and ' vizard video clip query workflow'.\n2. Submit a Video for Clipping ( https://docs.vizard.ai/docs/basic ).\n3. Retrieve Your Clips（ https://docs.vizard.ai/docs/retrieve-video-clips ）.\n4. Check clip status by polling, or configure a webhook URL in workspace before submitting a video.\n##\n\nQuick start：https://docs.vizard.ai/docs/quickstart\nThe maximum video length is 600 minutes, with a file size limit of 10GB. The highest supported upload resolution is 4K, and exported clips will maintain the same resolution as the original long video.",
+        "height": 272,
+        "width": 1248
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -96,
+        -784
+      ],
+      "typeVersion": 1,
+      "id": "be9db3f8-0b58-4fa6-9736-1ec1826d7f74",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Create_Input_Param": {
+      "main": [
+        [
+          {
+            "node": "Api_Vizard_AI_Video_Clip_Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Api_Vizard_AI_Video_Clip_Create": {
+      "main": [
+        [
+          {
+            "node": "Wait4Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vizard_AI_Video_Clip_Query": {
+      "main": [
+        [
+          {
+            "node": "Wait4Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4Query": {
+      "main": [
+        [
+          {
+            "node": "If_query_success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4Create": {
+      "main": [
+        [
+          {
+            "node": "If_create_success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4Query2": {
+      "main": [
+        [
+          {
+            "node": "Vizard_AI_Video_Clip_Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If_query_success": {
+      "main": [
+        [],
+        [
+          {
+            "node": "If_query_wait_or_failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If_create_success": {
+      "main": [
+        [
+          {
+            "node": "Vizard_AI_Video_Clip_Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "If_query_wait_or_failed": {
+      "main": [
+        [
+          {
+            "node": "Wait4Query2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e1640af0-e967-4420-83c8-903512dfac72",
+  "meta": {
+    "instanceId": "7001cc76918c56e72ad4c7b1f8c14642b92bec405b12704d9c367625fa72d9b0"
+  },
+  "id": "kC253ZkWCQE2It54",
+  "tags": [
+    {
+      "updatedAt": "2026-01-16T09:12:04.984Z",
+      "createdAt": "2026-01-16T09:12:04.984Z",
+      "id": "wJ4eXBbiAusBwBeK",
+      "name": "20260116"
+    }
+  ]
+}

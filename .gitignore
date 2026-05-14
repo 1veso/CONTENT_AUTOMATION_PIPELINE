@@ -1,0 +1,42 @@
+# Secrets — never commit
+**/.env
+**/.env.*
+!**/.env.example
+.claude/telegram/.env
+
+# Generated content / references (heavy + per-client)
+**/references/outputs/**
+**/references/inputs/**
+
+# n8n backups — keep the docs (.md), drop the giant JSON blobs
+n8n_backups/*.json
+n8n_backups/__pycache__/
+
+# Per-client Obsidian data (private brand briefs, campaign logs, assets)
+obsidian-brain/clients/**
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.venv/
+**/venv/
+
+# Node
+**/node_modules/
+
+# Pipeline runtime state
+shared/gates/pending.json
+
+# Tempfiles + render output
+**/tmp/
+**/_render_output.mp4
+
+# Skill staging / lock
+skills-lock.json
+_skill_staging/
+
+# OS junk
+**/Thumbs.db
+**/.DS_Store

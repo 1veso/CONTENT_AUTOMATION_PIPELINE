@@ -1,0 +1,91 @@
+{
+  "name": "vizard_api_retrieve_social_account_template",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        -368
+      ],
+      "id": "785ef3f9-9de2-496d-9287-ced09b38b6eb",
+      "name": "Wait4Create",
+      "webhookId": "1195b3be-711e-4faa-8b80-d952b9d728b9"
+    },
+    {
+      "parameters": {
+        "url": "https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/social-accounts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "your_api_key"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        -368
+      ],
+      "id": "4bbdc65b-8486-4e2f-bf3e-fb2fec581463",
+      "name": "Api_Vizard_AI_Retrieve_Social_Accounts",
+      "retryOnFail": true,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "content": "## How to use（In this section, show an example to retrieve social account via API）\nReturns a list of social accounts connected to your Vizard workspace.( https://docs.vizard.ai/docs/retrieve-social-accounts )\nUse the returned id when publishing videos to a specific platform.\n##",
+        "width": 1248
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -80,
+        -656
+      ],
+      "typeVersion": 1,
+      "id": "92134603-55e2-4ff1-9ba4-187a144379be",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Api_Vizard_AI_Retrieve_Social_Accounts": {
+      "main": [
+        [
+          {
+            "node": "Wait4Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "00d6d991-1313-4084-ae7c-a7544a585473",
+  "meta": {
+    "instanceId": "7001cc76918c56e72ad4c7b1f8c14642b92bec405b12704d9c367625fa72d9b0"
+  },
+  "id": "XbBz7jT8WgWVoWtg",
+  "tags": [
+    {
+      "updatedAt": "2026-01-16T09:12:04.984Z",
+      "createdAt": "2026-01-16T09:12:04.984Z",
+      "id": "wJ4eXBbiAusBwBeK",
+      "name": "20260116"
+    }
+  ]
+}

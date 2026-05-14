@@ -1,0 +1,6 @@
+fal-client
+boto3
+requests
+python-dotenv
+ffmpeg-python
+pyairtable

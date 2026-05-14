@@ -1,0 +1,26 @@
+{
+  "description": "Cron registry for the CONTENT_PIPELINE primary agent. Recreated on every session restart by the startup routine in CLAUDE.md. All times are local system time (Europe/Berlin).",
+  "crons": [
+    {
+      "id": "morning-summary",
+      "name": "Morning summary across R55/R57/R61",
+      "cron": "0 8 * * *",
+      "prompt": "Send the daily 8am summary to Telegram. Steps:\n1. Read obsidian-brain/_index.md for current pipeline status.\n2. Query Airtable base appC3HqG42ftswOvw — count records by Status in R57 table tblnpiwNYF3zJXm9Q (today's scheduled images) and R61 table tbl1hd8yprLTZia4c (today's scheduled videos).\n3. Check shared/gates/pending.json for any unresolved R61 human gates.\n4. Send a Telegram message with this format:\n   *Daily summary — <date>*\n   • R55 (Shorts): <pending review count> awaiting review\n   • R57 (images): <X scheduled today>, <Y posted, Z pending>\n   • R61 (videos): <X scheduled today>, <gate count> gates pending\n   • Blotato hold: ACTIVE (schedule-only)\n5. If any gate is pending, list it with a clear approve/redo option.",
+      "enabled": true
+    },
+    {
+      "id": "keepalive",
+      "name": "Keep-alive ping every 6 hours",
+      "cron": "0 */6 * * *",
+      "prompt": "Internal keep-alive only. Verify the Telegram channel is still connected by calling getMe via the channel. Do NOT send a Telegram message to the user. If the connection is broken, log it to shared/memory/convo_log_primary.md and try once to reinitialize.",
+      "enabled": true
+    },
+    {
+      "id": "r61-gate-watcher",
+      "name": "R61 human-gate notifier (15 min poll)",
+      "cron": "*/15 * * * *",
+      "prompt": "Check shared/gates/pending.json. For every entry in gates[] with status=\"pending\" AND notified=false, send a Telegram message in this format:\n*R61 Gate <gate_number> — <gate_name>*\n• Record: <record_id>\n• Ad: <ad_name>\n• Asset: <video_url> (omit line if empty)\n• Next: <next_step from the extra fields, if present>\n\nReply with: *approve <record_id>*, *redo <record_id> <reason>*, or *hold*.\n\nAfter sending, set notified=true for that entry and save the file atomically. If the file is missing or gates[] is empty, do nothing — silent is correct.",
+      "enabled": true
+    }
+  ]
+}

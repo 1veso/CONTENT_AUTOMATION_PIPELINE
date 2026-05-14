@@ -1,0 +1,2519 @@
+{
+  "name": "n31 | Precision Camera Movements (by RoboNuggets)",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblTbUxZ1UCHPQbfq",
+          "mode": "list",
+          "cachedResultName": "Project",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tblTbUxZ1UCHPQbfq"
+        },
+        "filterByFormula": "{Status} = \"Create\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        176
+      ],
+      "id": "b5ab4e75-88ea-4607-81ac-fb41c0a87ca0",
+      "name": "Get Project",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        -16
+      ],
+      "id": "c5987cac-ba01-4609-a6d6-af877b82e775",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate 1 unique prompt\n\n***\n\nThe product for this prompt is:\n{{ $json.candidates[0].content.parts[0].text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You output a prompt that is a variation of the prompt below. Follow this prompt exactly but just change:\n\n-the hand positioning based on what makes sense for the product\n-how the product is worn and where it is placed\n\neverything else stays the same\n\n***\n\nShow a high fashion studio photoshoot image of this reference character as a photorealistic model wearing the featured apparel and product, captured as a full body shot. The model looks slightly past the camera with a bored expression and raised eyebrows. One hand is lifted, with two fingers interacting with or touching the featured product in a natural, stylish way.\n\nThe setting is a clean studio environment with a solid color background that matches the primary color of the character. The featured product is intentionally prominent.\n\nThe image is shot from a low angle, looking up at the subject to emphasize presence and dominance.\n\nThe photo is captured on Fuji Velvia film using a 55mm prime lens with hard flash lighting. Light is concentrated on the subject and softly fades toward the edges of the frame. The image is intentionally overexposed, with visible film grain and heavy oversaturation. Skin appears shiny, almost oily, and the featured product shows harsh white reflections that highlight its surface and form.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        240,
+        176
+      ],
+      "id": "afc5a625-9eeb-4990-867e-77befc55f408",
+      "name": "AI Agent by RoboNuggets"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3-pro-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        176,
+        0
+      ],
+      "id": "17bf0918-ed46-44ac-8576-dfa92b4dbee1",
+      "name": "Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "hmP48RU4dJfJaaSV",
+          "name": "OpenRouter account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"prompt\": \"prompt here\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        0
+      ],
+      "id": "43004253-027b-473d-9032-1c32c99ef7cb",
+      "name": "Structure"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblTbUxZ1UCHPQbfq",
+          "mode": "list",
+          "cachedResultName": "Project",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tblTbUxZ1UCHPQbfq"
+        },
+        "filterByFormula": "{Status} = \"Create\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        336
+      ],
+      "id": "abf6ea1b-8018-4d4e-9060-4f1b89fa2a4c",
+      "name": "Get Project1",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblTbUxZ1UCHPQbfq",
+          "mode": "list",
+          "cachedResultName": "Project",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tblTbUxZ1UCHPQbfq"
+        },
+        "filterByFormula": "{Status} = \"Create\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        496
+      ],
+      "id": "3d6faec6-00cc-4265-b5b1-bde8668ec98a",
+      "name": "Get Project2",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblTbUxZ1UCHPQbfq",
+          "mode": "list",
+          "cachedResultName": "Project",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tblTbUxZ1UCHPQbfq"
+        },
+        "filterByFormula": "{Status} = \"Create\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        656
+      ],
+      "id": "175dfde4-38f9-449e-a560-d3b49b24e35b",
+      "name": "Get Project3",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        176
+      ],
+      "id": "0d8b13f3-44b2-4f06-80e7-98b74baac287",
+      "name": "PROMPT"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        336
+      ],
+      "id": "ca48781f-0d68-4dc6-bc8d-5735c2fb2105",
+      "name": "CORE IMAGE"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        496
+      ],
+      "id": "9520bcf1-ace3-4f9e-8a00-4581ec679afe",
+      "name": "CONTACT SHEET"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        656
+      ],
+      "id": "b69f2d74-1480-4232-8fec-3e9f16223ce4",
+      "name": "SPLIT"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"aspect_ratio\": \"3:2\",\n  \"enable_base64_output\": false,\n  \"enable_sync_mode\": true,\n \n  \"output_format\": \"png\",\n  \"prompt\": \"give me JUST the image at the Bottom Left panel. The output should show only that ONE image and none of the others\",\n  \"resolution\": \"2k\",\n  \"images\": [\"{{ $json.contact_sheet_image[0].url }}\"]\n\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -32,
+        656
+      ],
+      "id": "47fc8a31-b1dc-4789-befd-86912c9ba4bc",
+      "name": "Bottom Left",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IZqnM1MEeUfWcob3",
+          "name": "WaveSpeed Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"aspect_ratio\": \"3:2\",\n  \"enable_base64_output\": false,\n  \"enable_sync_mode\": true,\n \n  \"output_format\": \"png\",\n  \"prompt\": \"give me JUST the image at the Bottom Right panel. The output should show only that ONE image and none of the others\",\n  \"resolution\": \"2k\",\n  \"images\": [\"{{ $('Get Project3').item.json.contact_sheet_image[0].url }}\"]\n\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        656
+      ],
+      "id": "d6dfea06-7e91-4268-a8ad-02fb699500da",
+      "name": "Bottom Right",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IZqnM1MEeUfWcob3",
+          "name": "WaveSpeed Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"aspect_ratio\": \"3:2\",\n  \"enable_base64_output\": false,\n  \"enable_sync_mode\": true,\n \n  \"output_format\": \"png\",\n  \"prompt\": \"give me JUST the image at the Top Left panel. The output should show only that ONE image and none of the others\",\n  \"resolution\": \"2k\",\n  \"images\": [\"{{ $('Get Project3').item.json.contact_sheet_image[0].url }}\"]\n\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        192,
+        656
+      ],
+      "id": "96663ff8-715c-4093-8e74-6c48235fd746",
+      "name": "Top Left",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IZqnM1MEeUfWcob3",
+          "name": "WaveSpeed Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"aspect_ratio\": \"3:2\",\n  \"enable_base64_output\": false,\n  \"enable_sync_mode\": true,\n \n  \"output_format\": \"png\",\n  \"prompt\": \"give me JUST the image at the Top Right panel. The output should show only that ONE image and none of the others\",\n  \"resolution\": \"2k\",\n  \"images\": [\"{{ $('Get Project3').item.json.contact_sheet_image[0].url }}\"]\n\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        304,
+        656
+      ],
+      "id": "f972b630-62ff-4af1-bf31-5ea9f2f7efbf",
+      "name": "Top Right",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IZqnM1MEeUfWcob3",
+          "name": "WaveSpeed Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-pro-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-pro-preview"
+        },
+        "text": "Please look at this image and describe it in detail. What is shown in the character section, the setting section, and the product section? Explain what you see in each part so the image can be fully translated into text.",
+        "imageUrls": "={{ $json['Image 3'][0].url }}",
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        128,
+        176
+      ],
+      "id": "99d7f8e2-6305-41f2-8e77-1e999a264759",
+      "name": "Analyze image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Uf69yXezkjIZP6Ah",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblTbUxZ1UCHPQbfq",
+          "mode": "list",
+          "cachedResultName": "Project",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tblTbUxZ1UCHPQbfq"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Get Project').item.json.id }}",
+            "core_image_prompt": "={{ $json.output.prompt }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Project Name",
+              "displayName": "Project Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image 1",
+              "displayName": "Image 1",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image 2",
+              "displayName": "Image 2",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image 3",
+              "displayName": "Image 3",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "core_image_prompt",
+              "displayName": "core_image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "aspect_ratio",
+              "displayName": "aspect_ratio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "9:16",
+                  "value": "9:16"
+                },
+                {
+                  "name": "16:9",
+                  "value": "16:9"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Generate",
+              "displayName": "Generate",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "start_image_prompt",
+              "displayName": "start_image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "end_image_prompt",
+              "displayName": "end_image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "transition_prompt",
+              "displayName": "transition_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "start_image",
+              "displayName": "start_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "end_image",
+              "displayName": "end_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "scene_video",
+              "displayName": "scene_video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        816,
+        176
+      ],
+      "id": "13ef2c67-90d8-4476-8cd6-1fd706f610b2",
+      "name": "Log Output",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblTbUxZ1UCHPQbfq",
+          "mode": "list",
+          "cachedResultName": "Project",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tblTbUxZ1UCHPQbfq"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Get Project1').item.json.id }}",
+            "core_image": "= [   {     \"url\": \"{{ $('Core Image 🍌').item.json.data.outputs[0] }}\"   } ]"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Project Name",
+              "displayName": "Project Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image 1",
+              "displayName": "Image 1",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image 2",
+              "displayName": "Image 2",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image 3",
+              "displayName": "Image 3",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "core_image_prompt",
+              "displayName": "core_image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "core_image",
+              "displayName": "core_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_sheet_image",
+              "displayName": "contact_sheet_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "aspect_ratio",
+              "displayName": "aspect_ratio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "9:16",
+                  "value": "9:16"
+                },
+                {
+                  "name": "16:9",
+                  "value": "16:9"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Generate",
+              "displayName": "Generate",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "start_image_prompt",
+              "displayName": "start_image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "end_image_prompt",
+              "displayName": "end_image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "transition_prompt",
+              "displayName": "transition_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "scene_video",
+              "displayName": "scene_video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        816,
+        336
+      ],
+      "id": "85e8a6c8-f19b-4f79-aa56-38e066eab3c3",
+      "name": "Log Output1",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblTbUxZ1UCHPQbfq",
+          "mode": "list",
+          "cachedResultName": "Project",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tblTbUxZ1UCHPQbfq"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Get Project2').item.json.id }}",
+            "contact_sheet_image": "= [   {     \"url\": \"{{ $('Contact Sheet 🍌').item.json.data.outputs[0] }}\"   } ]"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Project Name",
+              "displayName": "Project Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image 1",
+              "displayName": "Image 1",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image 2",
+              "displayName": "Image 2",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image 3",
+              "displayName": "Image 3",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "core_image_prompt",
+              "displayName": "core_image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "core_image",
+              "displayName": "core_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "contact_sheet_image",
+              "displayName": "contact_sheet_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "aspect_ratio",
+              "displayName": "aspect_ratio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "9:16",
+                  "value": "9:16"
+                },
+                {
+                  "name": "16:9",
+                  "value": "16:9"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Generate",
+              "displayName": "Generate",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "start_image_prompt",
+              "displayName": "start_image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "end_image_prompt",
+              "displayName": "end_image_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "transition_prompt",
+              "displayName": "transition_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "scene_video",
+              "displayName": "scene_video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        816,
+        496
+      ],
+      "id": "ddcd2fc3-f2e3-49c9-891c-3dcb42dc7ca4",
+      "name": "Log Output2",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl8TgrOox6gKQXid",
+          "mode": "list",
+          "cachedResultName": "Scene",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tbl8TgrOox6gKQXid"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "=",
+            "start_image": "= [   {     \"url\": \"{{ $('Bottom Left').item.json.data.outputs[0] }}\"   } ]",
+            "end_image": "= [   {     \"url\": \"{{ $('Bottom Right').item.json.data.outputs[0] }}\"   } ]",
+            "transition_prompt": "=The camera performs a very slow, smooth, continuous movement with no acceleration or shake. The subject barely moves and remains extremely deliberate and thoughtful in movement.",
+            "Project Name": "={{ $('Get Project3').item.json['Project Name'] }}",
+            "Status": "Create"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Project Name",
+              "displayName": "Project Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "start_image",
+              "displayName": "start_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "end_image",
+              "displayName": "end_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "transition_prompt",
+              "displayName": "transition_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "scene_video",
+              "displayName": "scene_video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Assignee",
+              "displayName": "Assignee",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Create",
+                  "value": "Create"
+                },
+                {
+                  "name": "In progress",
+                  "value": "In progress"
+                },
+                {
+                  "name": "Done",
+                  "value": "Done"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        656
+      ],
+      "id": "8e93fdc4-182f-41a8-ba0c-95b7f44b893d",
+      "name": "Log Output3",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl8TgrOox6gKQXid",
+          "mode": "list",
+          "cachedResultName": "Scene",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tbl8TgrOox6gKQXid"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "=",
+            "start_image": "= [   {     \"url\": \"{{ $('Bottom Right').item.json.data.outputs[0] }}\"   } ]",
+            "end_image": "= [   {     \"url\": \"{{ $('Top Left').item.json.data.outputs[0] }}\"   } ]",
+            "transition_prompt": "=The camera performs a very slow, smooth, continuous movement with no acceleration or shake. The subject barely moves and remains extremely deliberate and thoughtful in movement.",
+            "Project Name": "={{ $('Get Project3').item.json['Project Name'] }}",
+            "Status": "Create"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Project Name",
+              "displayName": "Project Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "start_image",
+              "displayName": "start_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "end_image",
+              "displayName": "end_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "transition_prompt",
+              "displayName": "transition_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "scene_video",
+              "displayName": "scene_video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Assignee",
+              "displayName": "Assignee",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Create",
+                  "value": "Create"
+                },
+                {
+                  "name": "In progress",
+                  "value": "In progress"
+                },
+                {
+                  "name": "Done",
+                  "value": "Done"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        592,
+        656
+      ],
+      "id": "26c76e93-c566-45c8-b045-1c3911630856",
+      "name": "Log Output4",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl8TgrOox6gKQXid",
+          "mode": "list",
+          "cachedResultName": "Scene",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tbl8TgrOox6gKQXid"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "=",
+            "start_image": "= [   {     \"url\": \"{{ $('Top Left').item.json.data.outputs[0] }}\"   } ]",
+            "end_image": "= [   {     \"url\": \"{{ $('Top Right').item.json.data.outputs[0] }}\"   } ]",
+            "transition_prompt": "=The camera performs a very slow, smooth, continuous movement with no acceleration or shake. The subject barely moves and remains extremely deliberate and thoughtful in movement.",
+            "Project Name": "={{ $('Get Project3').item.json['Project Name'] }}",
+            "Status": "Create"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Project Name",
+              "displayName": "Project Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "start_image",
+              "displayName": "start_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "end_image",
+              "displayName": "end_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "transition_prompt",
+              "displayName": "transition_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "scene_video",
+              "displayName": "scene_video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Assignee",
+              "displayName": "Assignee",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Create",
+                  "value": "Create"
+                },
+                {
+                  "name": "In progress",
+                  "value": "In progress"
+                },
+                {
+                  "name": "Done",
+                  "value": "Done"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        704,
+        656
+      ],
+      "id": "c8f52529-4ffa-4ac7-8863-846904c32984",
+      "name": "Log Output5",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl8TgrOox6gKQXid",
+          "mode": "list",
+          "cachedResultName": "Scene",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tbl8TgrOox6gKQXid"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "=",
+            "start_image": "= [   {     \"url\": \"{{ $('Top Right').item.json.data.outputs[0] }}\"   } ]",
+            "end_image": "= [   {     \"url\": \"{{ $('Bottom Left').item.json.data.outputs[0] }}\"   } ]",
+            "transition_prompt": "=The camera performs a very slow, smooth, continuous movement with no acceleration or shake. The subject barely moves and remains extremely deliberate and thoughtful in movement.",
+            "Project Name": "={{ $('Get Project3').item.json['Project Name'] }}",
+            "Status": "Create"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Project Name",
+              "displayName": "Project Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "start_image",
+              "displayName": "start_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "end_image",
+              "displayName": "end_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "transition_prompt",
+              "displayName": "transition_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "scene_video",
+              "displayName": "scene_video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Assignee",
+              "displayName": "Assignee",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Create",
+                  "value": "Create"
+                },
+                {
+                  "name": "In progress",
+                  "value": "In progress"
+                },
+                {
+                  "name": "Done",
+                  "value": "Done"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        816,
+        656
+      ],
+      "id": "44ab54c6-2ba1-405b-b562-40aff71986ef",
+      "name": "Log Output6",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Create Prompts",
+        "height": 128,
+        "width": 272
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        176
+      ],
+      "id": "c15788e1-8d0f-4661-9f0a-c53bd0488505",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Create Contact Sheet",
+        "height": 128,
+        "width": 272,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        496
+      ],
+      "id": "78da7b82-3e2a-4827-8303-2a9562534b6f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Split Shots",
+        "height": 128,
+        "width": 272,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        656
+      ],
+      "id": "e548d7f9-3cf0-47ec-ae1c-7bb560a70451",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Create Core Img",
+        "height": 128,
+        "width": 272,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        336
+      ],
+      "id": "32d2bf46-f237-46ba-b787-7d3fe83f4f8c",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        848
+      ],
+      "id": "835c9453-8423-4ddf-8b52-9fa6835b381a",
+      "name": "Wait",
+      "webhookId": "3bc93b61-63b0-4063-9f71-b70553f1236b"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        848
+      ],
+      "id": "c5826864-513f-499b-80d8-07bd8eaae118",
+      "name": "VIDEOS"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.wavespeed.ai/api/v3/kwaivgi/kling-v2.5-turbo-pro/image-to-video",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"duration\": 5,\n  \"guidance_scale\": 0.5,\n  \"image\": \"{{ $json.start_image[0].url }}\",\n  \"last_image\": \"{{ $json.end_image[0].url }}\",\n  \"negative_prompt\": \"blur, distort, and low quality\",\n  \"prompt\": {{ JSON.stringify($json.transition_prompt) }}\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 3000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        848
+      ],
+      "id": "6fcfad0e-bbcb-4bfa-9ac9-9647a8a4e28a",
+      "name": "Create Video 🔻",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IZqnM1MEeUfWcob3",
+          "name": "WaveSpeed Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.data.urls.get }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        848
+      ],
+      "id": "07d01ab3-3b58-428a-9d86-945d37d421a2",
+      "name": "Get Video 🔻",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IZqnM1MEeUfWcob3",
+          "name": "WaveSpeed Credentials"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl8TgrOox6gKQXid",
+          "mode": "list",
+          "cachedResultName": "Scene",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tbl8TgrOox6gKQXid"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "scene_video": "= [   {     \"url\": \"{{ $json.data.outputs[0] }}\"   } ]",
+            "id": "={{ $('Get Scenes1').item.json.id }}",
+            "Status": "Done"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Project Name",
+              "displayName": "Project Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "start_image",
+              "displayName": "start_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "end_image",
+              "displayName": "end_image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "transition_prompt",
+              "displayName": "transition_prompt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "scene_video",
+              "displayName": "scene_video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Assignee",
+              "displayName": "Assignee",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Todo",
+                  "value": "Todo"
+                },
+                {
+                  "name": "In progress",
+                  "value": "In progress"
+                },
+                {
+                  "name": "Done",
+                  "value": "Done"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        816,
+        816
+      ],
+      "id": "1b95f761-7400-46ea-bd5f-e242d42bcb00",
+      "name": "Log Videos",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appsMxPVom9fRXFq7",
+          "mode": "list",
+          "cachedResultName": "n31 Contact Sheet Prompting",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl8TgrOox6gKQXid",
+          "mode": "list",
+          "cachedResultName": "Scene",
+          "cachedResultUrl": "https://airtable.com/appsMxPVom9fRXFq7/tbl8TgrOox6gKQXid"
+        },
+        "filterByFormula": "={Status} = \"Create\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        848
+      ],
+      "id": "751cc42a-3a71-4140-a086-98ed7f8ad49f",
+      "name": "Get Scenes1",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Gik7e1Ksb0K9anPI",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $('Get Video 🔻').item.json.data.errorMessage }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        816,
+        976
+      ],
+      "id": "0506c896-1a7f-4040-8e2b-1a2469864d42",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data.status }}",
+                    "rightValue": "completed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bf05a398-eb00-4e25-8de6-3ae7d10e69dd"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "success"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4686d0f8-4428-4d81-9c40-c9d56b69ab02",
+                    "leftValue": "={{ $json.data.status }}",
+                    "rightValue": "ing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "in progress"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        640,
+        832
+      ],
+      "id": "118efe81-83ed-41d6-8f44-21bc3c7f21b6",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "content": "## Create Video",
+        "height": 256,
+        "width": 272,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        816
+      ],
+      "id": "06185fa3-654e-4137-a4cf-efa2fbc89fea",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"aspect_ratio\": \"3:2\",\n  \"enable_base64_output\": false,\n  \"enable_sync_mode\": true,\n \n  \"output_format\": \"png\",\n  \"prompt\": {{ JSON.stringify($json.core_image_prompt) }},\n  \"resolution\": \"2k\",\n  \"images\": [\"{{ $json['Image 1'][0].url }}\", \"{{ $json['Image 2'][0].url }}\", \"{{ $json['Image 3'][0].url }}\"]\n\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        304,
+        336
+      ],
+      "id": "f5c26f2d-4542-4e98-a435-a17c72daa175",
+      "name": "Core Image 🍌",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IZqnM1MEeUfWcob3",
+          "name": "WaveSpeed Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"aspect_ratio\": \"3:2\",\n  \"enable_base64_output\": false,\n  \"enable_sync_mode\": true,\n \n  \"output_format\": \"png\",\n  \"prompt\": \"Analyze the input image and silently inventory all fashion-critical details: the subject(s), exact wardrobe pieces, materials, colors, textures, accessories, hair, makeup, body proportions, environment, set geometry, light direction, and shadow quality. All wardrobe, styling, hair, makeup, lighting, environment, and color grade must remain 100% unchanged across all frames. Do not add or remove anything. Do not reinterpret materials or colors. Do not output any reasoning. Perfectly replicate the exact facial features of the model. Your visible output must be: One 2×3 contact sheet image (6 frames). Then a keyframe breakdown for each frame. Each frame must represent a resting point after a dramatic camera move — only describe the final camera position and what the subject is doing, never the motion itself. The six frames must be spatially dynamic, non-linear, and visually distinct. Required 6-Frame Shot List 1. High-Fashion Beauty Portrait (Close, Editorial, Intimate) Camera positioned very close to the subject's face, slightly above or slightly below eye level, using an elegant offset angle that enhances bone structure and highlights key wardrobe elements near the neckline. Shallow depth of field, flawless texture rendering, and a sculptural fashion-forward composition. 2. High-Angle Three-Quarter Frame Camera positioned overhead but off-center, capturing the subject from a diagonal downward angle.This frame should create strong shape abstraction and reveal wardrobe details from above. 3. Low-Angle Oblique Full-Body Frame Camera positioned low to the ground and angled obliquely toward the subject.This elongates the silhouette, emphasizes footwear, and creates a dramatic perspective distinct from Frames 1 and 2. 4. Side-On Compression Frame (Long Lens) Camera placed far to one side of the subject, using a tighter focal length to compress space.The subject appears in clean profile or near-profile, showcasing garment structure in a flattened, editorial manner. 5. Intimate Close Portrait From an Unexpected Height Camera positioned very close to the subject's face (or upper torso) but slightly above or below eye level.The angle should feel fashion-editorial, not conventional — offset, elegant, and expressive. 6. Extreme Detail Frame From a Non-Intuitive Angle Camera positioned extremely close to a wardrobe detail, accessory, or texture, but from an unusual spatial direction (e.g., from below, from behind, from the side of a neckline).This must be a striking, abstract, editorial detail frame. Continuity & Technical Requirements Maintain perfect wardrobe fidelity in every frame: exact garment type, silhouette, material, color, texture, stitching, accessories, closures, jewelry, shoes, hair, and makeup. Environment, textures, and lighting must remain consistent. Depth of field shifts naturally with focal length (deep for distant shots, shallow for close/detail shots). Photoreal textures and physically plausible light behavior required. Frames must feel like different camera placements within the same scene, not different scenes. All keyframes must be the exact same aspect ratio, and exactly 6 keyframes should be output. Maintain the exact visual style in all keyframes, where the image is shot on fuji velvia film with a hard flash, the light is concentrated on the subject and fades slightly toward the edges of the frame. The image is over exposed showing significant film grain and is oversaturated. The skin appears shiny (almost oily), and there are harsh white reflections on the glasses frames. Output FormatA) 2×3 Contact Sheet Image (Mandatory)\",\n  \"resolution\": \"4k\",\n  \"images\": [\"{{ $json.core_image[0].url }}\"]\n\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        304,
+        496
+      ],
+      "id": "b9eb7e29-b0cf-47e8-822c-e1e530074edf",
+      "name": "Contact Sheet 🍌",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IZqnM1MEeUfWcob3",
+          "name": "WaveSpeed Credentials"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent by RoboNuggets",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent by RoboNuggets",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structure": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent by RoboNuggets",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Project": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent by RoboNuggets": {
+      "main": [
+        [
+          {
+            "node": "Log Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Project1": {
+      "main": [
+        [
+          {
+            "node": "Core Image 🍌",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Project2": {
+      "main": [
+        [
+          {
+            "node": "Contact Sheet 🍌",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Project3": {
+      "main": [
+        [
+          {
+            "node": "Bottom Left",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PROMPT": {
+      "main": [
+        [
+          {
+            "node": "Get Project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CORE IMAGE": {
+      "main": [
+        [
+          {
+            "node": "Get Project1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONTACT SHEET": {
+      "main": [
+        [
+          {
+            "node": "Get Project2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SPLIT": {
+      "main": [
+        [
+          {
+            "node": "Get Project3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bottom Left": {
+      "main": [
+        [
+          {
+            "node": "Bottom Right",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bottom Right": {
+      "main": [
+        [
+          {
+            "node": "Top Left",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Top Left": {
+      "main": [
+        [
+          {
+            "node": "Top Right",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Top Right": {
+      "main": [
+        [
+          {
+            "node": "Log Output3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "AI Agent by RoboNuggets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Output3": {
+      "main": [
+        [
+          {
+            "node": "Log Output4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Output4": {
+      "main": [
+        [
+          {
+            "node": "Log Output5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Output5": {
+      "main": [
+        [
+          {
+            "node": "Log Output6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get Video 🔻",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VIDEOS": {
+      "main": [
+        [
+          {
+            "node": "Get Scenes1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Video 🔻": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video 🔻": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scenes1": {
+      "main": [
+        [
+          {
+            "node": "Create Video 🔻",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Log Videos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Core Image 🍌": {
+      "main": [
+        [
+          {
+            "node": "Log Output1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Sheet 🍌": {
+      "main": [
+        [
+          {
+            "node": "Log Output2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "54cbcb96-45e9-4e65-a96f-e6ba216c714e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "addaa68bf5af965c06c3765c811549851eb65db8df4677e0c6253726ffcac493"
+  },
+  "id": "FNNWe793zAwsMWXz",
+  "tags": []
+}

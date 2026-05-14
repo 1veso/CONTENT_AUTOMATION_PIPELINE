@@ -1,0 +1,14 @@
+{
+  "alwaysUpdateLinks": true,
+  "newLinkFormat": "shortest",
+  "useMarkdownLinks": false,
+  "attachmentFolderPath": "clients/Provinzial_Geier_Ayhan/assets",
+  "defaultViewMode": "source",
+  "livePreview": true,
+  "promptDelete": true,
+  "showLineNumber": true,
+  "spellcheck": false,
+  "strictLineBreaks": false,
+  "autoConvertHtml": true,
+  "trashOption": "system"
+}

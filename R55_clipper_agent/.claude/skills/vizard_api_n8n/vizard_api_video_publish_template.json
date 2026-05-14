@@ -1,0 +1,197 @@
+{
+  "name": "vizard_api_video_publish_template",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## How to use\nPublish a generated clip to a connected social account. （ https://docs.vizard.ai/docs/publish-clips-to-social-media ）\nVizard automatically creates the post caption and relevant hashtags for you. You can publish the video immediately or schedule it for a future time.\n\nIf publishTime is not provided, the video will be published immediately. title is only used when publishing to YouTube and can be omitted for other platforms.\n\nThe parameters in Create_Input_Param are required. Please refer to the API documentation for other parameters.\n\n##",
+        "height": 208,
+        "width": 1024,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1408,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "8ef043d1-2c8f-4ee8-8b9b-294e79d1e689",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"finalVideoId\": from api retrieve Output Videos,\n  \"socialAccountId\":\"your social addcount id\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1376,
+        128
+      ],
+      "id": "65fc336e-bfbb-4664-8950-8726b3df88f3",
+      "name": "Create_Input_Param"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -864,
+        128
+      ],
+      "id": "95ba4295-cd09-4dd6-8e85-e3a653674448",
+      "name": "Wait4Create",
+      "webhookId": "1195b3be-711e-4faa-8b80-d952b9d728b9"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c726338b-00db-43c5-bfeb-f7cd1c122c2c",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 2000,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c6c1a672-f6c3-4daa-a2a1-63556d9b16e8",
+              "leftValue": "={{ $json.projectId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8384df88-eace-400c-a5fe-ca4e11132572",
+              "leftValue": "={{ $json.shareLink }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -608,
+        128
+      ],
+      "id": "392dd7ee-f8b8-46b3-a09c-d668d4c05e10",
+      "name": "If_create_success",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/publish-video",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "your_api_key"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n$json\n}}",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1136,
+        128
+      ],
+      "id": "81eaad19-97c0-4713-b189-fb22b20b46e6",
+      "name": "Api_Vizard_AI_Publish_Clips_2_Social_Media",
+      "retryOnFail": true,
+      "maxTries": 5
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Create_Input_Param": {
+      "main": [
+        [
+          {
+            "node": "Api_Vizard_AI_Publish_Clips_2_Social_Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4Create": {
+      "main": [
+        [
+          {
+            "node": "If_create_success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If_create_success": {
+      "main": [
+        []
+      ]
+    },
+    "Api_Vizard_AI_Publish_Clips_2_Social_Media": {
+      "main": [
+        [
+          {
+            "node": "Wait4Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "95fe7b84-5763-4224-9054-4020b8fd4f66",
+  "meta": {
+    "instanceId": "7001cc76918c56e72ad4c7b1f8c14642b92bec405b12704d9c367625fa72d9b0"
+  },
+  "id": "uUrc1z10ncAP3slX",
+  "tags": [
+    {
+      "updatedAt": "2026-01-16T09:12:04.984Z",
+      "createdAt": "2026-01-16T09:12:04.984Z",
+      "id": "wJ4eXBbiAusBwBeK",
+      "name": "20260116"
+    }
+  ]
+}
