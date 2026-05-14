@@ -1,0 +1,12 @@
+# Modal project config. App-level metadata for `modal deploy` / `modal run`
+# invocations from this repo root.
+#
+# Two Modal apps live in this monorepo:
+#   • r57-content-engine  ->  R57_content_engine/modal_app.py
+#   • r61-video-pipeline  ->  R61_video_pipeline/modal_app.py
+#
+# Both share this Modal account and read their own per-pipeline secrets
+# (r57-secrets, r61-secrets). Cron schedules are NOT defined here; the
+# pipelines are still operator-triggered in this rollout.
+
+name = "content-pipeline"
