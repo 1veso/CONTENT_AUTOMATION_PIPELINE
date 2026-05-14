@@ -66,6 +66,7 @@ Pipeline scripts don't talk to Telegram directly. Each R61 step writes a JSON en
   "record_id": "recXXX...",
   "ad_name": "Day_3_Sicherheit_im_Alltag",
   "video_url": "https://r2.../r61/final/v3/3_day_3_...mp4",
+  "options": ["Approve", "Redo", "Hold"],
   "timestamp": "2026-05-13T22:30:00",
   "status": "pending",
   "notified": false
@@ -73,6 +74,17 @@ Pipeline scripts don't talk to Telegram directly. Each R61 step writes a JSON en
 ```
 
 `notified` flips to `true` once the gate-watcher cron has sent the Telegram message. `status` flips to `approved` / `rejected` based on user reply.
+
+### Telegram inline keyboards
+
+Every gate entry carries an `options[]` array (defaults to `["Approve", "Redo", "Hold"]` — see `_gates.DEFAULT_OPTIONS`). The `r61-gate-watcher` cron renders these as a single-row inline keyboard. Each button's `callback_data` is `gate:<option_lower>:<record_id>` (e.g. `gate:approve:rec4cuKlnZwe0Slag`).
+
+On callback:
+- `gate:approve:<id>` → status → `approved`; if gate 4, prompt to advance to `blotato_schedule`
+- `gate:redo:<id>` → status → `rejected` + ask the operator in chat for a `reason` (merged into `extra.reason`)
+- `gate:hold:<id>` → keeps status `pending`; acknowledge only
+
+Pipeline scripts can override the options array per-gate by passing `options=[...]` to `_gates.append_gate(...)` — useful when a gate needs a custom action (e.g. `["Use take 1", "Use take 2", "Both", "Redo"]`).
 
 ### Numbering vs CLAUDE.md's 4 gates
 

@@ -14,6 +14,8 @@ Schema per entry (matches the cron's expected format):
       "record_id": str,          # Airtable record id or "batch"
       "ad_name": str,            # display label
       "video_url": str,          # video/asset URL ("" for non-video gates)
+      "options": list[str],      # Telegram inline-keyboard button labels
+                                 # (default: Approve / Redo / Hold)
       "timestamp": str,          # ISO 8601 local time
       "status": "pending",       # pending | approved | rejected
       "notified": false          # flipped to true by the gate-watcher cron
@@ -69,6 +71,9 @@ def _save(data):
         raise
 
 
+DEFAULT_OPTIONS = ["Approve", "Redo", "Hold"]
+
+
 def append_gate(
     gate_number,
     gate_name,
@@ -76,11 +81,17 @@ def append_gate(
     ad_name,
     video_url="",
     extra=None,
+    options=None,
 ):
     """Append one gate entry. Returns the inserted dict.
 
     `extra` is an optional dict of additional fields merged into the entry
     (e.g. {"clip_count": 8} for a batch summary).
+
+    `options` is the list of inline-keyboard button labels surfaced on
+    Telegram. Defaults to ["Approve", "Redo", "Hold"]. The gate-watcher
+    cron renders these as inline-keyboard buttons; callbacks are mapped
+    to commands of the form `<option> <record_id>`.
     """
     entry = {
         "gate_number": gate_number,
@@ -88,6 +99,7 @@ def append_gate(
         "record_id": record_id,
         "ad_name": ad_name,
         "video_url": video_url or "",
+        "options": list(options) if options is not None else list(DEFAULT_OPTIONS),
         "timestamp": dt.datetime.now().isoformat(timespec="seconds"),
         "status": "pending",
         "notified": False,
