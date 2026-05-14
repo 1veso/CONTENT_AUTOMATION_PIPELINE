@@ -405,10 +405,15 @@ def process_record(record, table_cfg, output_path=None, duration_s=DEFAULT_DURAT
     log(f"  re-hosted on Fal -> {fal_url}")
 
     # If --output requested, copy the local clip to that path before cleanup.
+    # Use check_output_path so a second run never overwrites the first
+    # (SOUL.md rule 2 — never delete generated content).
     if output_path is not None:
-        out = Path(output_path)
+        from tools.path_utils import check_output_path  # local import keeps this branch cold-imported
+        out = check_output_path(Path(output_path))
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(clip_local, out)
+        if out != Path(output_path):
+            log(f"  version-incremented -> {out.name} (prior preserved)")
         log(f"  saved local copy -> {out}")
 
     _airtable_update(

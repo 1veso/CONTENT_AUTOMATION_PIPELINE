@@ -66,8 +66,8 @@ load_dotenv(ENV_PATH)
 
 from tools import airtable_video as av  # noqa: E402
 from tools import _gates  # noqa: E402
+from tools.path_utils import check_output_path, clean_slug  # noqa: E402
 from tools.stitch import (  # noqa: E402
-    slugify,
     attachment_url,
     ext_from_url,
     download_attachment,
@@ -75,10 +75,15 @@ from tools.stitch import (  # noqa: E402
     upload_to_r2,
 )
 
+# Version tag controls both the local final dir and the R2 key prefix so a
+# new render generation can be cut over by changing one env var. Defaults
+# to v3 for backwards compatibility with the existing render shelf.
+VERSION_TAG = os.environ.get("R61_VERSION_TAG", "v3")
+
 LOG_PATH = PROJECT_ROOT / "references" / "outputs" / "hf_stitch_run.log"
 TMP_DIR = PROJECT_ROOT / "references" / "outputs" / "tmp"
 HF_WORK_DIR = PROJECT_ROOT / "references" / "outputs" / "hf_work"
-FINAL_V3_DIR = PROJECT_ROOT / "references" / "outputs" / "final" / "v3"
+FINAL_DIR = PROJECT_ROOT / "references" / "outputs" / "final" / VERSION_TAG
 INTRO_PATH = PROJECT_ROOT / "references" / "inputs" / "intro.mp4"
 OUTRO_PATH = PROJECT_ROOT / "references" / "outputs" / "outro.mp4"
 
@@ -321,14 +326,14 @@ def run_hyperframes(workdir: Path, output_path: Path):
 
 def publish_to_r2_and_airtable(record_id: str, mp4_path: Path, key_name: str,
                                advance_status: bool = False):
-    """Upload mp4 to r61/final/v3/{key_name} and PATCH the Airtable record.
+    """Upload mp4 to r61/final/{VERSION_TAG}/{key_name} and PATCH the Airtable record.
 
     If advance_status is True, also set Video Status = "Stitched".
     Used by --all-voiceover-done batch (fresh pipeline progression). The
     older --all-approved-or-scheduled batch keeps status untouched because
     those records are re-renders of already-Scheduled finals.
     """
-    r2_key = f"r61/final/v3/{key_name}"
+    r2_key = f"r61/final/{VERSION_TAG}/{key_name}"
     public_url = upload_to_r2(mp4_path, r2_key, content_type="video/mp4")
     log(f"  uploaded → {public_url}")
 
@@ -391,8 +396,12 @@ def process_record(record, skip_publish=False, force_premix=False,
                               intro_dur, clip_dur, audio_dur, outro_dur)
     log(f"  composition staged: {workdir}  (total {total:.3f}s)")
 
-    out_name = f"{index}_{slugify(ad_name)}.mp4"
-    output_path = FINAL_V3_DIR / out_name
+    out_name = f"{index}_{clean_slug(ad_name)}.mp4"
+    output_path = check_output_path(FINAL_DIR / out_name)
+    if output_path.name != out_name:
+        log(f"  version-incremented output → {output_path.name} "
+            f"(original existed; preserving prior render per SOUL.md rule 2)")
+        out_name = output_path.name
     run_hyperframes(workdir, output_path)
 
     if skip_publish:

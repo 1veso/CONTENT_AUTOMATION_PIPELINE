@@ -74,6 +74,7 @@ if os.getenv("FAL_KEY") is None and os.getenv("FAL_API_KEY"):
     os.environ["FAL_KEY"] = os.environ["FAL_API_KEY"]
 
 from tools import airtable_video as av  # noqa: E402
+from tools.path_utils import check_output_path, clean_slug  # noqa: E402
 
 LOG_PATH = PROJECT_ROOT / "references" / "outputs" / "stitch_run.log"
 TMP_DIR = PROJECT_ROOT / "references" / "outputs" / "tmp"
@@ -113,12 +114,14 @@ def log(msg):
 
 
 def slugify(name, max_len=60):
-    """Filesystem-safe slug from an Ad Name. Preserves German umlauts."""
-    s = (name or "video").strip()
-    s = re.sub(r"[\\/:*?\"<>|]+", "", s)        # strip Windows-illegal chars
-    s = re.sub(r"\s+", "_", s)
-    s = re.sub(r"_+", "_", s)
-    return s[:max_len].strip("._-")
+    """Filesystem-safe slug from an Ad Name. Preserves German umlauts.
+
+    Thin alias for tools.path_utils.clean_slug. Kept as a name-stable
+    re-export because other tools historically import `slugify` from this
+    module. The implementation now strips brackets and ampersands too —
+    those tripped up FFmpeg/npx/R2 in mid-May 2026.
+    """
+    return clean_slug(name, max_len=max_len)
 
 
 def attachment_url(record, field_name):
@@ -544,7 +547,11 @@ def process_record(record, auto_confirm=None):
 
     out_name = f"{index}_{slugify(ad_name)}.mp4" if index is not None \
         else f"{rec_id}_{slugify(ad_name)}.mp4"
-    output_path = FINAL_DIR / out_name
+    output_path = check_output_path(FINAL_DIR / out_name)
+    if output_path.name != out_name:
+        log(f"  version-incremented output → {output_path.name} "
+            f"(prior render preserved per SOUL.md rule 2)")
+        out_name = output_path.name
 
     argv = build_ffmpeg_command(plan, vo_local, output_path)
 

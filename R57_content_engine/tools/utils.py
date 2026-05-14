@@ -3,11 +3,61 @@ Shared utilities for Creative Content Engine.
 Task submission, parallel polling, file downloads, and status printing.
 """
 
+import re
 import time
 import requests
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from . import config
+
+
+_RE_BRACKETS = re.compile(r"[\[\]\(\)\{\}]")
+_RE_WIN_ILLEGAL = re.compile(r"[\\/:*?\"<>|]")
+_RE_WHITESPACE = re.compile(r"\s+")
+_RE_MULTI_UNDERSCORE = re.compile(r"_+")
+_RE_V_SUFFIX = re.compile(r"^(.*)_v(\d+)$")
+
+
+def clean_slug(name, max_len=60):
+    """Filesystem- and CDN-safe slug. Mirrors R61's tools.path_utils.clean_slug.
+
+    Strips brackets `[]`, ampersands `&`, Windows-illegal chars
+    `\\ / : * ? " < > |`, collapses whitespace to underscore, preserves
+    German umlauts. Truncated to `max_len`.
+    """
+    s = (name or "image").strip()
+    s = _RE_BRACKETS.sub("", s)
+    s = s.replace("&", "")
+    s = _RE_WIN_ILLEGAL.sub("", s)
+    s = _RE_WHITESPACE.sub("_", s)
+    s = _RE_MULTI_UNDERSCORE.sub("_", s)
+    return s[:max_len].strip("._-")
+
+
+def check_output_path(path):
+    """Return a free path, version-incrementing if needed.
+
+    Codifies [[SOUL.md]] rule 2 — never overwrite a generated output.
+    Mirrors R61's `tools.path_utils.check_output_path` so both pipelines
+    behave the same way at the filesystem layer.
+    """
+    p = Path(path)
+    if not p.exists():
+        return p
+    stem = p.stem
+    suffix = p.suffix
+    m = _RE_V_SUFFIX.match(stem)
+    if m:
+        base = m.group(1)
+        n = int(m.group(2)) + 1
+    else:
+        base = stem
+        n = 2
+    while True:
+        candidate = p.with_name(f"{base}_v{n}{suffix}")
+        if not candidate.exists():
+            return candidate
+        n += 1
 
 
 def print_status(message, symbol="->"):
@@ -169,12 +219,14 @@ def download_file(url, output_path):
 
     Args:
         url: Source URL
-        output_path: Local file path to save to
+        output_path: Local file path to save to (will be version-incremented
+            via `check_output_path` if it already exists)
 
     Returns:
-        Path object of the saved file
+        Path object of the saved file (may differ from `output_path` if
+        version-incremented)
     """
-    output_path = Path(output_path)
+    output_path = check_output_path(Path(output_path))
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     print_status(f"Downloading to: {output_path.name}")
