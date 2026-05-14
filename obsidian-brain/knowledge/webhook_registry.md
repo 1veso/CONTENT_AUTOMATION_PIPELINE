@@ -55,6 +55,14 @@ The respond is immediate; pipeline body work happens after. Operator wires the b
 
 R57 and R61 pipelines deployed as Modal apps. Workspace: `hello-58046` (Modal owner).
 
+**Verified live 2026-05-14** via `curl -X POST` HEAD probe — both R57 endpoints return `HTTP/2 422` (FastAPI validation rejecting empty body), confirming the functions are reachable and warm-startable.
+
+| App ID | App | State |
+|---|---|---|
+| `ap-x3Mpc6hbqoXamFzykV6t2I` | `vizard-clipper` (R55) | deployed |
+| `ap-7hP62D82XJ6x8LvefI79CD` | `r57-content-engine` | deployed |
+| `ap-SB0c4CNE51ZfMfmR49WYkC` | `r61-video-pipeline` | deployed |
+
 **Important:** these endpoints are NOT yet wired into n8n webhook nodes. Wiring waits for the `ops.getautomata.ai ↔ Modal` tunnel/reverse-proxy work (planned for a later phase). The canvas-side webhooks listed above (`/webhook/r57`, `/webhook/r61`, etc.) still target their original shims, not Modal.
 
 ### r57-content-engine (deployed)
