@@ -79,11 +79,14 @@ from tools.stitch import (  # noqa: E402
 # new render generation can be cut over by changing one env var. Defaults
 # to v3 for backwards compatibility with the existing render shelf.
 VERSION_TAG = os.environ.get("R61_VERSION_TAG", "v3")
+# Env-level default for captions burn-in. CLI --add-captions overrides this.
+ADD_CAPTIONS_DEFAULT = os.environ.get("R61_ADD_CAPTIONS", "").lower() in ("1", "true", "yes")
 
 LOG_PATH = PROJECT_ROOT / "references" / "outputs" / "hf_stitch_run.log"
 TMP_DIR = PROJECT_ROOT / "references" / "outputs" / "tmp"
 HF_WORK_DIR = PROJECT_ROOT / "references" / "outputs" / "hf_work"
 FINAL_DIR = PROJECT_ROOT / "references" / "outputs" / "final" / VERSION_TAG
+CAPTIONS_DIR = FINAL_DIR / "captions"
 INTRO_PATH = PROJECT_ROOT / "references" / "inputs" / "intro.mp4"
 OUTRO_PATH = PROJECT_ROOT / "references" / "outputs" / "outro.mp4"
 
@@ -93,6 +96,8 @@ CLIP_AUDIO_VOLUME = 0.3
 TARGET_W = 1080
 TARGET_H = 1920
 TARGET_SR = 48000
+
+CAPTION_CHUNK_MAX_CHARS = 42
 
 
 def log(msg):
@@ -325,15 +330,21 @@ def run_hyperframes(workdir: Path, output_path: Path):
 
 
 def publish_to_r2_and_airtable(record_id: str, mp4_path: Path, key_name: str,
-                               advance_status: bool = False):
-    """Upload mp4 to r61/final/{VERSION_TAG}/{key_name} and PATCH the Airtable record.
+                               advance_status: bool = False,
+                               key_prefix: str = ""):
+    """Upload mp4 to r61/final/{VERSION_TAG}/{key_prefix}{key_name} and PATCH Airtable.
+
+    `key_prefix` (default "") sits between the version dir and the filename
+    in the R2 key — e.g. "captions/" lands the upload at
+    r61/final/v3/captions/<key_name>. The Airtable attachment filename stays
+    just `key_name` (no slash) so the UI download is clean.
 
     If advance_status is True, also set Video Status = "Stitched".
     Used by --all-voiceover-done batch (fresh pipeline progression). The
     older --all-approved-or-scheduled batch keeps status untouched because
     those records are re-renders of already-Scheduled finals.
     """
-    r2_key = f"r61/final/{VERSION_TAG}/{key_name}"
+    r2_key = f"r61/final/{VERSION_TAG}/{key_prefix}{key_name}"
     public_url = upload_to_r2(mp4_path, r2_key, content_type="video/mp4")
     log(f"  uploaded → {public_url}")
 
@@ -346,8 +357,139 @@ def publish_to_r2_and_airtable(record_id: str, mp4_path: Path, key_name: str,
     return public_url
 
 
+def _split_script_for_captions(script: str, max_chars: int = CAPTION_CHUNK_MAX_CHARS):
+    """Break the German script into caption-line-sized chunks.
+
+    Splits on sentence-ending punctuation first (. ! ? :), then re-splits any
+    chunk longer than max_chars on commas, then on word boundaries. Output is
+    plain UTF-8 text per chunk — ASS escaping happens at format time.
+    """
+    text = " ".join((script or "").split())
+    if not text:
+        return []
+    sentences = re.split(r"(?<=[\.\!\?\:])\s+", text)
+    chunks = []
+    for s in sentences:
+        s = s.strip()
+        if not s:
+            continue
+        if len(s) <= max_chars:
+            chunks.append(s)
+            continue
+        for piece in s.split(","):
+            piece = piece.strip()
+            if not piece:
+                continue
+            if len(piece) <= max_chars:
+                chunks.append(piece)
+                continue
+            words, cur = piece.split(), ""
+            for w in words:
+                candidate = (cur + " " + w).strip() if cur else w
+                if len(candidate) > max_chars and cur:
+                    chunks.append(cur)
+                    cur = w
+                else:
+                    cur = candidate
+            if cur:
+                chunks.append(cur)
+    return chunks
+
+
+def _ass_time(seconds: float) -> str:
+    """ASS uses H:MM:SS.cs (centiseconds)."""
+    if seconds < 0:
+        seconds = 0.0
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    s = seconds - h * 3600 - m * 60
+    return f"{h}:{m:02d}:{int(s):02d}.{int(round((s - int(s)) * 100)):02d}"
+
+
+def build_ass_subs(script: str, vo_start: float, vo_dur: float,
+                   out_path: Path):
+    """Write an ASS file with the German script chunked over [vo_start, vo_start+vo_dur].
+
+    Caption style: white text, black 3px outline, bottom-third margin,
+    centre-aligned, sans-serif. Chunks are distributed proportionally to
+    their character length over the voiceover window.
+    """
+    chunks = _split_script_for_captions(script)
+    if not chunks:
+        log("  no caption chunks (empty script); skipping ASS build")
+        return False
+
+    total_chars = sum(max(1, len(c)) for c in chunks)
+    events = []
+    cursor = 0.0
+    for c in chunks:
+        share = max(1, len(c)) / total_chars
+        chunk_dur = vo_dur * share
+        start_s = vo_start + cursor
+        end_s = vo_start + cursor + chunk_dur
+        cursor += chunk_dur
+        # ASS escapes — backslash and braces are special.
+        safe = c.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
+        events.append(
+            f"Dialogue: 0,{_ass_time(start_s)},{_ass_time(end_s)},Caption,,0,0,0,,{safe}"
+        )
+
+    # MarginV is from the bottom (PlayResY 1920 → bottom-third begins at ~640
+    # from the bottom). Outline=3, BorderStyle=1 (outline+drop shadow), Alignment=2
+    # (bottom-centre). Fontsize tuned for 1080-wide vertical.
+    header = (
+        "[Script Info]\n"
+        "ScriptType: v4.00+\n"
+        f"PlayResX: {TARGET_W}\n"
+        f"PlayResY: {TARGET_H}\n"
+        "WrapStyle: 0\n"
+        "ScaledBorderAndShadow: yes\n"
+        "\n"
+        "[V4+ Styles]\n"
+        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+        "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+        "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+        "Alignment, MarginL, MarginR, MarginV, Encoding\n"
+        "Style: Caption,Arial,68,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,"
+        "1,0,0,0,100,100,0,0,1,3,0,2,60,60,260,1\n"
+        "\n"
+        "[Events]\n"
+        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(header + "\n".join(events) + "\n", encoding="utf-8")
+    log(f"  ASS subs written → {out_path.name} ({len(chunks)} chunks)")
+    return True
+
+
+def burn_captions(input_mp4: Path, ass_file: Path, output_mp4: Path):
+    """Run ffmpeg to burn the ASS subs into a copy of the rendered mp4.
+
+    The original input_mp4 is left untouched (SOUL.md rule 2/4 — never
+    overwrite existing renders). Re-encodes video; copies audio.
+    """
+    output_mp4.parent.mkdir(parents=True, exist_ok=True)
+    # ffmpeg's subtitles/ass filter needs the path in libavfilter syntax —
+    # backslashes and colons (Windows drive letters) must be escaped.
+    ass_str = str(ass_file).replace("\\", "/").replace(":", "\\:")
+    argv = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-i", str(input_mp4),
+        "-vf", f"ass='{ass_str}'",
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+        "-c:a", "copy",
+        str(output_mp4),
+    ]
+    proc = subprocess.run(argv, capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
+    if proc.returncode != 0:
+        raise RuntimeError("burn_captions ffmpeg failed:\n" + (proc.stderr or "")[-2000:])
+    log(f"  captions burned → {output_mp4.name}  "
+        f"({output_mp4.stat().st_size/1e6:.1f} MB)")
+
+
 def process_record(record, skip_publish=False, force_premix=False,
-                   advance_status=False):
+                   advance_status=False, add_captions=False):
     """End-to-end v2 build for one Airtable record."""
     rec_id = record["id"]
     fields = record.get("fields", {})
@@ -404,12 +546,36 @@ def process_record(record, skip_publish=False, force_premix=False,
         out_name = output_path.name
     run_hyperframes(workdir, output_path)
 
+    # Optional captions burn-in. The captioned variant goes to a separate
+    # path so the unsubtitled render is preserved per SOUL.md rule 2/4.
+    publish_path = output_path
+    publish_key_prefix = ""
+    if add_captions:
+        vo_script = fields.get("Voiceover Script") or ""
+        ass_path = workdir / "captions.ass"
+        captioned_name = output_path.stem + "_captions.mp4"
+        captioned_path = check_output_path(CAPTIONS_DIR / captioned_name)
+        # vo_start = end of intro = t_intro_end inside the composition; here
+        # we recompute it from intro_dur (write_composition uses the same
+        # value rounded to ms).
+        if build_ass_subs(vo_script, vo_start=intro_dur,
+                          vo_dur=audio_dur, out_path=ass_path):
+            burn_captions(output_path, ass_path, captioned_path)
+            publish_path = captioned_path
+            publish_key_prefix = "captions/"
+            log(f"  publishing captioned variant: {captioned_path.name}")
+        else:
+            log(f"  --add-captions set but no Voiceover Script text; "
+                f"publishing uncaptioned render")
+
     if skip_publish:
         log(f"  --skip-publish set; not uploading or touching Airtable")
         return "rendered_only"
 
-    public_url = publish_to_r2_and_airtable(rec_id, output_path, out_name,
-                                            advance_status=advance_status)
+    public_url = publish_to_r2_and_airtable(rec_id, publish_path,
+                                            publish_path.name,
+                                            advance_status=advance_status,
+                                            key_prefix=publish_key_prefix)
     log(f"DONE  {rec_id}")
 
     try:
@@ -454,6 +620,16 @@ def main(argv=None):
     parser.add_argument("--force-premix", action="store_true",
                         help="Re-run FFmpeg pre-mix and lastframe even if "
                              "the output files already exist.")
+    parser.add_argument("--add-captions", action="store_true",
+                        default=ADD_CAPTIONS_DEFAULT,
+                        help="After HyperFrames render, burn the Airtable "
+                             "'Voiceover Script' field into the final mp4 as "
+                             "white-on-black-outline ASS subtitles (bottom "
+                             "third, DE). Captioned variant goes to "
+                             "final/<tag>/captions/ and uploads to "
+                             "r61/final/<tag>/captions/. Original render is "
+                             "preserved. Default from R61_ADD_CAPTIONS env "
+                             "var (1/true to enable).")
     args = parser.parse_args(argv)
 
     missing = av.check_credentials()
@@ -491,7 +667,8 @@ def main(argv=None):
         try:
             res = process_record(r, skip_publish=args.skip_publish,
                                  force_premix=args.force_premix,
-                                 advance_status=advance_status)
+                                 advance_status=advance_status,
+                                 add_captions=args.add_captions)
         except Exception as e:
             log(f"FAIL {r['id']}: {e}")
             res = "failed"

@@ -216,27 +216,52 @@ def sync_r57_to_video(dry_run: bool = False) -> dict:
 
 # --------------------------------------------------------------- HTTP endpoints
 #
-# R61 has 6 stages that would each warrant a POST endpoint, but the Modal
-# free-tier workspace cap is 8 web endpoints total and R57 + the older
-# vizard-clipper app already consume 4. Until the operator upgrades the
-# Modal plan (and/or wires this canvas into n8n via the tunnel work),
-# R61 ships as plain Modal functions only — operator invokes via
-# `modal run R61_video_pipeline/modal_app.py::<fn>` or programmatically
-# via `Function.from_name("r61-video-pipeline", "<fn>").remote(...)`.
+# Free-tier 8-endpoint cap budget (2026-05-14):
+#   vizard-clipper          → 2 (POST + GET)
+#   r57-content-engine      → 2 (generate_images_http, schedule_blotato_http)
+#   r61-video-pipeline      → 3 (this file, below)
+#   Total                   → 7 / 8
 #
-# Re-enable the HTTP endpoints by uncommenting the block below once the
-# plan limit is raised. Each one is a thin wrapper around its sibling
-# function call.
+# Three priority endpoints enabled — the n8n tunnel needs `hf_stitch`,
+# `voiceover_gen`, and `blotato_schedule` as the user-facing entry points.
+# `frame_gen_http`, `video_gen_http`, `sync_r57_to_video_http` remain offline
+# (callable via `modal run` / `Function.from_name(...).remote()`) until the
+# plan is upgraded.
 
-# @app.function(image=r61_image, secrets=[r61_secret],
-#               volumes={WORK_MOUNT: r61_volume}, timeout=60 * 60)
-# @modal.fastapi_endpoint(method="POST")
-# def frame_gen_http(payload: dict) -> dict:
-#     p = payload or {}
-#     return frame_gen.local(record_id=p.get("record_id"),
-#                            dry_run=bool(p.get("dry_run", False)))
-# (... similar wrappers for video_gen, voiceover_gen, hf_stitch,
-#      blotato_schedule, sync_r57_to_video — see git history)
+
+def _coerce_payload(payload):
+    return payload or {}
+
+
+@app.function(image=r61_image, secrets=[r61_secret],
+              volumes={WORK_MOUNT: r61_volume}, timeout=60 * 30)
+@modal.fastapi_endpoint(method="POST")
+def voiceover_gen_http(payload: dict) -> dict:
+    p = _coerce_payload(payload)
+    return voiceover_gen.local(record_id=p.get("record_id"),
+                               dry_run=bool(p.get("dry_run", False)),
+                               confirm=p.get("confirm", "go"))
+
+
+@app.function(image=r61_image, secrets=[r61_secret],
+              volumes={WORK_MOUNT: r61_volume}, timeout=60 * 90,
+              cpu=4, memory=8192)
+@modal.fastapi_endpoint(method="POST")
+def hf_stitch_http(payload: dict) -> dict:
+    p = _coerce_payload(payload)
+    return hf_stitch.local(record_id=p.get("record_id"),
+                           all_voiceover_done=bool(p.get("all_voiceover_done", False)),
+                           skip_publish=bool(p.get("skip_publish", False)))
+
+
+@app.function(image=r61_image, secrets=[r61_secret],
+              volumes={WORK_MOUNT: r61_volume}, timeout=60 * 15)
+@modal.fastapi_endpoint(method="POST")
+def blotato_schedule_http(payload: dict) -> dict:
+    p = _coerce_payload(payload)
+    return blotato_schedule.local(record_id=p.get("record_id"),
+                                  dry_run=bool(p.get("dry_run", False)),
+                                  limit=p.get("limit"))
 
 
 # ------------------------------------------------------------ Local entrypoint
