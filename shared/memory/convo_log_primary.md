@@ -4,6 +4,31 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 ---
 
+## Session 1 — 2026-05-14 (Gate flow end-to-end test)
+
+### Active Context
+- Operator launched primary, asked for Status, then asked to test the gate flow.
+- 3 crons re-registered (session-only, 7d expiry): morning-summary `6b993f49`, keepalive `6dbafa45`, r61-gate-watcher `b474a490`.
+
+### Completed This Session
+- Wrote test gate entry via `_gates.append_gate()`: record `recTEST123456789`, gate 1.
+- Sent notification message manually (Telegram MCP reply tool has no inline-keyboard parameter — operator uses verb+record_id reply protocol instead).
+- Verified gate-watcher silent path (entries with `notified=true` are skipped).
+- Verified gate-reply handler end-to-end on approve: local-state update OK → Airtable subprocess shelled out → 404 for test record → graceful-degradation message sent per protocol.
+
+### Key Decisions / Findings
+- Telegram inline keyboards are NOT supported by current `claude-plugins-official/telegram` MCP. The watcher prompt in `cron-registry.json` references inline keyboards but the tool can only send text. Fallback: send action verbs in the message body and parse `<verb> <record_id>` from operator replies. CLAUDE.md gate-reply protocol already accommodates this — no fix needed.
+- Test gate left in pending.json with `status=approved`. Safe to leave or clear on operator request.
+
+### Pending / Next Steps
+- Clear test gate entry (when operator says so) — currently `recTEST123456789`, status=approved.
+- If/when inline-keyboard support lands in the Telegram MCP, revisit the watcher prompt to use callback_data path.
+
+### Gate replies
+- 2026-05-14T20:39 — record `recTEST123456789`, verb `approve` → local: approved · Airtable: failed (404 NOT_FOUND, expected for test record).
+
+---
+
 ## Session 0b — 2026-05-13 (Phase 1.5: gates wired)
 
 ### Active Context

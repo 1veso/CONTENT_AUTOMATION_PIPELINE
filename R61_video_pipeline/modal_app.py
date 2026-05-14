@@ -36,7 +36,13 @@ Build context:
             AIRTABLE_BASE_ID=<...> \\
             BLOTATO_API_KEY=<...> \\
             GOOGLE_API_KEY=<...> \\
-            R61_VERSION_TAG=v3
+            R61_VERSION_TAG=v3 \\
+            TELEGRAM_BOT_TOKEN=<bot token> \\
+            TELEGRAM_CHAT_ID=1077552316
+    TELEGRAM_* drive batch-level progress pings. If unset, notify_progress()
+    silently no-ops. Per-record granularity requires editing the individual
+    tool loops (frame_gen.py, video_gen.py, voiceover_gen.py, hf_stitch.py)
+    to call notify after each record — deferred to a follow-up commit.
 
 Deploy:
         modal deploy R61_video_pipeline/modal_app.py
@@ -135,6 +141,15 @@ def _bootstrap_env_and_paths():
 
 # ------------------------------------------------------------ Modal functions
 
+def _stage_notify(step: str, current: int, total: int, emoji: str, suffix: str = "") -> None:
+    """Batch-level progress ping. Best-effort; notify failures never raise."""
+    try:
+        from tools import notify  # type: ignore
+        notify.notify_progress("R61", step, current, total, suffix, emoji=emoji)
+    except Exception:
+        pass
+
+
 @app.function(image=r61_image, secrets=[r61_secret],
               volumes={WORK_MOUNT: r61_volume}, timeout=60 * 60)
 def frame_gen(record_id: str | None = None, dry_run: bool = False) -> dict:
@@ -143,7 +158,10 @@ def frame_gen(record_id: str | None = None, dry_run: bool = False) -> dict:
     argv = ["--dry-run"] if dry_run else []
     if record_id:
         argv += ["--record-id", record_id]
-    return {"exit_code": fg.main(argv)}
+    _stage_notify("Frames", 0, 1, "🎬", "batch started")
+    exit_code = fg.main(argv)
+    _stage_notify("Frames", 1, 1, "🎬", f"batch done (exit {exit_code})")
+    return {"exit_code": exit_code}
 
 
 @app.function(image=r61_image, secrets=[r61_secret],
@@ -157,7 +175,10 @@ def video_gen(record_id: str | None = None, dry_run: bool = False,
         argv += ["--record-id", record_id]
     if limit:
         argv += ["--limit", str(limit)]
-    return {"exit_code": vg.main(argv)}
+    _stage_notify("Clips", 0, 1, "🎥", "batch started")
+    exit_code = vg.main(argv)
+    _stage_notify("Clips", 1, 1, "🎥", f"batch done (exit {exit_code})")
+    return {"exit_code": exit_code}
 
 
 @app.function(image=r61_image, secrets=[r61_secret],
@@ -169,7 +190,10 @@ def voiceover_gen(record_id: str | None = None, dry_run: bool = False,
     argv = ["--dry-run"] if dry_run else ["--confirm", confirm]
     if record_id:
         argv += ["--record-id", record_id]
-    return {"exit_code": vg.main(argv)}
+    _stage_notify("Voiceover", 0, 1, "🎙", "batch started")
+    exit_code = vg.main(argv)
+    _stage_notify("Voiceover", 1, 1, "🎙", f"batch done (exit {exit_code})")
+    return {"exit_code": exit_code}
 
 
 @app.function(image=r61_image, secrets=[r61_secret],
@@ -188,7 +212,10 @@ def hf_stitch(record_id: str | None = None, all_voiceover_done: bool = False,
         argv = ["--all-approved-or-scheduled"]
     if skip_publish:
         argv.append("--skip-publish")
-    return {"exit_code": hs.main(argv)}
+    _stage_notify("Stitch", 0, 1, "✂️", "batch started")
+    exit_code = hs.main(argv)
+    _stage_notify("Stitch", 1, 1, "✂️", f"batch done (exit {exit_code})")
+    return {"exit_code": exit_code}
 
 
 @app.function(image=r61_image, secrets=[r61_secret],
@@ -202,7 +229,10 @@ def blotato_schedule(record_id: str | None = None, dry_run: bool = False,
         argv += ["--record-id", record_id]
     if limit:
         argv += ["--limit", str(limit)]
-    return {"exit_code": bs.main(argv)}
+    _stage_notify("Scheduled", 0, 1, "📅", "batch started")
+    exit_code = bs.main(argv)
+    _stage_notify("Scheduled", 1, 1, "📅", f"batch done (exit {exit_code})")
+    return {"exit_code": exit_code}
 
 
 @app.function(image=r61_image, secrets=[r61_secret],

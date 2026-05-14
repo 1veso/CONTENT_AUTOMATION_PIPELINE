@@ -17,9 +17,13 @@ Build context:
             FAL_API_KEY=<from R57/.env> \\
             AIRTABLE_API_KEY=<from R57/.env> \\
             BLOTATO_API_KEY=<from R57/.env> \\
-            GOOGLE_API_KEY=<from R57/.env>
+            GOOGLE_API_KEY=<from R57/.env> \\
+            TELEGRAM_BOT_TOKEN=<bot token> \\
+            TELEGRAM_CHAT_ID=1077552316
     The pipeline tools read these via os.environ; the local-only
     `load_dotenv()` calls silently no-op in Modal (no .env file present).
+    TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID drive per-record progress pings —
+    if unset, notify_progress() silently no-ops.
 
 Deploy:
         modal deploy R57_content_engine/modal_app.py
@@ -88,18 +92,22 @@ def generate_images(record_ids: list[str] | None = None,
     """Generate R57 images for specific record ids (or all pending)."""
     _bootstrap_env()
     sys.path.insert(0, "/root")
-    from tools import image_gen, airtable  # noqa: E402
+    from tools import image_gen, airtable, notify  # noqa: E402
 
     rows = airtable.get_records()
     if record_ids:
         rows = [r for r in rows if r.get("id") in set(record_ids)]
-    summary = {"requested": len(rows), "ok": 0, "failed": 0, "ids": []}
+    total = len(rows)
+    summary = {"requested": total, "ok": 0, "failed": 0, "ids": []}
     for r in rows:
         try:
             if not dry_run:
                 image_gen.generate_for_record(r)
             summary["ok"] += 1
             summary["ids"].append(r.get("id"))
+            notify.notify_progress(
+                "R57", "Images", summary["ok"], total, "generated", emoji="🖼"
+            )
         except Exception as e:
             summary["failed"] += 1
             summary.setdefault("errors", []).append(
@@ -120,12 +128,19 @@ def schedule_blotato(record_ids: list[str] | None = None,
     # the wrapping module before re-deploy.
     try:
         from tools import blotato_schedule as scheduler  # type: ignore
+        from tools import notify  # type: ignore
     except ImportError as e:
         return {"status": "error", "reason": f"R57 has no blotato_schedule tool: {e}"}
     rows = scheduler.get_pending_records()
     if record_ids:
         rows = [r for r in rows if r.get("id") in set(record_ids)]
-    return scheduler.run_batch(rows, dry_run=dry_run)
+    total = len(rows)
+    result = scheduler.run_batch(rows, dry_run=dry_run)
+    # Run-level summary — per-record progress lives inside scheduler.run_batch,
+    # which we don't refactor here. Operator sees a single confirmation ping.
+    ok = result.get("scheduled", result.get("ok", 0))
+    notify.notify_progress("R57", "Scheduled", ok, total, "posts", emoji="📅")
+    return result
 
 
 # ------------------------------------------------------------ HTTP endpoints
