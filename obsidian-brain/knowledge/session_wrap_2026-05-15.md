@@ -3,7 +3,7 @@
 **Window:** ~2026-05-12 → 2026-05-15 (≈4 days)
 **Operator:** Benja
 **Agent:** ClaudeClaw / Primary
-**Branch:** `main` (will also push to `dev`)
+**Repo:** `1veso/CONTENT_AUTOMATION_PIPELINE` — `main` and `dev` in sync
 
 ---
 
@@ -63,6 +63,7 @@ Three content pipelines (R55, R57, R61) are deployed to Modal and complete-throu
 - Telegram channel: one bot, allowlisted to chat `1077552316`
 - Three crons registered: `morning-summary` (08:00), `keepalive` (every 6h), `r61-gate-watcher` (every 15m)
 - Gate-notification pattern wired in `frame_gen.py`, `video_gen.py`, `hf_stitch.py` → `R61_video_pipeline/tools/_gates.append_gate(...)` → `shared/gates/pending.json`
+- Progress notifications: long-running pipeline steps emit interim Telegram updates via the agent (so the operator sees "frame 4/8 generated" not just final summaries)
 - Per-pipeline alpha/beta/gamma split deferred until Phase 1 has run cleanly for ≥1 week
 
 ### n8n→Modal tunnel
@@ -79,7 +80,7 @@ Three content pipelines (R55, R57, R61) are deployed to Modal and complete-throu
 ## 3. n8n canvas state — `GetAutomata_W01-W05`
 
 - **Workflow ID:** `SmtkmTgfCTLZPlN4`
-- **Final state:** 460 nodes, ACTIVE
+- **Final state:** 472 nodes, ACTIVE (was 460 at last full export; +12 from this session's webhook + telegram trigger wiring)
 - **Final export:** `n8n_backups/GetAutomata_W01-W05_FINAL_2026-05-13.json`
 - **Telegram credential `lux_bot`:** id `WoB3AsOoB9cIKUrI`, bound to chat 1077552316 on `n8n-nodes-base.telegram` send/edit nodes
 - **`telegramTrigger` API limitation:** cannot be PUT via public API — TODO stickies preserve config until UI registration
@@ -108,28 +109,28 @@ Three content pipelines (R55, R57, R61) are deployed to Modal and complete-throu
 
 ## 4. Open items (priority ranked)
 
-| Rank | Item | Why |
+| # | Item | Notes |
 |---|---|---|
-| P0 | Credential fan-out — bind all 10 operator-bound credentials in n8n UI | Blocks every webhook chain from actually executing; UI work only |
-| P0 | Schäden campaign kickoff | Next active client campaign after Geier & Ayhan; needs vault folder + Airtable base + pipeline trigger plan |
-| P1 | Complete n8n→Modal tunnel for R57/R61 webhooks (Phase 7 in `webhook_registry.md`) | Until done, Modal endpoints are deployed but unreachable from n8n flows |
-| P1 | n21 — 5 sub-workflows for Ultimate UGC Creator | Slot §H placeholder only |
-| P1 | n8n pod stability (2Gi bump + Service rename) | See `getautomata_infra_notes.md` §1 |
-| P2 | k3s scaling architecture decision (horizontal vs per-tenant) | See `getautomata_infra_notes.md` §2 |
-| P2 | L3 semantic memory layer (ChromaDB + Pensyvee re-eval) | See `getautomata_infra_notes.md` §4 |
-| P2 | `gax tenant new` CLI | Automate the manual Provinzial-style onboarding |
-| P3 | Modal HTTP-wrapper revival for R61 (currently parked at 8-endpoint cap) | Either upgrade Modal plan or retire an endpoint elsewhere |
-| P3 | Per-pipeline alpha/beta/gamma agent split | Defer until Phase 1 ClaudeClaw has run ≥1 week clean |
+| 1 | 5 telegramTrigger nodes — manual UI registration | R39, n19, n29×3. n8n public API cannot PUT `telegramTrigger`; bind to `lux_bot` cred in UI then save |
+| 2 | n16 / n21 Airtable schema split | On hold pending operator answer to Q1/Q2 (one table vs split; which fields move) |
+| 3 | Schäden campaign kickoff — **$49.85, 120 posts** | Next active Provinzial campaign; provision vault folder + Airtable base + first R57 batch |
+| 4 | KIE → Fal remaining swaps | n19, n21, n16, R51 still reference KIE nodes; rip out per the no-KIE rule and replace with `nano-banana`/`kling`/`sora` Fal endpoints |
+| 5 | n21 sub-workflows creation | 5 sub-workflows under slot §H (Ultimate UGC Creator) — currently placeholder |
+| 6 | Modal free-tier upgrade — **7/8 endpoints used** | One more HTTP wrapper = capped. Either upgrade plan or retire a wrapper before adding any new endpoint |
+| 7 | `codegraph sync` | Run from `C:\CONTENT_PIPELINE\` after this session closes — several commits since last index |
+| 8 | Google Sheets OAuth2 — **defer; swap nodes to Airtable instead** | OAuth2 binding is brittle in n8n; cheaper to rewrite the two Sheets nodes against the existing Airtable base |
+| 9 | GetAutomata infra scaling | Separate project — see `getautomata_infra_notes.md` (HPA + per-tenant Helm + multi-node) |
+| 10 | L3 semantic memory (ChromaDB) | Separate project — see `getautomata_infra_notes.md` §4 (Pensyvee re-eval + per-tenant collections) |
 
 ---
 
 ## 5. Next session — start here
 
 1. **`codegraph sync`** from `C:\CONTENT_PIPELINE\` — index is from 2026-05-13, several commits since
-2. **Credential fan-out** — work through the 10 operator-bound creds in `n8n_credentials.md`; bind each in the n8n UI and tick off
-3. **Schäden campaign kickoff** — clone `NEW_CLIENT_TEMPLATE/`, provision Airtable base, brief alignment, drop first batch into R57 queue
+2. **n16 / n21 Airtable schema split** — resolve once operator answers Q1/Q2, then apply the split to both pipelines
+3. **Schäden campaign kickoff** — $49.85, 120 posts; clone `NEW_CLIENT_TEMPLATE/`, provision Airtable base, first batch into R57
 
-Anything from §4 below P1 is fair game once those three are done.
+Items 4–10 above are fair game once those three are done.
 
 ---
 

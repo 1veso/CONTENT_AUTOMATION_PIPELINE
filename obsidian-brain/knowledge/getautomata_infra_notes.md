@@ -21,7 +21,7 @@
 
 | Pod | Namespace | Limits | Notes |
 |---|---|---|---|
-| `n8n` | `n8n` | mem 1Gi, cpu 500m | Just bumped from 256Mi after canvas-merge OOMKills |
+| `n8n` | `n8n` | mem 1Gi, cpu 500m | Just bumped from 256Mi after canvas-merge OOMKills. `R2_ENDPOINT` env var added to pod spec this session so workflow nodes can resolve Cloudflare R2 without per-node config — keep it in the pod env, NOT in workflow JSON (so it survives PUT-overwrites). |
 | (planned) ChromaDB | `memory` | TBD | not yet deployed |
 | (planned) Obsidian sync sidecar | per-tenant | TBD | not yet deployed |
 
