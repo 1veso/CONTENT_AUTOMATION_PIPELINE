@@ -24,7 +24,9 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 - **Swapped 23 Google Sheets nodes → Airtable** (2 partial diffs, batch 1 = 12 ops, batch 2 = 11 ops; 10s gap between).
   - Pipeline assignment: §D→n16_Data, §F→R39_Data, §G→n19_Data, §H→n21_Data, §K→n3_Data
   - Credential `airtableTokenApi H9KNuMkfQ5Tl0Muu` ("Airtable PAT")
-- **Exported workflow** to `n8n_backups/GetAutomata_W01-W05_CREDENTIALS_2026-05-15.json` (580KB, 460 nodes, gitignored)
+- **Box→R2 swap** (1 partial diff, 3 ops): replaced `[F] Upload a file`, `[G] Upload Image`, `[G] Upload Video` with HTTP Request PUT nodes using s3 credential `LQgDrXwa1oYXUdEY` against bucket `trendiva-raw-assets`. URL pattern `={{ $env.R2_ENDPOINT }}/trendiva-raw-assets/<filename_expression>` — operator must set `R2_ENDPOINT` env on the n8n pod (`https://<accountId>.r2.cloudflarestorage.com`). typeVersion 4.2, `nodeCredentialType: "s3"` for sigv4.
+- **Added 5 operator-readable instruction stickies** (1 partial diff, 5 addNode ops) next to telegramTrigger TODO stickies in §F, §G, §L1, §L2, §L3. Each names the lux_bot credential id, the exact target node to connect, and tells the operator to delete the orange TODO sticky when done. Color 5 (green) to distinguish from the orange TODOs.
+- **Exported workflow** to `n8n_backups/GetAutomata_W01-W05_CREDENTIALS_2026-05-15.json` (586KB, 465 nodes — was 460 + 5 new stickies, gitignored)
 
 ### Key Decisions / Findings
 - **First swap batch failed** with `Cannot read properties of undefined (reading 'execute')` — root cause: I used typeVersion 2.2 / mode "id" / explicit `resource`+`authentication`. Running instance's airtable nodes use typeVersion **2.1**, base/table as `{__rl: true, mode: "list", cachedResultName}`, no `resource` key, no `authentication` key. Rollback was clean. Rebuilt against the production dialect by reading an existing live airtable node — succeeded.
@@ -42,6 +44,8 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 - Operator review of swapped nodes in n8n UI (cachedResultName may need to be re-populated by clicking the table picker once).
 - Operator inserts a delete-loop downstream of `[D] Clear scenes` if needed.
 - Operator audits upstream `row_number`→`id` references in §H Code/Set nodes.
+- Operator sets `R2_ENDPOINT` env var on the n8n pod (`https://<accountId>.r2.cloudflarestorage.com`) so the 3 ex-Box nodes can resolve their URL.
+- Operator follows the 5 HOW-TO stickies to register telegramTrigger nodes in the UI (API can't do this), then deletes both the HOW-TO sticky and the orange TODO sticky for each section.
 - `codegraph sync` (deferred — no Python changes this session).
 
 ### Gate replies
