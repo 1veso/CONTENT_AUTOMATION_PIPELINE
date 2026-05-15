@@ -4,6 +4,80 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 ---
 
+## Session 3 — 2026-05-15 (credential fan-out round 2 + Sheets→Airtable swap)
+
+### Active Context
+- Operator instructed credential fan-out round 2 (Blotato v2, Blotato account, ElevenLabs, S3 R2) and Sheets→Airtable swap across `SmtkmTgfCTLZPlN4`. Pod restarted with 1Gi mid-session — paused, then resumed under ≤20-node batch cap + 10s pacing.
+
+### Completed This Session
+- **Round 2 cred fan-out (1 partial diff, 6 ops):**
+  - 4 §C HTTP nodes (`[C] YOUTUBE/INSTAGRAM/TIKTOK/Load Video`) rebound from Fal.ai httpHeaderAuth (`XCCrAcucNjypOTqE`, wrong) → Blotato v2 `pKZs4xekk1thYf2N`
+  - `[E] ElevenLabs` ← elevenLabsApi `3LrGYbduS5r1Hdqb`
+  - `[E] S3` ← s3 `LQgDrXwa1oYXUdEY`
+  - Blotato account `blotatoApi z8JcQJjCeMMw6XU5` already on 6 native Blotato nodes — no-op
+- **Created 5 Airtable tables in base `appC3HqG42ftswOvw`** via inline Python subprocess (R57's dotenv loader):
+  - n16_Data → `tblROM3P4XlOYhIcn`
+  - R39_Data → `tblloJFLska1pClZd`
+  - n19_Data → `tbl7MdXu4l1J1NifF`
+  - n21_Data → `tblAyWJsWVz17CtOx`
+  - n3_Data  → `tblXHrLHWOM86fh1a`
+- **Swapped 23 Google Sheets nodes → Airtable** (2 partial diffs, batch 1 = 12 ops, batch 2 = 11 ops; 10s gap between).
+  - Pipeline assignment: §D→n16_Data, §F→R39_Data, §G→n19_Data, §H→n21_Data, §K→n3_Data
+  - Credential `airtableTokenApi H9KNuMkfQ5Tl0Muu` ("Airtable PAT")
+- **Exported workflow** to `n8n_backups/GetAutomata_W01-W05_CREDENTIALS_2026-05-15.json` (580KB, 460 nodes, gitignored)
+
+### Key Decisions / Findings
+- **First swap batch failed** with `Cannot read properties of undefined (reading 'execute')` — root cause: I used typeVersion 2.2 / mode "id" / explicit `resource`+`authentication`. Running instance's airtable nodes use typeVersion **2.1**, base/table as `{__rl: true, mode: "list", cachedResultName}`, no `resource` key, no `authentication` key. Rollback was clean. Rebuilt against the production dialect by reading an existing live airtable node — succeeded.
+- **Operator's section→pipeline label map was scrambled** vs CLAUDE.md canon (e.g. §D R39 vs canonical §D n16). Resolved by using pipeline names from CLAUDE.md, not section letters.
+- **38-node figure mismatch**: operator anticipated 38 nodes for fan-out; actual discovery found only 10 candidates (6 to bind). Defaulted to option 2 (bind 6 + rebind 4 mis-bound §C nodes) after 5min Telegram timeout.
+
+### Lossy Translations (operator follow-up needed)
+- `[D] Clear scenes`: Sheets `clear` op has no Airtable equivalent. Node now `search` — operator needs a delete-loop if clearing scenes between runs is required.
+- `[H] Store Videos / Final Video / Store Image`: matchingColumns changed from `row_number` → `id` (Airtable native record id). Any upstream Code/Set node referencing `$json.row_number` from these reads needs to switch to `$json.id`.
+- `[K] Log the Idea` previously wrote `id: =ROW()-1` (a Sheets formula). The `id` field was dropped on swap — Airtable auto-generates record IDs.
+- `[D] Get scenes` no longer projects to column C only; returns all fields.
+- `[H] Get Prompts / Get Images / Get Videos`: Sheets multi-filter translated to `filterByFormula AND(...)` strings. Verify field-name matches in production.
+
+### Pending / Next Steps
+- Operator review of swapped nodes in n8n UI (cachedResultName may need to be re-populated by clicking the table picker once).
+- Operator inserts a delete-loop downstream of `[D] Clear scenes` if needed.
+- Operator audits upstream `row_number`→`id` references in §H Code/Set nodes.
+- `codegraph sync` (deferred — no Python changes this session).
+
+### Gate replies
+- None this session.
+
+---
+
+## Session 2 — 2026-05-14 (n8n canvas re-spacing)
+
+### Active Context
+- Continued from prior context-window run. Full Step 1 (re-space) applied across two sessions.
+
+### Completed This Session
+- Applied `cleanStaleConnections` + 4x `addConnection` (fix ops) in a prior session to unblock saves — 30 ghost connection refs removed, 4 disconnected nodes rewired.
+- Moved all 460 nodes across 17 sections (§A through §T2 + [X] cross-section nodes) to 2500px minimum vertical gap via `mcp__n8n-mcp__n8n_update_partial_workflow` partial diffs.
+  - §A: anchor (no shift)
+  - §B+[X] R46→R51: +2240 (applied prior session)
+  - §C: +4592 | §D: +6852 | §E: +9764 | §J: +11504 | §F: +18804
+  - §K+[X] n3 gate: +21436 | §G: +28736 | §H: +31120 | §I: +33696
+  - §L1+[X] n29 gate: +33456 | §L2: +35412 | §L3: +37416
+  - §T1: +39016 | §T2: +40416
+- Exported final workflow to `n8n_backups/GetAutomata_W01-W05_SPACED_2026-05-14.json` (631 KB). Not git-tracked per .gitignore rule (intentional — large JSON blobs excluded).
+
+### Key Decisions / Findings
+- Node naming inconsistencies discovered live: `[D] §D HEADER` → actual name `[D] HEADER`; `[D] Wait ` has trailing space; `[D] If ` has trailing space. Corrected on first failed validate.
+- §E node `Map Voice to Voice ID` has full long name (not `Map Voice`).
+- §H TODO nodes carry full suffix: `(TODO sub-workflow)` not `(TODO)`.
+- One transient NO_RESPONSE on §G batch 1 validate — retry immediate, succeeded.
+- n8n_backups/*.json is gitignored by design; export is on disk only.
+
+### Pending / Next Steps
+- Task 7: Modal deploy R57 + R61 (gated — awaiting operator go-ahead)
+- Task 8: Credential fan-out (gated — operator needs to seed 11 nodes first)
+
+---
+
 ## Session 1 — 2026-05-14 (Gate flow end-to-end test)
 
 ### Active Context
