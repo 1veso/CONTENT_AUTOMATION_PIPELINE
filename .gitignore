@@ -32,6 +32,12 @@ shared/gates/pending.json
 # Tempfiles + render output
 **/tmp/
 **/_render_output.mp4
+tmp_*.ps1
+tmp_*.py
+
+# ClaudeClaw runtime artifacts
+.claude/scheduled_tasks.lock
+.claude/telegram/bot.pid
 
 # Skill staging / lock
 skills-lock.json
