@@ -48,6 +48,16 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 - Operator follows the 5 HOW-TO stickies to register telegramTrigger nodes in the UI (API can't do this), then deletes both the HOW-TO sticky and the orange TODO sticky for each section.
 - `codegraph sync` (deferred — no Python changes this session).
 
+### Split-table follow-up (operator clarification 2026-05-15, msg 45)
+- Created 4 fresh tables in base `appC3HqG42ftswOvw` (legacy `n16_Data` `tblROM3P4XlOYhIcn` and `n21_Data` `tblAyWJsWVz17CtOx` left intact — clean separation):
+  - `n16_Runs` → `tblKGJVa5rxzmp2TL` (run_id, niche, target_length, status[Pending/Running/Done/Failed], created_at, output_video_url)
+  - `n16_Scenes` → `tbl1A7Qh8VzbsuQnQ` (scene_id, run_id, scene_number, video_url, prompt, status[Pending/Done/Failed])
+  - `n21_Inputs` → `tblzFhiq04Ze1P0MQ` (input_id, product_name, character, aspect_ratio[9:16/16:9/1:1], status[Pending/Running/Done/Failed], created_at)
+  - `n21_Prompts` → `tblnqz4YPRxmicI2a` (prompt_id, input_id, scene_number, image_prompt, video_prompt, image_url, video_url, status[Pending/Done/Failed])
+- run_id / input_id implemented as `singleLineText` (denormalized), not `multipleRecordLinks` — operator said "text, linked", literal reading.
+- No n8n canvas changes per operator (existing §D/§H nodes stay pointed at the legacy flat tables).
+- Open question for operator: dev branch is 3 commits behind main (this session's prior commits never landed on dev). Cherry-pick just this commit, or fast-forward dev to main?
+
 ### Gate replies
 - None this session.
 
