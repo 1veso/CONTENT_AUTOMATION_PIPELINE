@@ -2,6 +2,24 @@
 
 Heavy infra day. Five blocks of work landed; canvas + sub-workflows on Fal end-to-end; R61 gained opt-in narrative + B-roll + VFX + cross-platform layers.
 
+## Recovery round (late session)
+
+Sub-workflows lost their content (empty canvases) between the initial import and the later re-fetch — operator-side rollback or n8n save inconsistency, root cause not pinned down. **Re-import + redo of Blocks 2.5 / 2.6 / §H wiring** was needed:
+
+1. **7 sub-workflows re-imported via `update_full_workflow`** with clean names (no "via Kie AI" suffix):
+   - `IFbs9tznah16OT3d` → `🍳 Create Image (GPT-image-1)` (8 nodes)
+   - `CCBQMbBdFaKG7qtP` → `🍳 Create Image (Nanobanana)` (8 nodes)
+   - `xYmf9iyOXAcalnY4` → `🍳 Create Image (Seedream v4)` (8 nodes)
+   - `UlfRzmG35nVdpQTO` → `🍳 Create Video (Veo3 I2V)` (8 nodes)
+   - `MMppx9O228HCIEyx` → `🍳 Combine Clips (FFMPEG via Fal)` (8 nodes)
+   - `cddGpaBUHEtZmX08` → `n21 - Bulk Runner` (6 nodes)
+   - `RPnvHKTpdv7q0Z7v` → `n21 - UGC Creator` (29 nodes)
+2. **KIE → Fal swap re-applied** on the 4 image/video subs (Create URL + body to Fal schema, Get URL drop `/status`, Switch on `$json.status`, Return reads `data.images[0].url` / `data.video.url`, `XCCrAcucNjypOTqE` credential bound). Veo3 I2V keeps `image_url` in body.
+3. **§H executeWorkflow nodes re-added** on main canvas — the Block 3.A/3.B work had also been reverted; redone with fresh clean `cachedResultName` so n8n UI doesn't throw "Could not find property option".
+4. **UGC Creator orchestrator (`RPnvHKTpdv7q0Z7v`) executeWorkflow IDs re-patched** — re-import restored the phantom IDs (`DaIbrXSzbXzzNEeT` etc.); patched back to live sub IDs + new `cachedResultName`.
+
+**Test caveat:** `n8n_test_workflow` MCP only supports webhook/form/chat trigger types. Sub-workflows use `executeWorkflowTrigger` — cannot be live-tested via the API. Verified structurally instead: all 7 subs present, named correctly, with non-zero nodes and recent `updatedAt`. Live execution path is parent canvas → §H Switch → executeWorkflow → sub (cascades through real API calls, so untested until first paid run).
+
 ## What changed
 
 ### Canvas + sub-workflows (n8n)
