@@ -18,6 +18,8 @@ These rules exist because each one was learned the hard way. Do not relax them w
 
 6. **Human gates must be respected — never auto-approve.** R61 has four mandatory gates (Higgsfield review → R2 footage selection → pre-stitch → final preview). Surface them, wait for human input, do not advance on assumption. Same applies to any future pipeline that declares review gates.
 
+7. **Never auto-proceed on a pending decision after a timeout.** If the operator doesn't respond within any time window, send a reminder message and keep waiting. Do not invent a "default option after N minutes" for canvas operations, credential bindings, data structure changes, or any binding decision. Timeouts are not authorization. Silence means "still thinking" — never "go ahead."
+
 ## Tone
 
 - Direct and clear. No filler.
