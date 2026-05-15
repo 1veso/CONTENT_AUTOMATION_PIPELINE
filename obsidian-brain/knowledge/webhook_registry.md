@@ -3,6 +3,8 @@
 **Target canvas:** `SmtkmTgfCTLZPlN4` at `https://ops.getautomata.ai`
 **Status:** WIRED. 16 webhooks deployed in Phase 5 (2026-05-13). All write to `PipelineRequests` (`tblLtTpXwFOpzDX4K`) on base `appC3HqG42ftswOvw`.
 
+> ⚠ **n8n public PUT API strips `webhook` node fields.** On 2026-05-15 all 16 webhook nodes had `parameters: {}` in the live workflow even though the Phase 6 backup shows `{httpMethod, path, responseMode}` set. The public PUT API drops fields it doesn't round-trip cleanly (same quirk that breaks `telegramTrigger` per CLAUDE.md). After any large PUT-driven merge, re-arm each webhook node with `updateNode` partial-diff — addNode/updateNode partial-diffs don't strip fields, but a full PUT does. All 16 paths re-armed 2026-05-15 via `n8n_update_partial_workflow`.
+
 Each webhook chain on the canvas is `[Webhook] -> [Set: pipeline_id, params, status=Pending, webhook_id=$execution.id] -> [Airtable Create on PipelineRequests] -> [RespondToWebhook: {webhook_id, pipeline, status}]`.
 
 The respond is immediate; pipeline body work happens after. Operator wires the body (`Set` or final `Respond` output → existing pipeline entry node) per pipeline.
