@@ -101,6 +101,20 @@ ELEVENLABS_TIMEOUT_S = 90
 
 FIRE_WORDS = {"go", "fire", "yes", "run it", "run", "ship"}
 
+# Narrative-structure mode (Block 3). When R61_NARRATIVE_MODE=true the cleaned
+# script is split into Hook / Problem / Lösung / CTA segments (Gemini Flash),
+# each TTS'd separately, then concatenated. Segment timing JSON lands in
+# Airtable's `Voiceover Segments` field; the existing `Voiceover Script`
+# behavior is unchanged when the flag is off (default).
+NARRATIVE_MODE = os.environ.get("R61_NARRATIVE_MODE", "").lower() in ("1", "true", "yes")
+
+NARRATIVE_SEGMENTS = [
+    ("hook",   0.0,  3.0,  "Aufmerksamkeitsmoment — echter menschlicher Moment, KEINE Markenerwähnung."),
+    ("problem",3.0,  7.0,  "Das alltägliche Risiko klar und einfach gezeigt."),
+    ("lösung", 7.0, 11.0,  "Die Rolle von Provinzial — wie sie helfen, NICHT was sie verkaufen."),
+    ("cta",   11.0, 15.0,  "Warme Einladung, niemals ein Befehl."),
+]
+
 # ----------------------------------------------------------- Caption cleaning
 
 # Phrases that are clearly social-call-to-action only. Matched case-insensitive.
@@ -282,6 +296,117 @@ def rewrite_for_vo(cleaned_text):
     return text
 
 
+# ----------------------------------------------------- Narrative-segment split
+# Block 3 — Hook / Problem / Lösung / CTA. When NARRATIVE_MODE is on, the
+# cleaned + provinzial-copy-rewritten script is passed to Gemini once more to
+# be split into 4 timed segments. Each segment carries (text, start_s, end_s).
+# This function returns a list of dicts; raises on hard API failure so caller
+# decides whether to abort the record or fall back to single-segment TTS.
+
+SPLIT_SYSTEM_PROMPT = """Du bist Drehbuch-Editor für die Provinzial Versicherung
+(Geier & Ayhan Kampagne). Du bekommst einen kurzen gesprochenen Voiceover-Text
+und teilst ihn in genau VIER aufeinanderfolgende Segmente:
+
+  1. hook    (0–3s):  Aufmerksamkeitsmoment — echter menschlicher Moment.
+                       KEINE Markenerwähnung, KEINE Produktnennung.
+  2. problem (3–7s):  Das alltägliche Risiko klar und einfach gezeigt.
+  3. lösung  (7–11s): Provinzials Rolle — wie sie helfen, NICHT was sie
+                       verkaufen. Konkret, geerdet.
+  4. cta     (11–15s): Warme Einladung, niemals ein Befehl. Keine
+                       Dringlichkeit.
+
+REGELN:
+- Sprache: Deutsch, Du-Form, warm, ruhig, professionell, geerdet.
+- Buzzwords verboten: innovativ, ganzheitlich, Synergie, auf Augenhöhe.
+- Niemals absolute Versprechen ("immer", "garantiert", "100%").
+- Falls der Input zu kurz ist, paraphrasiere/dehne sinnvoll auf die Beats;
+  erfinde keine Fakten.
+- Jedes Segment ist 1-2 kurze Sätze. Eine Idee pro Beat.
+
+Output: NUR ein JSON-Objekt mit den Schlüsseln "hook", "problem", "lösung",
+"cta", jeweils ein String. Kein Markdown, keine Erklärung."""
+
+
+def split_into_segments(script):
+    """Return [{name, text, start_s, end_s}, ...] for the 4 narrative beats.
+
+    Used only when NARRATIVE_MODE is True. Caller is responsible for branching
+    on the flag — this function unconditionally hits Gemini.
+    """
+    if not script:
+        return []
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise RuntimeError("GOOGLE_API_KEY missing — needed for narrative split.")
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.5-flash-lite:generateContent?key={api_key}"
+    )
+    payload = {
+        "system_instruction": {"parts": [{"text": SPLIT_SYSTEM_PROMPT}]},
+        "contents": [{
+            "role": "user",
+            "parts": [{"text": f"Voiceover-Text:\n{script}\n\nSegmente (JSON):"}],
+        }],
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": 1024,
+            "responseMimeType": "application/json",
+        },
+    }
+    resp = requests.post(url, json=payload, timeout=30)
+    if resp.status_code != 200:
+        raise RuntimeError(f"Gemini split failed ({resp.status_code}): "
+                           f"{resp.text[:300]}")
+    data = resp.json()
+    try:
+        raw = data["candidates"][0]["content"]["parts"][0]["text"]
+    except (KeyError, IndexError, TypeError):
+        raise RuntimeError(f"Gemini split response shape unexpected: "
+                           f"{json.dumps(data)[:300]}")
+    parsed = json.loads(raw)
+    out = []
+    for name, start_s, end_s, _ in NARRATIVE_SEGMENTS:
+        text = (parsed.get(name) or "").strip()
+        out.append({
+            "name": name,
+            "text": text,
+            "start_s": start_s,
+            "end_s": end_s,
+        })
+    return out
+
+
+def concat_mp3_via_ffmpeg(mp3_paths, out_path):
+    """Concatenate sequential MP3 chunks losslessly via ffmpeg concat demuxer.
+
+    Used to assemble the 4 narrative-segment TTS outputs into a single file.
+    """
+    import subprocess
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    list_file = out_path.parent / f"{out_path.stem}_concat.txt"
+    with open(list_file, "w", encoding="utf-8") as f:
+        for p in mp3_paths:
+            # ffmpeg concat demuxer requires single-quote escaping.
+            safe = str(p).replace("'", r"'\''")
+            f.write(f"file '{safe}'\n")
+    argv = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-f", "concat", "-safe", "0",
+        "-i", str(list_file),
+        "-c", "copy",
+        str(out_path),
+    ]
+    proc = subprocess.run(argv, capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
+    try:
+        list_file.unlink()
+    except OSError:
+        pass
+    if proc.returncode != 0:
+        raise RuntimeError("MP3 concat ffmpeg failed:\n" + (proc.stderr or "")[-2000:])
+
+
 # --------------------------------------------------------------- Voice pick
 
 def pick_voice(index):
@@ -422,6 +547,88 @@ def build_script(record, no_rewrite):
     return caption, stripped, rewritten, True
 
 
+def _process_record_narrative(record, no_rewrite, voice, script):
+    """Block 3 narrative path: split → TTS per segment → concat → upload + JSON."""
+    rec_id = record["id"]
+    fields = record.get("fields", {})
+    ad_name = fields.get("Ad Name") or "(no name)"
+    index = fields.get("Index")
+
+    try:
+        segments = split_into_segments(script)
+    except Exception as e:
+        log(f"  WARN narrative split failed ({e}); falling back to single-segment TTS")
+        segments = []
+
+    if not segments or not any(s.get("text") for s in segments):
+        log(f"  narrative split yielded no segments; using single-segment fallback")
+        audio_bytes = eleven_tts(script, voice["id"])
+        ts = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+        idx_str = f"{int(index):02d}" if isinstance(index, (int, float)) else "xx"
+        key = f"r61/voiceover/{idx_str}_{rec_id}_{ts}.mp3"
+        fd, tmp_path = tempfile.mkstemp(suffix=".mp3")
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(audio_bytes)
+            r2_url = upload_to_r2(tmp_path, key, content_type="audio/mpeg")
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+        av.update_record(rec_id, {
+            "Voiceover Audio": [{"url": r2_url, "filename": f"{rec_id}_vo.mp3"}],
+            av.STATUS_FIELD: av.STATUS_VOICEOVER_DONE,
+        })
+        return "ok"
+
+    # Per-segment TTS to temp files.
+    seg_paths = []
+    populated = []
+    for seg in segments:
+        if not seg["text"]:
+            continue
+        log(f"  segment '{seg['name']}' ({seg['start_s']:.1f}-{seg['end_s']:.1f}s, "
+            f"{len(seg['text'])} chars): {seg['text'][:80]}...")
+        seg_bytes = eleven_tts(seg["text"], voice["id"])
+        fd, tmp = tempfile.mkstemp(suffix=f"_{seg['name']}.mp3")
+        with os.fdopen(fd, "wb") as f:
+            f.write(seg_bytes)
+        seg_paths.append(Path(tmp))
+        populated.append(seg)
+
+    if not seg_paths:
+        log(f"SKIP {rec_id} ({ad_name}): all segments empty after split")
+        return "skipped_no_script"
+
+    # Concat → R2.
+    ts = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    idx_str = f"{int(index):02d}" if isinstance(index, (int, float)) else "xx"
+    combined = Path(tempfile.gettempdir()) / f"r61_vo_{rec_id}_{ts}.mp3"
+    try:
+        if len(seg_paths) == 1:
+            import shutil as _shutil
+            _shutil.copyfile(str(seg_paths[0]), str(combined))
+        else:
+            concat_mp3_via_ffmpeg(seg_paths, combined)
+        key = f"r61/voiceover/{idx_str}_{rec_id}_{ts}.mp3"
+        r2_url = upload_to_r2(str(combined), key, content_type="audio/mpeg")
+    finally:
+        for p in seg_paths:
+            try: p.unlink()
+            except OSError: pass
+        try: combined.unlink()
+        except OSError: pass
+
+    av.update_record(rec_id, {
+        "Voiceover Audio": [{"url": r2_url, "filename": f"{rec_id}_vo.mp3"}],
+        "Voiceover Segments": json.dumps(populated, ensure_ascii=False, indent=2),
+        av.STATUS_FIELD: av.STATUS_VOICEOVER_DONE,
+    })
+    log(f"DONE  {rec_id} ({ad_name}) [narrative, {len(populated)} segs] -> {r2_url}")
+    return "ok"
+
+
 def process_record(record, no_rewrite):
     rec_id = record["id"]
     fields = record.get("fields", {})
@@ -435,8 +642,12 @@ def process_record(record, no_rewrite):
         return "skipped_no_script"
 
     log(f"START {rec_id} Index={index} ({ad_name}) "
-        f"voice={voice['name']} chars={len(script)} rewrote={rewrote}")
+        f"voice={voice['name']} chars={len(script)} rewrote={rewrote} "
+        f"narrative={NARRATIVE_MODE}")
     log(f"  script: {script[:160]}{'...' if len(script) > 160 else ''}")
+
+    if NARRATIVE_MODE:
+        return _process_record_narrative(record, no_rewrite, voice, script)
 
     audio_bytes = eleven_tts(script, voice["id"])
 

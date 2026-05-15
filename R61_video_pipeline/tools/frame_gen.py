@@ -69,6 +69,12 @@ COST_PER_IMAGE_USD = 0.04
 
 FIRE_WORDS = {"go", "fire", "yes", "run it", "run", "ship"}
 
+# Narrative-structure mode (Block 3). When R61_NARRATIVE_MODE=true AND the
+# record has a populated `Voiceover Segments` JSON field, the first-frame
+# prompt incorporates the Hook beat text and the last-frame prompt
+# incorporates the CTA beat text. Falls back to pillar-only prompts otherwise.
+NARRATIVE_MODE = os.environ.get("R61_NARRATIVE_MODE", "").lower() in ("1", "true", "yes")
+
 # Content-pillar tags appear in the Ad Name like `... [Regional & Gemeinschaft]`.
 # Different pillars need different last-frame beats so Higgsfield has real
 # motion to interpolate.
@@ -116,6 +122,37 @@ def pillar_kind(pillar):
     return "lifestyle"
 
 
+def _narrative_beats(record):
+    """Return (hook_text, cta_text) from the record's Voiceover Segments JSON.
+
+    Returns ("", "") if NARRATIVE_MODE is off, the field is missing/empty, or
+    parsing fails. Caller treats empty strings as "no narrative override".
+    """
+    if not NARRATIVE_MODE:
+        return "", ""
+    raw = (record.get("fields", {}) or {}).get("Voiceover Segments") or ""
+    if not raw.strip():
+        return "", ""
+    try:
+        import json as _json
+        parsed = _json.loads(raw)
+    except (ValueError, TypeError):
+        return "", ""
+    hook_text = ""
+    cta_text = ""
+    if isinstance(parsed, list):
+        for seg in parsed:
+            if isinstance(seg, dict):
+                if seg.get("name") == "hook":
+                    hook_text = (seg.get("text") or "").strip()
+                elif seg.get("name") == "cta":
+                    cta_text = (seg.get("text") or "").strip()
+    elif isinstance(parsed, dict):
+        hook_text = (parsed.get("hook") or "").strip()
+        cta_text = (parsed.get("cta") or "").strip()
+    return hook_text, cta_text
+
+
 def build_prompts(record):
     """Return (first_frame_prompt, last_frame_prompt, pillar) for one record.
 
@@ -124,14 +161,29 @@ def build_prompts(record):
     static. Last frame is composition-locked but introduces ONE clear beat,
     where the beat shape depends on the detected content pillar so Higgsfield
     has real motion to interpolate.
+
+    When NARRATIVE_MODE is on AND the record has Voiceover Segments populated,
+    the first-frame prompt incorporates the Hook beat (real human moment) and
+    the last-frame prompt incorporates the CTA beat (resolution/invitation).
     """
     fields = record.get("fields", {})
     ad_name = (fields.get("Ad Name") or "Provinzial moment").strip()
     caption = (fields.get("Caption") or "").strip()
     pillar = detect_pillar(ad_name)
     kind = pillar_kind(pillar)
+    hook_text, cta_text = _narrative_beats(record)
 
     caption_line = f"Caption context: {caption}" if caption else ""
+    hook_clause = (
+        f"NARRATIVE HOOK BEAT (0-3s): '{hook_text}' — the first frame depicts "
+        f"this real human moment, no product visible, no brand reference. "
+        if hook_text else ""
+    )
+    cta_clause = (
+        f"NARRATIVE CTA BEAT (11-15s): '{cta_text}' — the last frame depicts "
+        f"the resolution/invitation moment matching this voiceover line. "
+        if cta_text else ""
+    )
 
     first = (
         f"FIRST FRAME for the ad '{ad_name}'. STRICT COMPOSITION LOCK: "
@@ -142,7 +194,7 @@ def build_prompts(record):
         f"wardrobe, same props, same background elements in the same "
         f"locations within the frame. The scene is cold and static — no "
         f"motion yet, no expression change yet, no parallax. This is "
-        f"frame zero of the clip. "
+        f"frame zero of the clip. {hook_clause}"
         f"{caption_line} {BRAND_ANCHOR} "
         f"Cinematic 9:16 vertical, warm natural color grading toward the "
         f"green palette, no on-image text, no logos other than the small "
@@ -186,7 +238,7 @@ def build_prompts(record):
         f"Outside that one beat, nothing else moves. No recomposing, "
         f"no zoom, no pan, no added/removed subjects beyond the beat "
         f"itself. The Provinzial product/context remains visible. "
-        f"Pillar: {pillar or 'general'}. "
+        f"Pillar: {pillar or 'general'}. {cta_clause}"
         f"{caption_line} {BRAND_ANCHOR} "
         f"Cinematic 9:16 vertical, same warm grading, no on-image text, "
         f"yellow wings bottom-right."

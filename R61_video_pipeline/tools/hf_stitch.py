@@ -538,6 +538,12 @@ def process_record(record, skip_publish=False, force_premix=False,
                               intro_dur, clip_dur, audio_dur, outro_dur)
     log(f"  composition staged: {workdir}  (total {total:.3f}s)")
 
+    # Block 3 opt-in side-features. Both are NO-OPs unless their env flag is
+    # set, and they swallow their own exceptions — the v3 render must reach
+    # R2/Airtable regardless of side-feature health.
+    add_broll_injection(workdir, record)
+    add_vfx_transitions(workdir)
+
     out_name = f"{index}_{clean_slug(ad_name)}.mp4"
     output_path = check_output_path(FINAL_DIR / out_name)
     if output_path.name != out_name:
@@ -576,6 +582,16 @@ def process_record(record, skip_publish=False, force_premix=False,
                                             publish_path.name,
                                             advance_status=advance_status,
                                             key_prefix=publish_key_prefix)
+
+    # Block 4 — cross-platform variants. NO-OP unless R61_PLATFORMS is set.
+    # Variants are rendered from `publish_path` (which is captioned if
+    # add_captions was used; uncaptioned otherwise). Failures here NEVER
+    # break the main publish.
+    try:
+        generate_platform_variants(publish_path, rec_id, VERSION_TAG)
+    except Exception as e:
+        log(f"  WARN generate_platform_variants raised: {e}")
+
     log(f"DONE  {rec_id}")
 
     try:
@@ -675,6 +691,272 @@ def main(argv=None):
         summary[res] = summary.get(res, 0) + 1
     log(f"Run complete. Summary: {summary}")
     return 0 if summary.get("failed", 0) == 0 else 2
+
+
+# =============================================================================
+# Block 3 — Narrative Structure Layer (opt-in)
+# Block 4 — Cross-Platform Format Adaptation (opt-in)
+#
+# All three functions below are PURE ADDITIONS. They never modify the existing
+# stitch path unless their respective env flags are set:
+#   R61_BROLL_ENABLED=true     → add_broll_injection() runs after write_composition
+#   R61_VFX_ENABLED=true       → add_vfx_transitions() runs after write_composition
+#   R61_PLATFORMS=tiktok,...   → generate_platform_variants() runs after publish
+#
+# Failure inside any of these is logged but NEVER raises into the calling
+# pipeline — the v3 render must always reach R2/Airtable even if a side-feature
+# misbehaves.
+# =============================================================================
+
+BROLL_R2_PREFIX = "r61/broll"
+PLATFORM_FORMATS = {
+    "instagram_feed":   {"w": 1080, "h": 1350, "crop": "center"},
+    "instagram_reels":  {"w": 1080, "h": 1920, "crop": "none"},
+    "tiktok":           {"w": 1080, "h": 1920, "crop": "none"},
+    "facebook_feed":    {"w": 1080, "h": 1080, "crop": "center"},
+    "facebook_stories": {"w": 1080, "h": 1920, "crop": "none"},
+    "linkedin":         {"w": 1920, "h": 1080, "crop": "center"},
+    "youtube_shorts":   {"w": 1080, "h": 1920, "crop": "none"},
+    "youtube":          {"w": 1920, "h": 1080, "crop": "center"},
+    "twitter":          {"w": 1920, "h": 1080, "crop": "center"},
+    "pinterest":        {"w": 1000, "h": 1500, "crop": "center"},
+}
+
+
+def _r2_client():
+    """Build a boto3 R2 client, mirroring tools/stitch.upload_to_r2 wiring."""
+    import boto3
+    from botocore.config import Config
+    account_id = os.environ["R2_ACCOUNT_ID"]
+    return boto3.client(
+        "s3",
+        endpoint_url=f"https://{account_id}.r2.cloudflarestorage.com",
+        aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+        region_name="auto",
+        config=Config(signature_version="s3v4", retries={"max_attempts": 3}),
+    )
+
+
+def _scenario_slug(ad_name):
+    """Reduce 'Wohnzimmer Familie [Pillar Name]' → 'wohnzimmer_familie'."""
+    base = (ad_name or "").split("[")[0]
+    base = re.sub(r"[^\w\s-]", "", base, flags=re.UNICODE).strip().lower()
+    base = re.sub(r"\s+", "_", base)
+    return base or "default"
+
+
+def _embed_texts(texts):
+    """OpenAI text-embedding-3-small. Returns list of vectors aligned with input.
+
+    Raises on hard API failure; caller catches and falls back.
+    """
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY missing — needed for B-roll semantic match")
+    resp = requests.post(
+        "https://api.openai.com/v1/embeddings",
+        headers={"Authorization": f"Bearer {api_key}",
+                 "Content-Type": "application/json"},
+        json={"model": "text-embedding-3-small", "input": texts},
+        timeout=20,
+    )
+    if resp.status_code != 200:
+        raise RuntimeError(f"OpenAI embeddings failed ({resp.status_code}): "
+                           f"{resp.text[:200]}")
+    return [d["embedding"] for d in resp.json()["data"]]
+
+
+def _cosine(a, b):
+    import math
+    dot = sum(x * y for x, y in zip(a, b))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(y * y for y in b))
+    if na == 0 or nb == 0:
+        return 0.0
+    return dot / (na * nb)
+
+
+def add_broll_injection(workdir, record):
+    """Pick best-matching B-roll clip from R2 r61/broll/{scenario}/ via embedding
+    cosine, download it into workdir, splice it into index.html as a new scene
+    between Hook (0-3s) and Problem (3-7s) — see write_composition timing.
+
+    Idempotent: silent no-op if R61_BROLL_ENABLED is unset, if the R2 folder is
+    missing/empty, or if no Voiceover Segments are present on the record (B-roll
+    only makes sense in narrative mode). Never raises.
+    """
+    if os.environ.get("R61_BROLL_ENABLED", "").lower() not in ("1", "true", "yes"):
+        return
+    try:
+        fields = record.get("fields", {}) or {}
+        ad_name = fields.get("Ad Name") or ""
+        segments_raw = fields.get("Voiceover Segments") or ""
+        if not segments_raw.strip():
+            log("  B-roll: no Voiceover Segments on record; skipping")
+            return
+        scenario = _scenario_slug(ad_name)
+        bucket = os.environ["R2_BUCKET_NAME"]
+        prefix = f"{BROLL_R2_PREFIX}/{scenario}/"
+        client = _r2_client()
+        listing = client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+        keys = [
+            obj["Key"] for obj in listing.get("Contents", [])
+            if obj["Key"].lower().endswith((".mp4", ".mov", ".webm"))
+        ]
+        if not keys:
+            log(f"  B-roll: no clips at r2://{bucket}/{prefix}; skipping")
+            return
+        filenames = [k.rsplit("/", 1)[-1] for k in keys]
+        embed_inputs = [ad_name] + filenames
+        try:
+            vecs = _embed_texts(embed_inputs)
+        except Exception as e:
+            log(f"  B-roll: embed failed ({e}); falling back to first clip")
+            best_idx = 0
+        else:
+            ad_vec = vecs[0]
+            scores = [_cosine(ad_vec, v) for v in vecs[1:]]
+            best_idx = max(range(len(scores)), key=lambda i: scores[i])
+            log(f"  B-roll: top match {filenames[best_idx]!r} "
+                f"(cos={scores[best_idx]:.3f})")
+        winner_key = keys[best_idx]
+        local_path = workdir / "broll.mp4"
+        client.download_file(bucket, winner_key, str(local_path))
+
+        html_path = workdir / "index.html"
+        html = html_path.read_text(encoding="utf-8")
+        # Splice a new <video> between Scene 1 (intro) and Scene 2 (clip).
+        # The HyperFrames composition uses absolute data-start timestamps;
+        # we layer the B-roll over the 3-7s window (problem beat). It plays
+        # muted (mixed audio carries the VO) and is composited on top.
+        broll_tag = (
+            '    <!-- B-roll injection (R61_BROLL_ENABLED) -->\n'
+            '    <video id="v-broll" data-start="3.000" data-duration="4.000" '
+            'data-track-index="2" src="broll.mp4" muted playsinline '
+            'style="opacity: 0.92;"></video>\n'
+        )
+        marker = '    <!-- Scene 2a: Clip'
+        if marker in html and broll_tag not in html:
+            html = html.replace(marker, broll_tag + marker, 1)
+            html_path.write_text(html, encoding="utf-8")
+            log(f"  B-roll: injected {winner_key} as 3-7s overlay")
+        else:
+            log("  B-roll: HTML marker not found or already injected; skipped splice")
+    except Exception as e:
+        log(f"  WARN add_broll_injection failed: {e}")
+
+
+def add_vfx_transitions(workdir):
+    """Inject a 100ms CSS opacity crossfade at every scene boundary in
+    index.html. Pure CSS — no JS, no HyperFrames API dependency. Idempotent.
+
+    Falls back silently if index.html is missing. Never raises.
+    """
+    if os.environ.get("R61_VFX_ENABLED", "").lower() not in ("1", "true", "yes"):
+        return
+    try:
+        html_path = workdir / "index.html"
+        if not html_path.exists():
+            return
+        html = html_path.read_text(encoding="utf-8")
+        if "hf-crossfade" in html:
+            return  # already injected on a prior call
+        css_inject = (
+            "    .hf-crossfade { animation: hf-crossfade 0.1s ease-out; }\n"
+            "    @keyframes hf-crossfade { from { opacity: 0; } to { opacity: 1; } }\n"
+        )
+        if "</style>" in html:
+            html = html.replace("</style>", css_inject + "  </style>", 1)
+        # Apply class to every <video> tag in the composition.
+        html = re.sub(
+            r"<video ((?:(?!class=)[^>])*?)>",
+            r'<video class="hf-crossfade" \1>',
+            html,
+        )
+        html_path.write_text(html, encoding="utf-8")
+        log("  VFX: injected 100ms crossfade on scene videos")
+    except Exception as e:
+        log(f"  WARN add_vfx_transitions failed: {e}")
+
+
+def generate_platform_variants(source_mp4, rec_id, version_tag):
+    """Block 4 — produce per-platform crops/scales from the master render, upload
+    each to R2 at r61/final/{tag}/platforms/{platform}/{name}, write a JSON map
+    of {platform: url} to Airtable's `Platform Variants` field.
+
+    Triggered by R61_PLATFORMS env (comma-separated, e.g.
+    'tiktok,instagram_reels,linkedin'). Unset/empty → silent no-op. Per-platform
+    failure logged; other platforms still proceed. Never raises into caller.
+    """
+    platforms_env = os.environ.get("R61_PLATFORMS", "")
+    if not platforms_env.strip():
+        return {}
+    targets = [p.strip() for p in platforms_env.split(",") if p.strip()]
+    if not targets:
+        return {}
+    log(f"  platform variants: {targets}")
+
+    from tools.stitch import upload_to_r2  # re-use R2 helper
+    out_root = source_mp4.parent / "platforms"
+    out_root.mkdir(parents=True, exist_ok=True)
+    variants = {}
+    base_stem = source_mp4.stem
+
+    for platform in targets:
+        spec = PLATFORM_FORMATS.get(platform)
+        if not spec:
+            log(f"    unknown platform '{platform}'; skipping")
+            continue
+        try:
+            target_w, target_h = spec["w"], spec["h"]
+            out_dir = out_root / platform
+            out_dir.mkdir(parents=True, exist_ok=True)
+            out_name = f"{base_stem}_{platform}.mp4"
+            out_path = check_output_path(out_dir / out_name)
+            if spec["crop"] == "none":
+                # Master is 1080x1920 9:16 — just copy/transcode if dims match.
+                vf = f"scale={target_w}:{target_h}"
+            else:
+                # Center crop to target aspect, then scale to exact dims.
+                # Pick the larger of (sw/tw, sh/th) so cropped region covers
+                # the target aspect, then scale.
+                vf = (
+                    f"crop=if(gt(a\\,{target_w}/{target_h})\\,"
+                    f"ih*{target_w}/{target_h}\\,iw):"
+                    f"if(gt(a\\,{target_w}/{target_h})\\,ih\\,iw*{target_h}/{target_w}),"
+                    f"scale={target_w}:{target_h}"
+                )
+            argv = [
+                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                "-i", str(source_mp4),
+                "-vf", vf,
+                "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                "-c:a", "copy",
+                str(out_path),
+            ]
+            proc = subprocess.run(argv, capture_output=True, text=True,
+                                  encoding="utf-8", errors="replace")
+            if proc.returncode != 0:
+                log(f"    {platform}: ffmpeg failed: "
+                    f"{(proc.stderr or '')[-300:]}")
+                continue
+            r2_key = f"r61/final/{version_tag}/platforms/{platform}/{out_path.name}"
+            url = upload_to_r2(out_path, r2_key, content_type="video/mp4")
+            variants[platform] = url
+            log(f"    {platform}: {target_w}x{target_h} -> {url}")
+        except Exception as e:
+            log(f"    {platform}: failed ({e})")
+
+    if variants:
+        try:
+            av.update_record(rec_id, {
+                "Platform Variants": json.dumps(variants, indent=2),
+            })
+            log(f"  platform variants: wrote {len(variants)} URLs to Airtable")
+        except Exception as e:
+            log(f"  WARN Airtable Platform Variants write failed: {e}")
+    return variants
 
 
 if __name__ == "__main__":
