@@ -2,7 +2,7 @@
 
 Vault root for the CONTENT_PIPELINE knowledge base. Every file in the vault is linked from this page.
 
-**Last updated:** 2026-05-14
+**Last updated:** 2026-05-15
 **Repo:** `C:\CONTENT_PIPELINE\` — checked into GitHub at `1veso/CONTENT_AUTOMATION_PIPELINE` (private) on `main` and `dev`
 **Active client:** Provinzial / Geier & Ayhan
 
@@ -77,7 +77,10 @@ Composition layer on top of pipelines. Pick a framework by output class.
 ## Next actions
 
 1. **Re-deploy remaining R61 HTTP endpoints** (3/6 now live: voiceover_gen_http, hf_stitch_http, blotato_schedule_http). The other 3 (frame_gen_http, video_gen_http, sync_r57_to_video_http) stay parked until Modal plan upgrade past the 8-endpoint cap.
-2. **n8n ↔ Modal tunnel** — blocked on operator decision. See [[knowledge/n8n_modal_tunnel_blocker]] — n8n receivers need *new* HTTP Request nodes added downstream of `WH-Log`, not URL patches. Decision items: payload mapping, sync vs async firing.
+2. ✅ ~~n8n ↔ Modal tunnel~~ wired 2026-05-15. §T1 R57 fires generate-images-http after WH-Respond (fire-and-forget). §T2 R61 routes voiceover/stitch/blotato via Switch on body.stage. See [[knowledge/n8n_modal_tunnel_blocker]] (wiring-as-built section).
+3. ✅ ~~KIE → Fal swap across canvas + 4 sub-workflows + UGC orchestrator~~ done 2026-05-15. R51 lyria2, n16/n19 veo3/image-to-video, n19 nano-banana-pro/edit, Seedream v4/edit. Bodies, poll URLs (drop /status), Switch routing, response keys all migrated. Block 2.5+2.6.
+4. **R61 narrative-structure layer (opt-in)** — `R61_NARRATIVE_MODE=true` splits voiceover into Hook/Problem/Lösung/CTA via Gemini Flash; `R61_BROLL_ENABLED` injects R2 b-roll between 3-7s via OpenAI embedding cosine match; `R61_VFX_ENABLED` adds 100ms crossfades; `R61_PLATFORMS=...` renders 10 platform variants. Off by default; existing pipeline unchanged.
+5. **Voiceover Segments + Platform Variants Airtable fields** added 2026-05-15 to `tbl1hd8yprLTZia4c` via Meta API. JSON Long-text shape.
 3. **n30 live canvas patch** — manual UI path documented in [[../n30_product_videography/MANUAL_PATCH_INSTRUCTIONS]] (~5 min). API path stays parked because `cleanStaleConnections` would wipe 30 documented TODO-sticky connection refs.
 4. ✅ ~~Captions in `hf_stitch.py`~~ done — `--add-captions` flag, ASS burn-in, captioned variant goes to `final/<tag>/captions/` (commit `2facccc`).
 5. ✅ ~~Geier & Ayhan persona for `provinzial-copy` skill~~ done — NRW Geschäftsstelle brief landed in §7 (commit `d369498`).
