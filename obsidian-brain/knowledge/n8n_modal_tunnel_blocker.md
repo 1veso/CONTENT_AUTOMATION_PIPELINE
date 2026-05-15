@@ -1,6 +1,6 @@
 # n8n ↔ Modal tunnel — blocker note
 
-**Status:** Not wired. Documented 2026-05-14. Operator decision required before any change.
+**Status:** Wired 2026-05-15 — see "Wiring as built" section at bottom. Historical context below preserved for reference.
 
 ## What was requested
 
@@ -67,3 +67,47 @@ POST https://hello-58046--r61-video-pipeline-voiceover-gen-http.modal.run
 POST https://hello-58046--r61-video-pipeline-hf-stitch-http.modal.run
 POST https://hello-58046--r61-video-pipeline-blotato-schedule-http.modal.run
 ```
+
+
+## Wiring as built — 2026-05-15
+
+Wired in two partial-diff patches against `SmtkmTgfCTLZPlN4`. Operator decisions captured up-front: strict per-endpoint payload mapping, fire-and-forget (HTTP after `WH-Respond`), R61 routed by a Switch on inbound `body.stage` to preserve human gates.
+
+### §T1 R57 — `/webhook/r57`
+
+```
+[T1] WH R57 → WH-Set → WH-Log → WH-Respond → [T1] HTTP-Modal R57 gen (POST)
+                                                  └─ (error) → [T1] HTTP-Err R57 (Airtable status=Failed)
+```
+
+- **HTTP node:** `[T1] HTTP-Modal R57 gen` — POST `https://hello-58046--r57-content-engine-generate-images-http.modal.run`, body `{record_ids: null, dry_run: false}`, `onError: continueErrorOutput`, timeout 300000ms.
+- **Error handler:** `[T1] HTTP-Err R57` — Airtable create on `tblLtTpXwFOpzDX4K` carrying `pipeline_id` + `webhook_id` from WH-Set, `status: Failed`, `params: JSON.stringify({error, endpoint, status_code, body})`.
+
+### §T2 R61 — `/webhook/r61`
+
+```
+[T2] WH R61 → WH-Set → WH-Log → WH-Respond → [T2] HTTP-Switch R61 ─┬─ stage=voiceover → [T2] HTTP-Modal R61 vo
+                                                                    ├─ stage=stitch    → [T2] HTTP-Modal R61 stitch
+                                                                    └─ stage=blotato   → [T2] HTTP-Modal R61 blotato
+                                                                                                │
+                                                                                                └─ (any error) → [T2] HTTP-Err R61
+```
+
+- **Switch:** `[T2] HTTP-Switch R61` (typeVersion 3.2, rules mode) — three string-equals rules on `={{ $('[T2] WH R61').item.json.body.stage }}`, outputs labelled `voiceover` / `stitch` / `blotato`. Missing/unmatched `stage` => no Modal call (n8n drops the item).
+- **HTTP nodes** (all `onError: continueErrorOutput`, timeout 300000ms):
+  - `[T2] HTTP-Modal R61 vo` → `voiceover-gen-http.modal.run`, body `{record_id: {{ body.record_id }}, confirm: "go"}`
+  - `[T2] HTTP-Modal R61 stitch` → `hf-stitch-http.modal.run`, body `{all_voiceover_done: true}`
+  - `[T2] HTTP-Modal R61 blotato` → `blotato-schedule-http.modal.run`, body `{}`
+- **Error handler:** `[T2] HTTP-Err R61` — shared sink for all three; records the originating endpoint via `endpoint: 'r61-' + body.stage`.
+
+### Gates preserved
+
+The Switch routing means the caller chooses which R61 stage runs. R61 human gates (Gate 1 clip review, Gate 3 pre-stitch, Gate 4 final preview) are unaffected — operator still controls which `stage` to POST, exactly as before. Blotato `scheduledTime`-only convention is enforced inside `blotato_schedule.remote(...)` itself, not at the n8n layer.
+
+### Airtable PipelineRequests rows
+
+A successful Modal call produces only the original `status=Pending` row from `WH-Log`. The Modal job is expected to update Airtable on completion (per each pipeline's own write-back). A Modal HTTP error produces a second row with `status=Failed` and `params` carrying error context — match the two rows by `webhook_id`.
+
+### R57 scheduling endpoint
+
+The `r57-content-engine-schedule-blotato-http.modal.run` endpoint is **not** wired to `/webhook/r57`. R57 scheduling is driven by the morning cron / direct `modal run` invocation, not by a webhook trigger. If you later need to expose it, add a sibling Switch on `body.stage = schedule` in T1 mirroring the T2 pattern.
