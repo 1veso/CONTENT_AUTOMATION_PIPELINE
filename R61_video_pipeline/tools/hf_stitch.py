@@ -88,6 +88,8 @@ HF_WORK_DIR = PROJECT_ROOT / "references" / "outputs" / "hf_work"
 FINAL_DIR = PROJECT_ROOT / "references" / "outputs" / "final" / VERSION_TAG
 CAPTIONS_DIR = FINAL_DIR / "captions"
 INTRO_PATH = PROJECT_ROOT / "references" / "inputs" / "intro.mp4"
+# CANONICAL OUTRO: references/outputs/outro.mp4 (2.75s, 716x1284, silent)
+# Do NOT confuse with references/inputs/outro_5s_audio_DEPRECATED.mp4
 OUTRO_PATH = PROJECT_ROOT / "references" / "outputs" / "outro.mp4"
 
 VO_VOLUME = 0.9
