@@ -68,6 +68,41 @@ Not n8n-based — pure Python. n8n equivalents for narrative chaining live in [[
 - **Confirm cost before any paid generation call.**
 - **No throwaway scripts** — extend existing tools inline.
 
+## Voice tone map (2026-05-17, Phase 2A Schäden batch)
+
+Schema added to `Video` table: `Voice Tone` + `Voice Override` (singleSelect: ernst/familie/leicht/reif), `Edit Pacing` + `Edit Pacing Override` (slow/medium/fast), `Voiceover Alignment JSON` (long text), `Scenario ID` (text), `Scenario Version` (int). `Video Status` gained `Test Batch` option.
+
+Tone → ElevenLabs voice (shared library, German `accent=standard`):
+
+| Tone | Voice | ID | Labels | Why |
+|---|---|---|---|---|
+| `ernst` | Crizz — Conversational & Deep | `hUiEHybCSPbXi2EbtGC1` | male / middle_aged / deep / conversational / professional | Friend-on-the-phone soft-sell — not theatrical cinema-narrator. Aligns with Provinzial's NRW-neighbourhood-advisor voice. |
+| `familie` | Marion Mitte — Friendly, Warm & Fresh | `0o46iPcQNHBZFpnxxQz5` | female / middle_aged / neutral / narrative_story / professional | Motherly-warm — distinct from existing Clara clone which is narrative-calm not motherly. |
+| `leicht` | Laura — Upbeat & Energetic | `LB5G0Z4EP98YaEgL654m` | female / young / upbeat / social_media / professional | Direct match for upbeat-explainer scenarios (Haftpflicht, Hausrat). |
+| `reif` | Altáriel — Storyteller of the Light | `oBVK5gDykyUkoVXUPyCU` | female / old / wise / narrative_story / high_quality | Only viable age=old non-character German voice in shared library. Reserved for future Vorsorge/Pflege scenarios — none of today's 7 use it. |
+
+Pacing → editing tempo: `ernst→medium`, `familie→medium`, `leicht→fast`, `reif→slow`. Per-record overrides via `Voice Override` / `Edit Pacing Override` fields (empty by default).
+
+**Considered but rejected:** Timothee — Calm Baritone (`u2AFyXrhdl3fT6UPZrlD`) for ernst. More cinematic-narrator than husky-conversational; less aligned with Provinzial soft-sell red line.
+
+**Fallbacks (existing professional clones):** Jones `niMwYIP6tIdlsdDEGVdT` (male, deep, narrative) and Clara `E13qNLHLLuVPKQvesCoy` (female, calm, narrative). Available in personal library if a tone needs reverting.
+
+## Phase 2A Schäden test batch (7 records, 2026-05-17)
+
+`Video Status = Test Batch`. Picks chose closest semantic neighbors — none of the dataset Ad Names contain the named perils (Leitungswasser/Einbruch/Wildunfall/Hagel/Fahrraddiebstahl), so categories are proxies.
+
+| Idx | Ad Name | Tone | Pacing | Scenario ID |
+|---|---|---|---|---|
+| 1  | Family at New Home | familie | medium | `day_1_family_at_new_home` |
+| 2  | Hausrat vs Wohngebäude Explainer | leicht | fast | `day_2_hausrat_vs_wohngebaeude_explainer` |
+| 12 | Adjuster Handshake | ernst | medium | `day_12_adjuster_handshake` |
+| 16 | Haftpflicht Explainer | leicht | fast | `day_16_haftpflicht_explainer` |
+| 19 | Schaden in 2 Minuten | ernst | medium | `day_19_schaden_in_2_minuten` |
+| 21 | Altbau Balkon | ernst | medium | `day_21_altbau_balkon` |
+| 22 | Road Trip Packing | familie | medium | `day_22_road_trip_packing` |
+
+Idx 20 (Sunrise Landstraße) initially picked as Kfz proxy, then swapped out for idx 12 (Adjuster Handshake) — Schaden & Service category is the stronger Kfz signal.
+
 ## Resume prompt
 > Read R61_video_pipeline/HANDOVER.md and PIPELINE.md. ElevenLabs is now unblocked. Swap voiceover_gen.py to ElevenLabs, run voiceover on all records with status reset to Clip Generated, re-stitch all 30 with hf_stitch.py, add captions via HyperFrames, and schedule all 30 in Blotato at 3–5 posts/day for one week.
 
