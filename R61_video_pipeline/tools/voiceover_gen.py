@@ -500,6 +500,70 @@ def eleven_tts(script, voice_id):
     return resp.content
 
 
+# --------------------------------------------------- ElevenLabs forced alignment
+
+def get_forced_alignment(audio_path, transcript_text):
+    """Return per-word alignment for a rendered MP3 against its transcript.
+
+    Uses the ElevenLabs SDK (client.forced_alignment.create). The endpoint
+    returns word-level (and character-level) start/end timestamps that the
+    Block 6 stitcher consumes to time captions and pacing-based cuts.
+
+    Retries 2x with 3s backoff on transient (5xx, network) errors; 4xx errors
+    are surfaced immediately (auth / bad request — retry won't help).
+
+    Returns the response dict on success; returns None on permanent failure
+    (caller is expected to write {"alignment_failed": true} and continue).
+    """
+    import time as _time
+    from elevenlabs.client import ElevenLabs
+
+    api_key = os.environ.get("ELEVENLABS_API_KEY")
+    if not api_key:
+        log("  WARN alignment skipped — ELEVENLABS_API_KEY not set")
+        return None
+    if not transcript_text or not transcript_text.strip():
+        log("  WARN alignment skipped — empty transcript")
+        return None
+
+    try:
+        with open(audio_path, "rb") as f:
+            audio_bytes = f.read()
+    except OSError as e:
+        log(f"  WARN alignment skipped — cannot read audio ({e})")
+        return None
+
+    client = ElevenLabs(api_key=api_key)
+    last_err = None
+    for attempt in (1, 2, 3):  # initial + 2 retries
+        try:
+            result = client.forced_alignment.create(
+                file=audio_bytes, text=transcript_text
+            )
+            # Pydantic v2 → model_dump; fall back to dict() for older SDKs.
+            try:
+                payload = result.model_dump()
+            except AttributeError:
+                payload = result.dict()  # type: ignore[attr-defined]
+            words = payload.get("words") or []
+            log(f"  alignment ok (attempt {attempt}) — {len(words)} word(s) returned")
+            return payload
+        except Exception as e:  # noqa: BLE001 — SDK raises ApiError; treat broad
+            msg = str(e)
+            last_err = e
+            status = getattr(e, "status_code", None)
+            if status and 400 <= int(status) < 500:
+                log(f"  alignment FAILED (4xx, no retry) attempt {attempt}: {msg[:240]}")
+                return None
+            if attempt == 3:
+                log(f"  alignment FAILED (final) attempt {attempt}: {msg[:240]}")
+                return None
+            log(f"  alignment transient error attempt {attempt}: {msg[:240]} — retrying in 3s")
+            _time.sleep(3)
+    log(f"  alignment FAILED — exhausted retries: {last_err}")
+    return None
+
+
 # ----------------------------------------------------------------- R2 upload
 # Duplicated from tools/stitch.py — same boto3 + SigV4 + local-clock-skew
 # workaround. Kept inline rather than extracted to a shared module to keep
@@ -615,17 +679,25 @@ def _process_record_narrative(record, no_rewrite, voice, script):
         idx_str = f"{int(index):02d}" if isinstance(index, (int, float)) else "xx"
         key = f"r61/voiceover/{idx_str}_{rec_id}_{ts}.mp3"
         fd, tmp_path = tempfile.mkstemp(suffix=".mp3")
+        alignment_payload = None
         try:
             with os.fdopen(fd, "wb") as f:
                 f.write(audio_bytes)
             r2_url = upload_to_r2(tmp_path, key, content_type="audio/mpeg")
+            alignment_payload = get_forced_alignment(tmp_path, script)
         finally:
             try:
                 os.unlink(tmp_path)
             except OSError:
                 pass
+        alignment_json = (
+            json.dumps(alignment_payload, ensure_ascii=False)
+            if alignment_payload is not None
+            else json.dumps({"alignment_failed": True}, ensure_ascii=False)
+        )
         av.update_record(rec_id, {
             "Voiceover Audio": [{"url": r2_url, "filename": f"{rec_id}_vo.mp3"}],
+            "Voiceover Alignment JSON": alignment_json,
             av.STATUS_FIELD: av.STATUS_VOICEOVER_DONE,
         })
         return "ok"
@@ -649,10 +721,11 @@ def _process_record_narrative(record, no_rewrite, voice, script):
         log(f"SKIP {rec_id} ({ad_name}): all segments empty after split")
         return "skipped_no_script"
 
-    # Concat → R2.
+    # Concat → R2 → forced alignment (against local copy before cleanup).
     ts = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     idx_str = f"{int(index):02d}" if isinstance(index, (int, float)) else "xx"
     combined = Path(tempfile.gettempdir()) / f"r61_vo_{rec_id}_{ts}.mp3"
+    alignment_payload = None
     try:
         if len(seg_paths) == 1:
             import shutil as _shutil
@@ -661,6 +734,11 @@ def _process_record_narrative(record, no_rewrite, voice, script):
             concat_mp3_via_ffmpeg(seg_paths, combined)
         key = f"r61/voiceover/{idx_str}_{rec_id}_{ts}.mp3"
         r2_url = upload_to_r2(str(combined), key, content_type="audio/mpeg")
+        # Forced alignment runs on the LOCAL concatenated MP3 (cheaper than
+        # round-tripping through R2). Transcript = beats joined by single
+        # spaces in the order they were spoken.
+        concat_transcript = " ".join(s["text"].strip() for s in populated if s.get("text"))
+        alignment_payload = get_forced_alignment(combined, concat_transcript)
     finally:
         for p in seg_paths:
             try: p.unlink()
@@ -668,12 +746,22 @@ def _process_record_narrative(record, no_rewrite, voice, script):
         try: combined.unlink()
         except OSError: pass
 
+    if alignment_payload is None:
+        alignment_json = json.dumps({"alignment_failed": True}, ensure_ascii=False)
+    else:
+        alignment_json = json.dumps(alignment_payload, ensure_ascii=False)
+
     av.update_record(rec_id, {
         "Voiceover Audio": [{"url": r2_url, "filename": f"{rec_id}_vo.mp3"}],
         "Voiceover Segments": json.dumps(populated, ensure_ascii=False, indent=2),
+        "Voiceover Alignment JSON": alignment_json,
         av.STATUS_FIELD: av.STATUS_VOICEOVER_DONE,
     })
-    log(f"DONE  {rec_id} ({ad_name}) [narrative, {len(populated)} segs] -> {r2_url}")
+    aln_note = (
+        f"alignment_words={len(alignment_payload.get('words') or [])}"
+        if alignment_payload else "alignment_failed=True"
+    )
+    log(f"DONE  {rec_id} ({ad_name}) [narrative, {len(populated)} segs, {aln_note}] -> {r2_url}")
     return "ok"
 
 
@@ -819,13 +907,21 @@ def confirm_cost(records, no_rewrite):
     sees the same numbers the paid run will actually charge."""
     total_chars = 0
     skipped = 0
+    voice_counts = {}  # voice display name -> record count
     for r in records:
         _, _, script, _ = build_script(r, no_rewrite)
         if script:
             total_chars += len(script)
         else:
             skipped += 1
+        voice, _path = select_voice_id(r)
+        voice_counts[voice["name"]] = voice_counts.get(voice["name"], 0) + 1
     total_usd = total_chars * CREATOR_USD_PER_CHAR
+    voices_line = " | ".join(
+        f"{name} ({n})" for name, n in sorted(
+            voice_counts.items(), key=lambda kv: (-kv[1], kv[0])
+        )
+    )
     print()
     print("=" * 60)
     print("COST ESTIMATE")
@@ -836,8 +932,8 @@ def confirm_cost(records, no_rewrite):
     print(f"  ElevenLabs credits    : {total_chars}")
     print(f"  Creator-tier USD est. : ${total_usd:.4f}")
     print(f"  Model                 : {ELEVEN_MODEL_ID}")
-    print(f"  Voices                : {VOICE_MALE['name']} (odd Index) | "
-          f"{VOICE_FEMALE['name']} (even Index)")
+    print(f"  Voices in batch       : {voices_line}")
+    print(f"  Selection             : override → Voice Tone → Index-parity fallback")
     print("=" * 60)
     print(f"Type one of: {sorted(FIRE_WORDS)} to proceed, anything else aborts.")
     answer = input("> ").strip().lower()
