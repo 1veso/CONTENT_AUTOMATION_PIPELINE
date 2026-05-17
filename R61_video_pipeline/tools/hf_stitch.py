@@ -87,10 +87,12 @@ TMP_DIR = PROJECT_ROOT / "references" / "outputs" / "tmp"
 HF_WORK_DIR = PROJECT_ROOT / "references" / "outputs" / "hf_work"
 FINAL_DIR = PROJECT_ROOT / "references" / "outputs" / "final" / VERSION_TAG
 CAPTIONS_DIR = FINAL_DIR / "captions"
-INTRO_PATH = PROJECT_ROOT / "references" / "inputs" / "intro.mp4"
+REFERENCES_INPUT_DIR = PROJECT_ROOT / "references" / "inputs"
+INTRO_PATH = REFERENCES_INPUT_DIR / "intro.mp4"
 # CANONICAL OUTRO: references/outputs/outro.mp4 (2.75s, 716x1284, silent)
 # Do NOT confuse with references/inputs/outro_5s_audio_DEPRECATED.mp4
 OUTRO_PATH = PROJECT_ROOT / "references" / "outputs" / "outro.mp4"
+WATERMARK_PATH = REFERENCES_INPUT_DIR / "wings.png"
 
 VO_VOLUME = 0.9
 CLIP_AUDIO_VOLUME = 0.3
@@ -109,6 +111,32 @@ def log(msg):
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(line + "\n")
+
+
+def apply_watermark(input_video_path, output_video_path, segment_kind):
+    """Overlay golden wings bottom-right on every segment EXCEPT intro/outro.
+
+    Intro and outro carry their own brand-design treatment (center-positioned
+    logo, animation reserved for future variants). All other segments — Kling
+    clips, raw footage, B-roll, Ken Burns stills — receive the corner watermark
+    so brand presence is consistent throughout the content portion. When intro/
+    outro are later upgraded with retracting-wings animations, this helper does
+    not need to change."""
+
+    if segment_kind in {"intro", "outro"}:
+        shutil.copy(input_video_path, output_video_path)
+        return
+
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", str(input_video_path),
+        "-i", str(WATERMARK_PATH),
+        "-filter_complex",
+        "[1:v]scale=120:120[wm];[0:v][wm]overlay=W-w-12:H-h-12",
+        "-c:a", "copy",
+        str(output_video_path)
+    ]
+    subprocess.run(cmd, check=True, capture_output=True)
 
 
 def premix_audio(clip_path: Path, vo_path: Path, out_path: Path):
