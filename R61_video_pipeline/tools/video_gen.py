@@ -465,6 +465,115 @@ def dry_run_report(records, table_cfg):
     print("No API calls were made.")
 
 
+# ============================================================
+# Block 9 — dedicated Hook/Lösung clip generation
+#
+# Each Block 9 beat clip uses the corresponding beat frame as BOTH start and
+# end image. With start==end, Kling 3.0 fills in subtle camera drift/breathing
+# rather than a real scene change — i.e. "subtle motion" the spec asks for.
+# The clips are additive: written to the new Hook Clip / Lösung Clip fields,
+# Video Status is NOT touched (these augment the existing pipeline, they don't
+# replace its stage transitions).
+#
+# Durations per Block 9 spec defaults:
+#   hook   → 3s (CREDITS_BY_DURATION[3] = 6 credits)
+#   lösung → 5s (Option A from Block 9 questions — 6s not in Kling's native
+#                duration map; stitch holds the last frame to fill the 6th s).
+# ============================================================
+
+BEAT_CLIP_CONFIG = {
+    "hook":   {"frame_field": "Hook Frame",   "clip_field": "Hook Clip",   "duration_s": 3, "filename": "hook.mp4"},
+    "lösung": {"frame_field": "Lösung Frame", "clip_field": "Lösung Clip", "duration_s": 5, "filename": "loesung.mp4"},
+}
+
+
+def build_beat_motion_prompt(record, beat: str):
+    """Motion prompt for the dedicated Hook/Lösung clip. With start==end frame,
+    the prompt instructs Kling toward subtle ambient motion, not scene change."""
+    fields = record.get("fields", {}) or {}
+    ad_name = (fields.get("Ad Name") or "Provinzial moment").strip()
+    if beat == "hook":
+        beat_kind = "opening moment"
+        motion_directive = (
+            "Subtle ambient motion only: slow camera breathing, gentle subject "
+            "movement (a glance, a breath, a small hand gesture). No scene "
+            "change, no major action — this is a hook that opens a longer story."
+        )
+    else:  # lösung
+        beat_kind = "resolution moment"
+        motion_directive = (
+            "Warm, gentle motion: slow camera push-in (5–8%), soft subject "
+            "movement showing relief or trust (a small smile, eyes settling, "
+            "a hand resting). No scene change — this is the emotional payoff "
+            "after the problem beat. Hold the warmth."
+        )
+    return (
+        f"R61 narrative {beat_kind} for: {ad_name}. "
+        f"{motion_directive} "
+        f"Documentary handheld feel — no fast pans, no zooms beyond the "
+        f"specified push-in. Maintain the documentary German lifestyle aesthetic "
+        f"and the framing of the input image. 9:16 vertical."
+    )
+
+
+def process_beat_clip(record, beat: str, table_cfg, output_path=None):
+    """Generate the dedicated Hook or Lösung clip for one record.
+
+    Uses the matching beat frame (Hook Frame / Lösung Frame) as BOTH start and
+    end image. Duration is taken from BEAT_CLIP_CONFIG. Writes the resulting
+    clip URL to the matching Airtable attachment field. Video Status is NOT
+    touched — these are additive Block 9 fields.
+    """
+    if beat not in BEAT_CLIP_CONFIG:
+        raise ValueError(f"process_beat_clip: bad beat {beat!r}")
+    cfg = BEAT_CLIP_CONFIG[beat]
+    # ASCII-safe slug for local filenames — the fal upload helper rejects
+    # non-ASCII filenames (utf-8 path → 'ascii' codec crash on Fal storage upload).
+    beat_slug = "loesung" if beat == "lösung" else beat
+    rec_id = record["id"]
+    fields = record.get("fields", {})
+    label = fields.get(table_cfg["name_field"]) or "(no name)"
+
+    frame_url = attachment_url(record, cfg["frame_field"])
+    if not frame_url:
+        log(f"SKIP {rec_id} ({label}) [{beat}]: missing {cfg['frame_field']} attachment")
+        return "skipped_no_frame"
+
+    prompt = build_beat_motion_prompt(record, beat)
+    duration_s = cfg["duration_s"]
+    log(f"START {rec_id} ({label}) [{beat}] duration={duration_s}s")
+
+    frame_local = TMP_DIR / f"{rec_id}_{beat_slug}_frame{ext_from_url(frame_url, '.png')}"
+    download_attachment(frame_url, frame_local)
+    log(f"  downloaded {beat} frame -> {frame_local.name}")
+
+    # start_image == end_image → Kling fills in subtle drift, not scene change.
+    video_url = run_higgsfield(prompt, frame_local, frame_local, duration_s=duration_s)
+    log(f"  higgsfield returned {video_url}")
+
+    clip_local = TMP_DIR / f"{rec_id}_{beat_slug}_clip.mp4"
+    download_attachment(video_url, clip_local)
+    fal_url = upload_to_fal(clip_local)
+    log(f"  re-hosted on Fal -> {fal_url}")
+
+    if output_path is not None:
+        from tools.path_utils import check_output_path
+        out = check_output_path(Path(output_path))
+        out.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(clip_local, out)
+        log(f"  saved local copy -> {out}")
+
+    _airtable_update(
+        table_cfg, rec_id,
+        {cfg["clip_field"]: [{"url": fal_url, "filename": f"{rec_id}_{cfg['filename']}"}]},
+    )
+    log(f"DONE  {rec_id} ({label}) [{beat}] -> {cfg['clip_field']} set; Video Status untouched")
+    for p in (frame_local, clip_local):
+        try: p.unlink()
+        except OSError: pass
+    return "ok"
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="R61 Step 2 — Higgsfield clip generation")
     parser.add_argument("--dry-run", action="store_true",
@@ -488,7 +597,20 @@ def main(argv=None):
                         choices=sorted(CREDITS_BY_DURATION.keys()),
                         help=f"Clip duration in seconds "
                              f"(default {DEFAULT_DURATION_S}s, "
-                             f"choices: {sorted(CREDITS_BY_DURATION.keys())}).")
+                             f"choices: {sorted(CREDITS_BY_DURATION.keys())}). "
+                             f"Ignored when --generate-hook/--generate-lösung "
+                             f"are set — those use BEAT_CLIP_CONFIG durations.")
+    parser.add_argument("--generate-hook", action="store_true",
+                        help="Block 9: generate the dedicated Hook Clip "
+                             "(3s, Hook Frame as start+end). Writes to Hook "
+                             "Clip field. Does NOT touch Video Status.")
+    parser.add_argument("--generate-lösung", "--generate-loesung",
+                        dest="generate_lösung", action="store_true",
+                        help="Block 9: generate the dedicated Lösung Clip "
+                             "(5s, Lösung Frame as start+end). Writes to "
+                             "Lösung Clip field. Does NOT touch Video Status. "
+                             "The 6s composition slot in stitch is filled by "
+                             "holding the last frame for 1s after this 5s clip.")
     args = parser.parse_args(argv)
 
     table_cfg = TABLE_CONFIG[args.table]
@@ -517,6 +639,75 @@ def main(argv=None):
         )
     if args.limit:
         records = records[: args.limit]
+
+    # ---- Block 9: dedicated Hook/Lösung clip generation ----
+    beats = []
+    if args.generate_hook:
+        beats.append("hook")
+    if args.generate_lösung:
+        beats.append("lösung")
+    if beats:
+        if not records:
+            log("--generate-hook/--generate-lösung set but no records selected.")
+            return 0
+        per_beat_credits = {b: CREDITS_BY_DURATION[BEAT_CLIP_CONFIG[b]["duration_s"]]
+                            for b in beats}
+        total_credits = sum(per_beat_credits.values()) * len(records)
+        if args.dry_run:
+            print()
+            print(f"DRY RUN — Block 9 beat-clip generation")
+            print(f"Beats: {beats}")
+            print(f"Per-beat credits: {per_beat_credits}")
+            print(f"Records: {len(records)}")
+            print(f"Total credits: {total_credits} ({sum(per_beat_credits.values())} per record)")
+            for r in records:
+                f = r.get("fields", {})
+                print(f"  - {r['id']}  Index={f.get('Index')!r}  "
+                      f"Ad Name={f.get('Ad Name')!r}")
+                for b in beats:
+                    cfg = BEAT_CLIP_CONFIG[b]
+                    has = "ok" if attachment_url(r, cfg["frame_field"]) else "MISSING"
+                    print(f"      {b:7s} duration={cfg['duration_s']}s  "
+                          f"frame field '{cfg['frame_field']}': {has}")
+            print("No API calls were made.")
+            return 0
+        balance = get_balance_credits()
+        if args.confirm and args.confirm.strip().lower() in FIRE_WORDS:
+            log(f"Beat-clip cost gate bypassed via --confirm {args.confirm!r}. "
+                f"{len(records)} record(s) × beats={beats} = {total_credits} credits.")
+        else:
+            print()
+            print("=" * 60)
+            print(f"BLOCK 9 BEAT-CLIP GENERATION — COST ESTIMATE")
+            print("=" * 60)
+            print(f"  Records            : {len(records)}")
+            print(f"  Beats per record   : {len(beats)} ({', '.join(beats)})")
+            for b, c in per_beat_credits.items():
+                print(f"    {b:8s} {BEAT_CLIP_CONFIG[b]['duration_s']}s : {c} credits/clip")
+            print(f"  Total credits      : {total_credits}")
+            if balance is not None:
+                print(f"  Account balance    : {balance} credits "
+                      f"({balance - total_credits} after)")
+            print("=" * 60)
+            print(f"Type one of: {sorted(FIRE_WORDS)} to proceed, anything else aborts.")
+            ans = input("> ").strip().lower()
+            if ans not in FIRE_WORDS:
+                log("Aborted at beat-clip cost gate — no API calls made.")
+                return 1
+        log(f"Beat-clip confirmed. {len(records)} record(s) × beats={beats}.")
+        TMP_DIR.mkdir(parents=True, exist_ok=True)
+        summary = {"ok": 0, "failed": 0, "skipped_no_frame": 0}
+        for r in records:
+            for beat in beats:
+                try:
+                    result = process_beat_clip(r, beat, table_cfg,
+                                               output_path=args.output if len(records) == 1 and len(beats) == 1 else None)
+                except Exception as e:
+                    log(f"FAIL {r['id']} [{beat}]: {e}")
+                    result = "failed"
+                summary[result] = summary.get(result, 0) + 1
+        log(f"Beat-clip run complete. Summary: {summary}")
+        return 0 if summary.get("failed", 0) == 0 else 2
 
     if args.dry_run:
         dry_run_report(records, table_cfg)

@@ -380,6 +380,129 @@ def dry_run_report(records):
     print("No API calls were made.")
 
 
+def _hook_lösung_beats(record):
+    """Return (hook_text, lösung_text) from Voiceover Segments JSON.
+
+    Block 9 helper. Returns ("", "") if the field is missing/empty/unparseable —
+    the caller treats empty as "skip this beat's generation".
+    """
+    raw = (record.get("fields", {}) or {}).get("Voiceover Segments") or ""
+    if not raw.strip():
+        return "", ""
+    try:
+        import json as _json
+        parsed = _json.loads(raw)
+    except (ValueError, TypeError):
+        return "", ""
+    hook = lösung = ""
+    if isinstance(parsed, list):
+        for seg in parsed:
+            if isinstance(seg, dict):
+                n = seg.get("name")
+                if n == "hook":
+                    hook = (seg.get("text") or "").strip()
+                elif n in ("lösung", "loesung"):
+                    lösung = (seg.get("text") or "").strip()
+    elif isinstance(parsed, dict):
+        hook = (parsed.get("hook") or "").strip()
+        lösung = (parsed.get("lösung") or parsed.get("loesung") or "").strip()
+    return hook, lösung
+
+
+def build_hook_prompt(record):
+    """Image prompt for the dedicated Hook frame (Block 9 beat 0-3s)."""
+    fields = record.get("fields", {}) or {}
+    ad_name = (fields.get("Ad Name") or "Provinzial moment").strip()
+    pillar = detect_pillar(ad_name) or "lifestyle"
+    scenario = re.sub(r"\s*\[.*\]\s*$", "", ad_name).strip()
+    hook_text, _ = _hook_lösung_beats(record)
+    if not hook_text:
+        raise RuntimeError(f"build_hook_prompt: no hook text in Voiceover Segments")
+    return (
+        f"Attention-grabbing opening moment for: {scenario}. "
+        f"Single visual hook. The first thing the viewer sees — must stop the scroll. "
+        f"Scene anchored on: \"{hook_text}\". "
+        f"Documentary style, natural lighting, German lifestyle aesthetic "
+        f"(NRW everyday — real homes, real people, never staged). "
+        f"Composition: 9:16 vertical, subject prominent in upper-mid frame, "
+        f"clean bottom-third for caption. {BRAND_ANCHOR} "
+        f"NO text, NO logos, NO graphic overlays in the image — those are "
+        f"composited in post."
+    )
+
+
+def build_lösung_prompt(record):
+    """Image prompt for the dedicated Lösung frame (Block 9 beat 10-16s)."""
+    fields = record.get("fields", {}) or {}
+    ad_name = (fields.get("Ad Name") or "Provinzial moment").strip()
+    scenario = re.sub(r"\s*\[.*\]\s*$", "", ad_name).strip()
+    _, lösung_text = _hook_lösung_beats(record)
+    if not lösung_text:
+        raise RuntimeError(f"build_lösung_prompt: no lösung text in Voiceover Segments")
+    return (
+        f"Resolution moment for: {scenario}. People being helped, relieved, "
+        f"secure — the emotional payoff after the problem beat. "
+        f"Scene anchored on: \"{lösung_text}\". "
+        f"Documentary style, warm lighting (golden-hour bias), German "
+        f"lifestyle (NRW everyday). "
+        f"Composition: 9:16 vertical, faces or hands visible, "
+        f"warmth and trust in the body language, clean bottom-third for caption. "
+        f"{BRAND_ANCHOR} "
+        f"NO text, NO logos, NO graphic overlays — those are composited in post."
+    )
+
+
+def process_beat_frame(record, beat: str):
+    """Generate a single new beat frame (hook OR lösung) and patch Airtable.
+
+    `beat` must be one of {"hook", "lösung"}. Reads Voiceover Segments for the
+    beat text, builds the prompt, submits to Fal Nano Banana Pro using the
+    record's Source Image as the anchor, writes the result to the matching
+    Airtable attachment field, and stores the prompt for traceability.
+
+    Does NOT touch Video Status — these are additive Block 9 fields, not part
+    of the original Pending → Frames Generated → Clip Generated → ... ladder.
+    """
+    if beat not in ("hook", "lösung"):
+        raise ValueError(f"process_beat_frame: bad beat {beat!r}")
+    rec_id = record["id"]
+    fields = record.get("fields", {})
+    ad_name = fields.get("Ad Name") or "(no name)"
+    source_url = av.get_source_image_url(record)
+    if not source_url:
+        log(f"SKIP {rec_id} ({ad_name}) [{beat}]: no Source Image attachment")
+        return "skipped_no_source"
+
+    if beat == "hook":
+        prompt = build_hook_prompt(record)
+        frame_field, prompt_field, fname = "Hook Frame", "Hook Prompt", f"{rec_id}_hook.png"
+    else:
+        prompt = build_lösung_prompt(record)
+        frame_field, prompt_field, fname = "Lösung Frame", "Lösung Prompt", f"{rec_id}_loesung.png"
+
+    log(f"START {rec_id} ({ad_name}) [{beat}]")
+    tmp = download_to_temp(source_url,
+                           suffix=Path(urlparse(source_url).path).suffix or ".png")
+    try:
+        fal_ref_url = upload_to_fal(tmp)
+    finally:
+        try: tmp.unlink()
+        except OSError: pass
+
+    handler = submit_frame(prompt, fal_ref_url)
+    result_url = extract_image_url(handler.get())
+    if not result_url:
+        log(f"FAIL {rec_id} ({ad_name}) [{beat}]: no result URL")
+        return "failed"
+
+    av.update_record(rec_id, {
+        prompt_field: prompt,
+        frame_field: [{"url": result_url, "filename": fname}],
+    })
+    log(f"DONE  {rec_id} ({ad_name}) [{beat}] -> {result_url}")
+    return "ok"
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="R61 Step 1 — frame generation")
     parser.add_argument("--dry-run", action="store_true",
@@ -391,6 +514,20 @@ def main(argv=None):
                              "bypassing the Video Status = Pending filter. "
                              "Useful for re-running a specific record after "
                              "prompt changes.")
+    parser.add_argument("--generate-hook", action="store_true",
+                        help="Block 9: generate the Hook Frame for the targeted "
+                             "record(s) using the hook text from Voiceover Segments. "
+                             "Writes to the Hook Frame / Hook Prompt fields. Does "
+                             "not touch the original first/last frames or Video Status.")
+    parser.add_argument("--generate-lösung", "--generate-loesung",
+                        dest="generate_lösung", action="store_true",
+                        help="Block 9: generate the Lösung Frame for the targeted "
+                             "record(s) using the lösung text from Voiceover Segments. "
+                             "Writes to the Lösung Frame / Lösung Prompt fields. Does "
+                             "not touch the original first/last frames or Video Status.")
+    parser.add_argument("--confirm", default=None,
+                        help="Pass a fire word (e.g. --confirm go) to bypass the "
+                             "interactive cost prompt.")
     args = parser.parse_args(argv)
 
     missing = av.check_credentials()
@@ -412,6 +549,69 @@ def main(argv=None):
     if args.limit:
         records = records[: args.limit]
 
+    # ---- Block 9: dedicated hook / lösung beat generation path ----
+    beats = []
+    if args.generate_hook:
+        beats.append("hook")
+    if args.generate_lösung:
+        beats.append("lösung")
+    if beats:
+        if not records:
+            log("--generate-hook/--generate-lösung set but no records selected.")
+            return 0
+        if args.dry_run:
+            print()
+            print(f"DRY RUN — Block 9 beat generation")
+            print(f"Beats: {beats}")
+            print(f"Records: {len(records)}")
+            total_images = len(records) * len(beats)
+            print(f"Would generate {total_images} images "
+                  f"(~${total_images * COST_PER_IMAGE_USD:.2f} on "
+                  f"{FAL_IMAGE_ENDPOINT}). No API calls were made.")
+            for r in records:
+                f = r.get("fields", {})
+                hook, lösung = _hook_lösung_beats(r)
+                print(f"  - {r['id']}  Index={f.get('Index')!r}")
+                if "hook" in beats:
+                    print(f"      hook text   ({len(hook)} chars): {hook[:120]}{'...' if len(hook) > 120 else ''}")
+                if "lösung" in beats:
+                    print(f"      lösung text ({len(lösung)} chars): {lösung[:120]}{'...' if len(lösung) > 120 else ''}")
+            return 0
+        total_images = len(records) * len(beats)
+        total_usd = total_images * COST_PER_IMAGE_USD
+        if args.confirm and args.confirm.strip().lower() in FIRE_WORDS:
+            log(f"Beat-gen cost gate bypassed via --confirm {args.confirm!r}. "
+                f"{len(records)} record(s) × {len(beats)} beat(s) = "
+                f"{total_images} images, ~${total_usd:.2f}.")
+        else:
+            print()
+            print("=" * 60)
+            print(f"BLOCK 9 BEAT GENERATION — COST ESTIMATE")
+            print("=" * 60)
+            print(f"  Records            : {len(records)}")
+            print(f"  Beats per record   : {len(beats)} ({', '.join(beats)})")
+            print(f"  Total images       : {total_images}")
+            print(f"  $ per image        : ${COST_PER_IMAGE_USD:.2f}")
+            print(f"  TOTAL              : ${total_usd:.2f}")
+            print("=" * 60)
+            print(f"Type one of: {sorted(FIRE_WORDS)} to proceed, anything else aborts.")
+            ans = input("> ").strip().lower()
+            if ans not in FIRE_WORDS:
+                log("Aborted at beat-gen cost gate — no API calls made.")
+                return 1
+        log(f"Beat-gen confirmed. {len(records)} record(s) × beats={beats}.")
+        summary = {"ok": 0, "failed": 0, "skipped_no_source": 0}
+        for r in records:
+            for beat in beats:
+                try:
+                    result = process_beat_frame(r, beat)
+                except Exception as e:
+                    log(f"FAIL {r['id']} [{beat}]: {e}")
+                    result = "failed"
+                summary[result] = summary.get(result, 0) + 1
+        log(f"Beat-gen complete. Summary: {summary}")
+        return 0 if summary.get("failed", 0) == 0 else 2
+
     if args.dry_run:
         dry_run_report(records)
         return 0
@@ -420,7 +620,9 @@ def main(argv=None):
         log("No pending records — nothing to do.")
         return 0
 
-    if not confirm_cost(len(records)):
+    if args.confirm and args.confirm.strip().lower() in FIRE_WORDS:
+        log(f"Cost gate bypassed via --confirm {args.confirm!r}.")
+    elif not confirm_cost(len(records)):
         log("Aborted at cost gate — no API calls made.")
         return 1
 
