@@ -1191,8 +1191,8 @@ def build_ass_subs_from_alignment(alignment_json, out_path: Path,
     `window` (defaults to the voiced 0–17s region).
 
     Highlight heuristic — the longest word inside each narrative beat slot
-    (0-3 / 3-8 / 8-14 / 14-17) is recolored Provinzial Flügelgelb (#F5C518).
-    ASS uses BGR ordering, so the override tag is &H18C5F5&.
+    (0-3 / 3-8 / 8-14 / 14-17) is recolored brand-blue (#0066CC). ASS uses
+    BGR ordering, so the override tag is &HCC6600&.
 
     Caption style: Inter Bold ~52px, white text with a 3px black outline,
     bottom-centered with MarginV=120 to keep captions inside the brand-safe
@@ -1242,7 +1242,7 @@ def build_ass_subs_from_alignment(alignment_json, out_path: Path,
         raw = (w["text"] or "").strip()
         safe = raw.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
         if i in highlight:
-            safe = f"{{\\c&H18C5F5&}}{safe}{{\\c&HFFFFFF&}}"
+            safe = f"{{\\c&HCC6600&}}{safe}{{\\c&HFFFFFF&}}"
         events.append(
             f"Dialogue: 0,{_ass_time(disp_start)},{_ass_time(disp_end)},"
             f"Caption,,0,0,0,,{safe}"
@@ -1376,114 +1376,61 @@ def stitch_narrative(record):
             log(f"  WARN raw download failed ({e}); fallback to ken_burns(first_frame, right)")
             raw_available = False
     else:
-        log(f"  no Raw Footage URL — raw_or_kling slot will use Lösung Clip "
-            f"if present, else ken_burns(first_frame, right)")
+        log(f"  no Raw Footage URL — raw_or_kling uses ken_burns(first_frame, right)")
 
-    # Block 9: optional dedicated Hook / Lösung clips. When present, they
-    # replace the kling_hook (clip[0:3]) and raw_or_kling slots respectively.
-    # Absent → fall back to the Block 6/7 behavior (slice or ken_burns).
-    hook_clip_url = attachment_url(record, "Hook Clip")
-    loesung_clip_url = attachment_url(record, "Lösung Clip")
-    hook_clip_local = None
-    loesung_clip_local = None
-    if hook_clip_url:
-        hook_clip_local = work / f"hook_clip{ext_from_url(hook_clip_url, '.mp4')}"
-        if not hook_clip_local.exists():
-            download_attachment(hook_clip_url, hook_clip_local)
-        log(f"  Hook Clip available → {hook_clip_local.name} "
-            f"({hook_clip_local.stat().st_size / 1e6:.1f} MB)")
-    else:
-        log(f"  no Hook Clip attachment — kling_hook slot falls back to Video Clip[0:3]")
-    if loesung_clip_url:
-        loesung_clip_local = work / f"loesung_clip{ext_from_url(loesung_clip_url, '.mp4')}"
-        if not loesung_clip_local.exists():
-            download_attachment(loesung_clip_url, loesung_clip_local)
-        log(f"  Lösung Clip available → {loesung_clip_local.name} "
-            f"({loesung_clip_local.stat().st_size / 1e6:.1f} MB)")
-
-    # --- Build visual segments (audio stripped on all) ---
+    # --- Build six visual segments (audio stripped on all) ---
     seg_dir = work / "segments"
     seg_dir.mkdir(parents=True, exist_ok=True)
-    segment_paths = []  # ordered list fed to concat
 
-    # hook 0-3s  → Hook Clip if present, else Video Clip[0:3] (Block 6/7 fallback)
+    # kling_hook 0-3s
     p_hook_raw = seg_dir / "01_hook_raw.mp4"
     p_hook = seg_dir / "01_hook.mp4"
-    if hook_clip_local:
-        _trim_static(hook_clip_local, 3.0, p_hook_raw)
-        log(f"  hook segment from Hook Clip ({hook_clip_local.name})")
-    else:
-        _trim_clip(clip_local, 0.0, 3.0, p_hook_raw)
-        log(f"  hook segment from Video Clip[0:3] (fallback)")
+    _trim_clip(clip_local, 0.0, 3.0, p_hook_raw)
     apply_watermark(p_hook_raw, p_hook, "kling_hook")
-    segment_paths.append(p_hook)
 
     # intro 3-5s (pass-through, no watermark)
     p_intro_raw = seg_dir / "02_intro_raw.mp4"
     p_intro = seg_dir / "02_intro.mp4"
     _trim_static(INTRO_PATH, 2.0, p_intro_raw)
     apply_watermark(p_intro_raw, p_intro, "intro")
-    segment_paths.append(p_intro)
 
-    # problem 5-10s  → Video Clip (full 5s from t=0). Block 9 spec change: the
-    # existing May-13 Kling clip is reused as the Problem beat instead of being
-    # split between hook and main as it was in Block 6/7.
-    p_problem_raw = seg_dir / "03_problem_raw.mp4"
-    p_problem = seg_dir / "03_problem.mp4"
-    _trim_clip(clip_local, 0.0, 5.0, p_problem_raw)
-    apply_watermark(p_problem_raw, p_problem, "problem")
-    segment_paths.append(p_problem)
+    # kling_main 5-10s = clip[3:5] (2s) + ken_burns last_frame in (3s)
+    p_mainA_raw = seg_dir / "03a_kling_tail_raw.mp4"
+    p_mainA = seg_dir / "03a_kling_tail.mp4"
+    _trim_clip(clip_local, 3.0, 2.0, p_mainA_raw)
+    apply_watermark(p_mainA_raw, p_mainA, "kling_main")
 
-    # lösung 10-16s  → Lösung Clip (5s) + last-frame ken-burns 1s, or raw clip,
-    # or ken_burns(first_frame, right). Order: Lösung Clip wins, then raw, then
-    # ken_burns. Spec Option A: 5s real motion + 1s subtle hold to fill the 6s slot.
-    if loesung_clip_local:
-        p_loesungA_raw = seg_dir / "04a_loesung_raw.mp4"
-        p_loesungA = seg_dir / "04a_loesung.mp4"
-        _trim_static(loesung_clip_local, 5.0, p_loesungA_raw)
-        apply_watermark(p_loesungA_raw, p_loesungA, "lösung")
-        segment_paths.append(p_loesungA)
-        # 1s sub-perceptual hold on the Lösung clip's last frame.
-        p_loesung_lastframe = seg_dir / "04b_loesung_lastframe.png"
-        extract_last_frame(loesung_clip_local, p_loesung_lastframe)
-        p_loesungB_raw = seg_dir / "04b_loesung_hold_raw.mp4"
-        p_loesungB = seg_dir / "04b_loesung_hold.mp4"
-        apply_ken_burns(p_loesung_lastframe, p_loesungB_raw, 1.0,
-                        direction="in", zoom_to=1.02)
-        apply_watermark(p_loesungB_raw, p_loesungB, "lösung")
-        segment_paths.append(p_loesungB)
-        log(f"  lösung segment from Lösung Clip (5s) + last-frame hold (1s)")
-    elif raw_available:
-        p_loesung_raw_in = seg_dir / "04_raw_raw.mp4"
-        p_loesung = seg_dir / "04_raw.mp4"
-        _trim_static(raw_local, 6.0, p_loesung_raw_in)
-        apply_watermark(p_loesung_raw_in, p_loesung, "raw_or_kling")
-        segment_paths.append(p_loesung)
-        log(f"  lösung segment from raw footage (6s, fallback)")
+    p_mainB_raw = seg_dir / "03b_kb_in_last_raw.mp4"
+    p_mainB = seg_dir / "03b_kb_in_last.mp4"
+    apply_ken_burns(last_local, p_mainB_raw, 3.0, direction="in", zoom_to=1.10)
+    apply_watermark(p_mainB_raw, p_mainB, "kling_main")
+
+    # raw_or_kling 10-16s = 6s
+    p_raw_raw = seg_dir / "04_raw_raw.mp4"
+    p_raw = seg_dir / "04_raw.mp4"
+    if raw_available:
+        _trim_static(raw_local, 6.0, p_raw_raw)
     else:
-        p_loesung_raw_in = seg_dir / "04_kb_first_raw.mp4"
-        p_loesung = seg_dir / "04_kb_first.mp4"
-        apply_ken_burns(first_local, p_loesung_raw_in, 6.0, direction="right")
-        apply_watermark(p_loesung_raw_in, p_loesung, "raw_or_kling")
-        segment_paths.append(p_loesung)
-        log(f"  lösung segment from ken_burns(first_frame, right, 6s) (fallback)")
+        apply_ken_burns(first_local, p_raw_raw, 6.0, direction="right")
+    apply_watermark(p_raw_raw, p_raw, "raw_or_kling")
 
-    # cta 16-19s — ken_burns last_frame in (3s, zoom_to 1.15)
+    # ken_burns_cta 16-19s
     p_cta_raw = seg_dir / "05_kb_cta_raw.mp4"
     p_cta = seg_dir / "05_kb_cta.mp4"
     apply_ken_burns(last_local, p_cta_raw, 3.0, direction="in", zoom_to=1.15)
     apply_watermark(p_cta_raw, p_cta, "ken_burns_cta")
-    segment_paths.append(p_cta)
 
     # outro 19-21s (pass-through)
     p_outro_raw = seg_dir / "06_outro_raw.mp4"
     p_outro = seg_dir / "06_outro.mp4"
     _trim_static(OUTRO_PATH, 2.0, p_outro_raw)
     apply_watermark(p_outro_raw, p_outro, "outro")
-    segment_paths.append(p_outro)
 
     visual_track = work / "video_track.mp4"
-    _concat_segments_via_filter(segment_paths, visual_track)
+    _concat_segments_via_filter(
+        [p_hook, p_intro, p_mainA, p_mainB, p_raw, p_cta, p_outro],
+        visual_track,
+    )
     log(f"  visual track concatenated → {visual_track.name} "
         f"({visual_track.stat().st_size / 1e6:.1f} MB)")
 
