@@ -5,15 +5,29 @@
 .claude/telegram/.env
 
 # Generated content / references (heavy + per-client)
+# Block all renders but allow the canonical outro template + brand inputs
 **/references/outputs/**
+!**/references/outputs/outro.mp4
 **/references/inputs/**
+!**/references/inputs/*.png
+!R61_video_pipeline/references/inputs/intro.mp4
+!R61_video_pipeline/references/inputs/outro_5s_audio_DEPRECATED.mp4
 
 # n8n backups — keep the docs (.md), drop the giant JSON blobs
 n8n_backups/*.json
 n8n_backups/__pycache__/
 
-# Per-client Obsidian data (private brand briefs, campaign logs, assets)
-obsidian-brain/clients/**
+# Per-client Obsidian data — track docs, drop heavy/binary assets
+# (briefs, secrets bootstrap, checklists are tracked; raw media stays local)
+obsidian-brain/clients/**/assets/**
+obsidian-brain/clients/**/_local/**
+obsidian-brain/clients/**/*.mp4
+obsidian-brain/clients/**/*.mov
+obsidian-brain/clients/**/*.png
+obsidian-brain/clients/**/*.jpg
+obsidian-brain/clients/**/*.jpeg
+obsidian-brain/clients/**/*.wav
+obsidian-brain/clients/**/*.mp3
 
 # Python
 **/__pycache__/

@@ -1,5 +1,7 @@
 .env
-references/outputs/
+# Block all render artifacts under references/outputs/ but allow canonical outro template
+references/outputs/**
+!references/outputs/outro.mp4
 __pycache__/
 *.pyc
 .venv/
