@@ -103,48 +103,6 @@ Pacing → editing tempo: `ernst→medium`, `familie→medium`, `leicht→fast`,
 
 Idx 20 (Sunrise Landstraße) initially picked as Kfz proxy, then swapped out for idx 12 (Adjuster Handshake) — Schaden & Service category is the stronger Kfz signal.
 
-## Narrative stitcher v4 (2026-05-17, Block 6)
-
-The Phase 2A narrative path is a parallel FFmpeg pipeline alongside the legacy HyperFrames path, gated by `R61_NARRATIVE_MODE=1` + presence of `Voiceover Segments` on the record. Routed by a thin dispatcher in `tools/hf_stitch.py`:
-
-| Function | Role |
-|---|---|
-| `process_record(record, **kwargs)` | Dispatcher only — env + segments check, routes accordingly. |
-| `process_record_legacy(record, ...)` | Exact rename of the prior `process_record` body — the 22 v3 renders that shipped 2026-05-15 came from this code unchanged. |
-| `stitch_narrative(record)` | New 21s FFmpeg pipeline (added end-of-file). |
-
-**21s composition (NARRATIVE_TIMELINE):**
-
-| Window | Kind | Source |
-|---|---|---|
-| 0–3s   | `kling_hook`     | Kling clip `[0:3]` |
-| 3–5s   | `intro`          | `references/inputs/intro.mp4` trimmed to 2s — pass-through, no watermark |
-| 5–10s  | `kling_main`     | Kling clip `[3:5]` (2s) + `apply_ken_burns(last_frame, 3s, direction="in", zoom_to=1.10)` (3s) |
-| 10–16s | `raw_or_kling`   | Raw clip 6s window if `Raw Footage URL` set, else `apply_ken_burns(first_frame, 6s, direction="right")` |
-| 16–19s | `ken_burns_cta`  | `apply_ken_burns(last_frame, 3s, direction="in", zoom_to=1.15)` |
-| 19–21s | `outro`          | `references/outputs/outro.mp4` trimmed to 2s — pass-through |
-
-Every non-intro/outro segment gets `apply_watermark(...)` overlay (120×120 wings, bottom-right, 12px margin). Concatenation uses the **concat filter** (decoder + re-encoder) rather than the demuxer so segments don't have to be byte-identical.
-
-**Audio mix:**
-- Voiceover continuous at 0 dB across all 21s (padded with silence after the rendered ~12.3s — voice plays over the intro card; "voiceover absent during intro" was a spec error, dropped).
-- Raw audio (if available and the raw clip has an audio stream): -6 dB during voice-silent sub-windows of `[10,16]` only, computed from forced-alignment word intervals. Voice intervals merge gaps <200 ms.
-- **No music bed** in v1. Logs `WARNING: shipping v1 without music`. Adding Fal Lyria is a deliberate follow-up if Gate 6/7 review flags the result as feeling naked.
-
-**Captions (R61_ADD_CAPTIONS=1):** `build_ass_subs_from_alignment(...)` word-by-word from the forced-alignment JSON. Brand-blue highlight (`#0066CC` → ASS BGR `&HCC6600&`) on the longest word per beat slot (0-3 / 3-8 / 8-14 / 14-17). Inter 52px, white with 3px black outline, MarginV=120 keeps text inside the brand-safe bottom-third even when overlaid on the intro card.
-
-**Architectural change — B-roll and VFX semantics in narrative mode:**
-- `R61_BROLL_ENABLED` / `R61_VFX_ENABLED` only run inside `process_record_legacy` (they patch the HyperFrames `index.html`). Narrative mode skips both and logs a note at start of `stitch_narrative`.
-- The `raw_or_kling` segment IS the new B-roll mechanism — a first-class composition slot, not a CSS overlay. The Block-3 `add_broll_injection` semantic-match-against-R2-folder approach is retained on the legacy path only.
-
-**Output:**
-- R2 key: `r61/final/{VERSION_TAG}/{scenario_id}_{YYYYMMDD-HHMMSS}.mp4` (e.g. `r61/final/v4/day_1_family_at_new_home_20260517-...mp4`)
-- Airtable `Final Video` attachment filename: clean `{scenario_id}.mp4` (no timestamp, so the UI download is readable)
-- `Video Status` advances to `Stitched`
-- Gate 4 entry written to `shared/gates/pending.json`
-
-**Status:** code complete + syntax-checked as of this commit; live test pending Gate 7 in Block 7. The 22 v3 finals are untouched — they remain on the legacy path.
-
 ## Resume prompt
 > Read R61_video_pipeline/HANDOVER.md and PIPELINE.md. ElevenLabs is now unblocked. Swap voiceover_gen.py to ElevenLabs, run voiceover on all records with status reset to Clip Generated, re-stitch all 30 with hf_stitch.py, add captions via HyperFrames, and schedule all 30 in Blotato at 3–5 posts/day for one week.
 
