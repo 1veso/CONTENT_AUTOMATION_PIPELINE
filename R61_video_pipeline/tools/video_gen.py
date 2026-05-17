@@ -484,6 +484,10 @@ def dry_run_report(records, table_cfg):
 BEAT_CLIP_CONFIG = {
     "hook":   {"frame_field": "Hook Frame",   "clip_field": "Hook Clip",   "duration_s": 3, "filename": "hook.mp4"},
     "lösung": {"frame_field": "Lösung Frame", "clip_field": "Lösung Clip", "duration_s": 5, "filename": "loesung.mp4"},
+    # Block 11: CTA clip occupies the 15-19s slot (4s). Kling 3.0 native
+    # durations are {3, 5, 10}; generate at 5s and stitch trims the trailing
+    # 1s so the slot has real motion end-to-end rather than a 1s freeze hold.
+    "cta":    {"frame_field": "CTA Frame",    "clip_field": "CTA Clip",    "duration_s": 5, "filename": "cta.mp4"},
 }
 
 
@@ -499,13 +503,21 @@ def build_beat_motion_prompt(record, beat: str):
             "movement (a glance, a breath, a small hand gesture). No scene "
             "change, no major action — this is a hook that opens a longer story."
         )
-    else:  # lösung
+    elif beat == "lösung":
         beat_kind = "resolution moment"
         motion_directive = (
             "Warm, gentle motion: slow camera push-in (5–8%), soft subject "
             "movement showing relief or trust (a small smile, eyes settling, "
             "a hand resting). No scene change — this is the emotional payoff "
             "after the problem beat. Hold the warmth."
+        )
+    else:  # cta
+        beat_kind = "closing CTA moment"
+        motion_directive = (
+            "Calm conclusion motion: a small genuine smile blooming, a soft "
+            "nod of recognition, eyes settling toward camera, or a gentle "
+            "hand settling. No scene change, no zoom beyond a 3–5% drift. "
+            "This is the warm sign-off — invitation, not action."
         )
     return (
         f"R61 narrative {beat_kind} for: {ad_name}. "
@@ -529,7 +541,7 @@ def process_beat_clip(record, beat: str, table_cfg, output_path=None):
     cfg = BEAT_CLIP_CONFIG[beat]
     # ASCII-safe slug for local filenames — the fal upload helper rejects
     # non-ASCII filenames (utf-8 path → 'ascii' codec crash on Fal storage upload).
-    beat_slug = "loesung" if beat == "lösung" else beat
+    beat_slug = {"lösung": "loesung"}.get(beat, beat)
     rec_id = record["id"]
     fields = record.get("fields", {})
     label = fields.get(table_cfg["name_field"]) or "(no name)"
@@ -611,6 +623,12 @@ def main(argv=None):
                              "Lösung Clip field. Does NOT touch Video Status. "
                              "The 6s composition slot in stitch is filled by "
                              "holding the last frame for 1s after this 5s clip.")
+    parser.add_argument("--generate-cta", dest="generate_cta", action="store_true",
+                        help="Block 11: generate the dedicated CTA Clip "
+                             "(5s, CTA Frame as start+end). Writes to "
+                             "CTA Clip field. Does NOT touch Video Status. "
+                             "stitch_narrative trims the trailing 1s so the "
+                             "15-19s composition slot has real motion end-to-end.")
     args = parser.parse_args(argv)
 
     table_cfg = TABLE_CONFIG[args.table]
@@ -640,22 +658,24 @@ def main(argv=None):
     if args.limit:
         records = records[: args.limit]
 
-    # ---- Block 9: dedicated Hook/Lösung clip generation ----
+    # ---- Block 9/11: dedicated Hook/Lösung/CTA clip generation ----
     beats = []
     if args.generate_hook:
         beats.append("hook")
     if args.generate_lösung:
         beats.append("lösung")
+    if args.generate_cta:
+        beats.append("cta")
     if beats:
         if not records:
-            log("--generate-hook/--generate-lösung set but no records selected.")
+            log("--generate-hook/--generate-lösung/--generate-cta set but no records selected.")
             return 0
         per_beat_credits = {b: CREDITS_BY_DURATION[BEAT_CLIP_CONFIG[b]["duration_s"]]
                             for b in beats}
         total_credits = sum(per_beat_credits.values()) * len(records)
         if args.dry_run:
             print()
-            print(f"DRY RUN — Block 9 beat-clip generation")
+            print(f"DRY RUN — beat-clip generation")
             print(f"Beats: {beats}")
             print(f"Per-beat credits: {per_beat_credits}")
             print(f"Records: {len(records)}")
@@ -678,7 +698,7 @@ def main(argv=None):
         else:
             print()
             print("=" * 60)
-            print(f"BLOCK 9 BEAT-CLIP GENERATION — COST ESTIMATE")
+            print(f"BEAT-CLIP GENERATION — COST ESTIMATE")
             print("=" * 60)
             print(f"  Records            : {len(records)}")
             print(f"  Beats per record   : {len(beats)} ({', '.join(beats)})")

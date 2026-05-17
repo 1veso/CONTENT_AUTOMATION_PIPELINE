@@ -1028,16 +1028,22 @@ def generate_platform_variants(source_mp4, rec_id, version_tag):
 # =============================================================================
 
 NARRATIVE_TIMELINE = [
-    # kind            start  end
-    ("kling_hook",      0,   3),
-    ("intro",           3,   5),
-    ("kling_main",      5,  10),  # split internally: clip[3:5] (2s) + ken_burns last_frame in (3s)
-    ("raw_or_kling",   10,  16),  # raw clip if available, else ken_burns first_frame right
-    ("ken_burns_cta",  16,  19),
-    ("outro",          19,  21),
+    # Block 11 layout — every content beat is a real generated clip.
+    # kind         start  end
+    ("kling_hook",   0,   3),
+    ("intro",        3,   5),
+    ("problem",      5,  10),
+    ("lösung",      10,  15),
+    ("cta",         15,  19),
+    ("outro",       19,  21),
 ]
 NARRATIVE_TOTAL_S = 21
-NARRATIVE_VOICE_END_S = 17  # voiceover plan window; actual rendered length may be shorter
+# Block 11: voiced window now ends at 19s (cta beat 15-19 is voiced;
+# 19-21 outro is hard-muted). Audio mute windows below MUST stay in sync
+# with the skip_windows passed to build_ass_subs_from_alignment from
+# stitch_narrative.
+NARRATIVE_VOICE_END_S = 19
+NARRATIVE_MUTE_WINDOWS = [(3.0, 5.0), (19.0, 21.0)]
 NARRATIVE_FPS = 25
 
 
@@ -1183,15 +1189,24 @@ def _compute_voice_speaking_intervals(alignment_json, merge_gap_s: float = 0.20)
 
 def build_ass_subs_from_alignment(alignment_json, out_path: Path,
                                   window=(0.0, NARRATIVE_VOICE_END_S),
-                                  mode: str = "word_by_word"):
+                                  mode: str = "word_by_word",
+                                  skip_windows=None,
+                                  beats=None):
     """Word-by-word ASS captions sourced from forced-alignment timestamps.
 
     Each non-whitespace word displays from its alignment.start until the next
-    word's start (or its own end + 100 ms for the final word), clamped to the
-    `window` (defaults to the voiced 0–17s region).
+    word's start (or its own end + 100 ms for the final word), clamped to
+    `window` (defaults to the voiced 0–19s region in Block 11 mode).
 
-    Highlight heuristic — the longest word inside each narrative beat slot
-    (0-3 / 3-8 / 8-14 / 14-17) is recolored Provinzial Flügelgelb (#F5C518).
+    `skip_windows` is an optional list of (start, end) ranges; any word whose
+    `start` falls within a skip window is dropped entirely (used by Block 11
+    to keep captions silent during the 3-5s intro and 19-21s outro segments —
+    matches the voiceover mute windows in stitch_narrative).
+
+    Highlight heuristic — the longest word inside each narrative beat slot is
+    recolored Provinzial Flügelgelb (#F5C518). `beats` is an optional list of
+    (start, end) tuples; defaults to Block 11's voiced beats
+    [(0,3), (5,10), (10,15), (15,19)].
     ASS uses BGR ordering, so the override tag is &H18C5F5&.
 
     Caption style: Inter Bold ~52px, white text with a 3px black outline,
@@ -1220,23 +1235,41 @@ def build_ass_subs_from_alignment(alignment_json, out_path: Path,
 
     win_start, win_end = window
 
-    BEATS = [(0, 3), (3, 8), (8, 14), (14, NARRATIVE_VOICE_END_S)]
+    if skip_windows is None:
+        skip_windows = []
+
+    def _in_skip(t):
+        return any(a <= t < b for a, b in skip_windows)
+
+    if beats is None:
+        # Block 11 voiced beat layout (0-3 hook, 5-10 problem, 10-15 lösung, 15-19 cta).
+        beats = [(0, 3), (5, 10), (10, 15), (15, 19)]
     highlight = set()
-    for bs, be in BEATS:
+    for bs, be in beats:
         in_beat = [(i, w) for i, w in enumerate(words)
-                   if bs <= float(w.get("start", 0)) < be]
+                   if bs <= float(w.get("start", 0)) < be
+                   and not _in_skip(float(w.get("start", 0)))]
         if in_beat:
             highlight.add(max(in_beat, key=lambda iw: len(iw[1]["text"].strip()))[0])
 
     events = []
+    skipped_count = 0
     for i, w in enumerate(words):
         s = float(w["start"])
         e = float(w["end"])
         if s >= win_end or e <= win_start:
             continue
+        if _in_skip(s):
+            skipped_count += 1
+            continue
         next_s = float(words[i + 1]["start"]) if i + 1 < len(words) else e + 0.1
         disp_start = max(s, win_start)
         disp_end = min(next_s, win_end)
+        # Truncate display so a word never bleeds into a skip window
+        for a, b in skip_windows:
+            if disp_start < a <= disp_end:
+                disp_end = a
+                break
         if disp_end <= disp_start:
             continue
         raw = (w["text"] or "").strip()
@@ -1269,42 +1302,42 @@ def build_ass_subs_from_alignment(alignment_json, out_path: Path,
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(header + "\n".join(events) + "\n", encoding="utf-8")
     log(f"  captions ASS (alignment) → {out_path.name} ({len(events)} words, "
-        f"{len(highlight)} highlighted)")
+        f"{len(highlight)} highlighted, {skipped_count} skipped via skip_windows)")
     return True
 
 
 def stitch_narrative(record):
-    """R61 Block 6 — 21s narrative composition (FFmpeg pipeline, not HyperFrames).
+    """R61 Block 11 — 21s narrative composition with four distinct generated clips.
 
-    Timeline:
-      0-3   kling_hook     — clip[0:3], watermarked
-      3-5   intro          — intro.mp4 trimmed to 2s, no watermark (pass-through)
-      5-10  kling_main     — clip[3:5] (2s) + ken_burns last_frame "in" (3s), watermarked
-      10-16 raw_or_kling   — raw clip (6s) if Raw Footage URL set, else
-                             ken_burns first_frame "right" (6s). Watermarked.
-      16-19 ken_burns_cta  — ken_burns last_frame "in" (3s), watermarked
-      19-21 outro          — outro.mp4 trimmed to 2s, no watermark
+    Timeline (every content beat is real generated motion — no Ken Burns):
+      0-3   hook    → Hook Clip[0:3]     (fallback: Video Clip[0:3])
+      3-5   intro   → intro.mp4 (2s pass-through)
+      5-10  problem → Problem Clip[0:5]  (fallback: Video Clip[0:5])
+      10-15 lösung  → Lösung Clip[0:5]   (REQUIRED, full 5s, no hold extension)
+      15-19 cta     → CTA Clip[0:4]      (REQUIRED; Kling gens 5s, trimmed)
+      19-21 outro   → outro.mp4 (2s pass-through)
 
     Audio:
-      voice  — full voiceover (~12.3s), 0 dB, padded with silence to 21s
-      raw    — when raw clip available AND has audio: -6 dB during voice-silent
-               sub-windows of [10,16] only. Silent during voice activity to avoid
-               competing with narration. Skipped if raw absent or has no audio.
-      music  — SKIPPED in v1. No music asset shipped with R61_video_pipeline.
-               Logs a warning ("voiceover-only mix"). Adding Fal Lyria is a
-               follow-up if Gate 6/7 review says the videos feel naked.
+      voice  — voiceover padded to 21s, muted in [3,5) (intro) and [19,21] (outro).
+               Words at those times are dropped — captions skip them too so the
+               viewer never sees a word render against muted audio.
+      raw    — DROPPED in Block 11. The raw 6s slot no longer exists.
+      music  — still TODO (Fal Lyria as follow-up if Gate 4 review flags).
 
     Captions (R61_ADD_CAPTIONS=1):
-      build_ass_subs_from_alignment with mode="word_by_word". Captions render
-      whenever an alignment word is active (including over intro 3-5s). Bottom-
-      third with MarginV=120 keeps text inside the brand-safe area of the intro
-      card.
+      build_ass_subs_from_alignment with mode="word_by_word" and
+      skip_windows=NARRATIVE_MUTE_WINDOWS. Highlight beats sit on
+      [(0,3), (5,10), (10,15), (15,19)] — the four voiced segments.
 
     Side-features NOT run in narrative mode:
-      add_broll_injection — superseded by the raw_or_kling first-class slot.
-      add_vfx_transitions — HTML/HyperFrames-only; doesn't apply to this pipeline.
-      generate_platform_variants — invoked separately after stitch_narrative
-                                    returns; not called from inside this function.
+      add_broll_injection — superseded by the four-clip composition.
+      add_vfx_transitions — HTML/HyperFrames-only; doesn't apply here.
+      generate_platform_variants — invoked separately after stitch_narrative.
+
+    Skip conditions (returns "skipped_*" instead of "ok"):
+      - Voiceover Segments unparseable / empty
+      - Missing Voiceover Audio / First Frame / Last Frame / Video Clip
+      - Missing Lösung Clip or CTA Clip (Block 11 hard requirement)
 
     Output:
       r61/final/{VERSION_TAG}/{scenario_id}_{YYYYMMDD-HHMMSS}.mp4 on R2.
@@ -1359,121 +1392,105 @@ def stitch_narrative(record):
             download_attachment(url, dst)
     log(f"  inputs downloaded → {work.name}/")
 
-    raw_url = (fields.get("Raw Footage URL") or "").strip()
-    raw_local = None
+    # Block 11: raw footage no longer participates in the visual composition —
+    # the Lösung Clip occupies the 10-15s slot end-to-end. Kept as False for
+    # the gate entry's diagnostic fields.
     raw_available = False
     raw_has_audio = False
-    if raw_url:
-        try:
-            raw_local = work / f"raw{ext_from_url(raw_url, '.mp4')}"
-            if not raw_local.exists():
-                download_attachment(raw_url, raw_local)
-            if raw_local.stat().st_size > 1024:
-                raw_available = True
-                log(f"  raw footage available → {raw_local.name} "
-                    f"({raw_local.stat().st_size / 1e6:.1f} MB)")
-        except Exception as e:
-            log(f"  WARN raw download failed ({e}); fallback to ken_burns(first_frame, right)")
-            raw_available = False
-    else:
-        log(f"  no Raw Footage URL — raw_or_kling slot will use Lösung Clip "
-            f"if present, else ken_burns(first_frame, right)")
 
-    # Block 9: optional dedicated Hook / Lösung clips. When present, they
-    # replace the kling_hook (clip[0:3]) and raw_or_kling slots respectively.
-    # Absent → fall back to the Block 6/7 behavior (slice or ken_burns).
-    hook_clip_url = attachment_url(record, "Hook Clip")
+    # Block 11: four dedicated beat clips (Hook / Problem / Lösung / CTA).
+    # apply_ken_burns is no longer invoked — every content beat needs its own
+    # real generated motion. Hook + Problem fall back to Video Clip slices for
+    # back-compat on pre-Block-11 records; Lösung and CTA are required.
+    hook_clip_url    = attachment_url(record, "Hook Clip")
+    problem_clip_url = attachment_url(record, "Problem Clip")
     loesung_clip_url = attachment_url(record, "Lösung Clip")
-    hook_clip_local = None
-    loesung_clip_local = None
-    if hook_clip_url:
-        hook_clip_local = work / f"hook_clip{ext_from_url(hook_clip_url, '.mp4')}"
-        if not hook_clip_local.exists():
-            download_attachment(hook_clip_url, hook_clip_local)
-        log(f"  Hook Clip available → {hook_clip_local.name} "
-            f"({hook_clip_local.stat().st_size / 1e6:.1f} MB)")
-    else:
-        log(f"  no Hook Clip attachment — kling_hook slot falls back to Video Clip[0:3]")
-    if loesung_clip_url:
-        loesung_clip_local = work / f"loesung_clip{ext_from_url(loesung_clip_url, '.mp4')}"
-        if not loesung_clip_local.exists():
-            download_attachment(loesung_clip_url, loesung_clip_local)
-        log(f"  Lösung Clip available → {loesung_clip_local.name} "
-            f"({loesung_clip_local.stat().st_size / 1e6:.1f} MB)")
+    cta_clip_url     = attachment_url(record, "CTA Clip")
+
+    def _fetch_beat_clip(url, label):
+        if not url:
+            return None
+        local = work / f"{label}_clip{ext_from_url(url, '.mp4')}"
+        if not local.exists():
+            download_attachment(url, local)
+        log(f"  {label} Clip available → {local.name} "
+            f"({local.stat().st_size / 1e6:.1f} MB)")
+        return local
+
+    hook_clip_local    = _fetch_beat_clip(hook_clip_url, "hook")
+    problem_clip_local = _fetch_beat_clip(problem_clip_url, "problem")
+    loesung_clip_local = _fetch_beat_clip(loesung_clip_url, "loesung")
+    cta_clip_local     = _fetch_beat_clip(cta_clip_url, "cta")
+
+    if not hook_clip_local:
+        log(f"  no Hook Clip attachment — falls back to Video Clip[0:3]")
+    if not problem_clip_local:
+        log(f"  no Problem Clip attachment — falls back to Video Clip[0:5]")
+    if not loesung_clip_local:
+        log(f"  SKIP — Block 11 requires Lösung Clip; missing for {rec_id}")
+        return "skipped_missing_loesung_clip"
+    if not cta_clip_local:
+        log(f"  SKIP — Block 11 requires CTA Clip; missing for {rec_id}")
+        return "skipped_missing_cta_clip"
 
     # --- Build visual segments (audio stripped on all) ---
+    # Block 11 timeline (21s total, every content beat is a real generated clip):
+    #   0-3   hook    → Hook Clip[0:3]    (fallback: Video Clip[0:3])
+    #   3-5   intro   → intro.mp4 (2s)
+    #   5-10  problem → Problem Clip[0:5] (fallback: Video Clip[0:5])
+    #   10-15 lösung  → Lösung Clip[0:5]  (full 5s, no Ken Burns extension)
+    #   15-19 cta     → CTA Clip[0:4]     (Kling generated at 5s, trimmed to 4s)
+    #   19-21 outro   → outro.mp4 (2s)
     seg_dir = work / "segments"
     seg_dir.mkdir(parents=True, exist_ok=True)
     segment_paths = []  # ordered list fed to concat
 
-    # hook 0-3s  → Hook Clip if present, else Video Clip[0:3] (Block 6/7 fallback)
+    # hook 0-3s
     p_hook_raw = seg_dir / "01_hook_raw.mp4"
     p_hook = seg_dir / "01_hook.mp4"
     if hook_clip_local:
-        _trim_static(hook_clip_local, 3.0, p_hook_raw)
-        log(f"  hook segment from Hook Clip ({hook_clip_local.name})")
+        _trim_clip(hook_clip_local, 0.0, 3.0, p_hook_raw)
+        log(f"  hook segment from Hook Clip (3s)")
     else:
         _trim_clip(clip_local, 0.0, 3.0, p_hook_raw)
         log(f"  hook segment from Video Clip[0:3] (fallback)")
     apply_watermark(p_hook_raw, p_hook, "kling_hook")
     segment_paths.append(p_hook)
 
-    # intro 3-5s (pass-through, no watermark)
+    # intro 3-5s (pass-through)
     p_intro_raw = seg_dir / "02_intro_raw.mp4"
     p_intro = seg_dir / "02_intro.mp4"
     _trim_static(INTRO_PATH, 2.0, p_intro_raw)
     apply_watermark(p_intro_raw, p_intro, "intro")
     segment_paths.append(p_intro)
 
-    # problem 5-10s  → Video Clip (full 5s from t=0). Block 9 spec change: the
-    # existing May-13 Kling clip is reused as the Problem beat instead of being
-    # split between hook and main as it was in Block 6/7.
+    # problem 5-10s
     p_problem_raw = seg_dir / "03_problem_raw.mp4"
     p_problem = seg_dir / "03_problem.mp4"
-    _trim_clip(clip_local, 0.0, 5.0, p_problem_raw)
+    if problem_clip_local:
+        _trim_clip(problem_clip_local, 0.0, 5.0, p_problem_raw)
+        log(f"  problem segment from Problem Clip (5s)")
+    else:
+        _trim_clip(clip_local, 0.0, 5.0, p_problem_raw)
+        log(f"  problem segment from Video Clip[0:5] (fallback)")
     apply_watermark(p_problem_raw, p_problem, "problem")
     segment_paths.append(p_problem)
 
-    # lösung 10-16s  → Lösung Clip (5s) + last-frame ken-burns 1s, or raw clip,
-    # or ken_burns(first_frame, right). Order: Lösung Clip wins, then raw, then
-    # ken_burns. Spec Option A: 5s real motion + 1s subtle hold to fill the 6s slot.
-    if loesung_clip_local:
-        p_loesungA_raw = seg_dir / "04a_loesung_raw.mp4"
-        p_loesungA = seg_dir / "04a_loesung.mp4"
-        _trim_static(loesung_clip_local, 5.0, p_loesungA_raw)
-        apply_watermark(p_loesungA_raw, p_loesungA, "lösung")
-        segment_paths.append(p_loesungA)
-        # 1s sub-perceptual hold on the Lösung clip's last frame.
-        p_loesung_lastframe = seg_dir / "04b_loesung_lastframe.png"
-        extract_last_frame(loesung_clip_local, p_loesung_lastframe)
-        p_loesungB_raw = seg_dir / "04b_loesung_hold_raw.mp4"
-        p_loesungB = seg_dir / "04b_loesung_hold.mp4"
-        apply_ken_burns(p_loesung_lastframe, p_loesungB_raw, 1.0,
-                        direction="in", zoom_to=1.02)
-        apply_watermark(p_loesungB_raw, p_loesungB, "lösung")
-        segment_paths.append(p_loesungB)
-        log(f"  lösung segment from Lösung Clip (5s) + last-frame hold (1s)")
-    elif raw_available:
-        p_loesung_raw_in = seg_dir / "04_raw_raw.mp4"
-        p_loesung = seg_dir / "04_raw.mp4"
-        _trim_static(raw_local, 6.0, p_loesung_raw_in)
-        apply_watermark(p_loesung_raw_in, p_loesung, "raw_or_kling")
-        segment_paths.append(p_loesung)
-        log(f"  lösung segment from raw footage (6s, fallback)")
-    else:
-        p_loesung_raw_in = seg_dir / "04_kb_first_raw.mp4"
-        p_loesung = seg_dir / "04_kb_first.mp4"
-        apply_ken_burns(first_local, p_loesung_raw_in, 6.0, direction="right")
-        apply_watermark(p_loesung_raw_in, p_loesung, "raw_or_kling")
-        segment_paths.append(p_loesung)
-        log(f"  lösung segment from ken_burns(first_frame, right, 6s) (fallback)")
+    # lösung 10-15s — full 5s of real motion (no Ken Burns hold extension)
+    p_loesung_raw = seg_dir / "04_loesung_raw.mp4"
+    p_loesung = seg_dir / "04_loesung.mp4"
+    _trim_clip(loesung_clip_local, 0.0, 5.0, p_loesung_raw)
+    apply_watermark(p_loesung_raw, p_loesung, "lösung")
+    segment_paths.append(p_loesung)
+    log(f"  lösung segment from Lösung Clip (5s, no hold extension)")
 
-    # cta 16-19s — ken_burns last_frame in (3s, zoom_to 1.15)
-    p_cta_raw = seg_dir / "05_kb_cta_raw.mp4"
-    p_cta = seg_dir / "05_kb_cta.mp4"
-    apply_ken_burns(last_local, p_cta_raw, 3.0, direction="in", zoom_to=1.15)
-    apply_watermark(p_cta_raw, p_cta, "ken_burns_cta")
+    # cta 15-19s — Kling generated at 5s, trim trailing 1s to fit slot
+    p_cta_raw = seg_dir / "05_cta_raw.mp4"
+    p_cta = seg_dir / "05_cta.mp4"
+    _trim_clip(cta_clip_local, 0.0, 4.0, p_cta_raw)
+    apply_watermark(p_cta_raw, p_cta, "cta")
     segment_paths.append(p_cta)
+    log(f"  cta segment from CTA Clip (4s, trimmed from 5s gen)")
 
     # outro 19-21s (pass-through)
     p_outro_raw = seg_dir / "06_outro_raw.mp4"
@@ -1491,84 +1508,31 @@ def stitch_narrative(record):
     audio_dir = work / "audio"
     audio_dir.mkdir(parents=True, exist_ok=True)
 
-    vo_padded = audio_dir / "vo_padded.aac"
-    _ff(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-         "-i", str(vo_local),
-         "-af", f"apad=whole_dur={NARRATIVE_TOTAL_S},aresample={TARGET_SR}",
-         "-t", f"{NARRATIVE_TOTAL_S}",
-         "-c:a", "aac", "-b:a", "192k", "-ar", str(TARGET_SR),
-         str(vo_padded)], label="vo_pad")
-
     voice_intervals = _compute_voice_speaking_intervals(aln_raw)
     voice_end = voice_intervals[-1][1] if voice_intervals else 0.0
     log(f"  voice activity: {len(voice_intervals)} interval(s), ends at "
         f"{voice_end:.3f}s (alignment {'ok' if voice_intervals else 'missing'})")
 
-    raw_audio_path = None
-    if raw_available:
-        candidate = audio_dir / "raw_audio.aac"
-        rc = subprocess.run(
-            ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-             "-i", str(raw_local), "-t", "6.0",
-             "-vn", "-c:a", "aac", "-b:a", "192k",
-             str(candidate)],
-            capture_output=True, text=True, encoding="utf-8", errors="replace",
-        )
-        if rc.returncode == 0 and candidate.exists() and candidate.stat().st_size > 1024:
-            raw_audio_path = candidate
-            raw_has_audio = True
-            log(f"  raw audio extracted → {candidate.name}")
-        else:
-            log(f"  raw clip has no usable audio stream; raw audio dropped")
-
+    # Block 11.3: mute the voiceover in [3,5) (intro slot) and [19,21] (outro slot).
+    # Words scheduled at those times in the source vo file are dropped — captions
+    # apply the same skip windows (Block 11.4) so the muted regions stay silent
+    # but never look broken on screen.
+    mute_windows = NARRATIVE_MUTE_WINDOWS
+    mute_expr = "+".join(f"between(t,{a:.3f},{b:.3f})" for a, b in mute_windows)
     mixed_audio = work / "mixed_audio.aac"
-    if raw_audio_path:
-        # Voice-silent sub-windows within [10,16] = where raw plays at -6 dB.
-        clamped = []
-        for vs, ve in voice_intervals:
-            a = max(10.0, vs)
-            b = min(16.0, ve)
-            if b > a:
-                clamped.append((a, b))
-        free_intervals = []
-        cursor = 10.0
-        for a, b in clamped:
-            if cursor < a:
-                free_intervals.append((cursor, a))
-            cursor = max(cursor, b)
-        if cursor < 16.0:
-            free_intervals.append((cursor, 16.0))
-        if free_intervals:
-            enable_expr = "+".join(
-                f"between(t,{a:.3f},{b:.3f})" for a, b in free_intervals
-            )
-        else:
-            enable_expr = "0"  # voice covers all of [10,16] — raw silent throughout
-        # adelay shifts raw audio so t=0 of the raw clip lands at t=10 in the mix.
-        filter_complex = (
-            f"[1:a]adelay=10000|10000,"
-            f"apad=whole_dur={NARRATIVE_TOTAL_S},"
-            f"aresample={TARGET_SR},"
-            f"volume=enable='{enable_expr}':volume=0.5:eval=frame[ra];"
-            f"[0:a]aresample={TARGET_SR}[va];"
-            f"[va][ra]amix=inputs=2:duration=longest:dropout_transition=0,"
-            f"aresample={TARGET_SR}[outa]"
-        )
-        _ff([
-            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-            "-i", str(vo_padded),
-            "-i", str(raw_audio_path),
-            "-filter_complex", filter_complex,
-            "-map", "[outa]",
-            "-t", f"{NARRATIVE_TOTAL_S}",
-            "-c:a", "aac", "-b:a", "192k", "-ar", str(TARGET_SR),
-            str(mixed_audio),
-        ], label="audio_mix(voice+raw)")
-        log(f"  audio mix: voice + raw active in {free_intervals}")
-    else:
-        shutil.copyfile(vo_padded, mixed_audio)
-        log(f"  audio mix: voice-only — WARNING: no music bed asset; shipping "
-            f"v1 without music. Add Fal Lyria as follow-up if Gate review flags.")
+    _ff([
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-i", str(vo_local),
+        "-af",
+        f"apad=whole_dur={NARRATIVE_TOTAL_S},"
+        f"aresample={TARGET_SR},"
+        f"volume=enable='{mute_expr}':volume=0:eval=frame",
+        "-t", f"{NARRATIVE_TOTAL_S}",
+        "-c:a", "aac", "-b:a", "192k", "-ar", str(TARGET_SR),
+        str(mixed_audio),
+    ], label="audio_mix(voice_with_mute_windows)")
+    log(f"  audio mix: voice with mute windows {mute_windows} — "
+        f"intro/outro tone deferred to a follow-up (Block 11.3 fallback to silence).")
 
     # --- Mux video + audio ---
     base_mp4 = work / f"{scenario_id}_base.mp4"
@@ -1588,7 +1552,8 @@ def stitch_narrative(record):
     if add_captions:
         ass_path = work / "captions.ass"
         captioned = work / f"{scenario_id}_captioned.mp4"
-        if build_ass_subs_from_alignment(aln_raw, ass_path):
+        if build_ass_subs_from_alignment(aln_raw, ass_path,
+                                         skip_windows=NARRATIVE_MUTE_WINDOWS):
             burn_captions(base_mp4, ass_path, captioned)
             final_mp4 = captioned
         else:
@@ -1615,7 +1580,7 @@ def stitch_narrative(record):
                 "local_path": str(final_mp4),
                 "index": index,
                 "scenario_id": scenario_id,
-                "mode": "narrative_v4",
+                "mode": "narrative_v5_block11",
                 "captions": add_captions,
                 "raw_available": raw_available,
                 "raw_has_audio": raw_has_audio,

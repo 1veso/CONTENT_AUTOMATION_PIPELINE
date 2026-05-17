@@ -131,6 +131,32 @@ def set_status(record_id, status_value):
     return update_record(record_id, {STATUS_FIELD: status_value})
 
 
+def create_field(name, field_type, description=None, options=None):
+    """Add a new field to the Video table via the metadata API.
+
+    `field_type` must be a valid Airtable field type, e.g.:
+      - "multipleAttachments" for attachment fields
+      - "multilineText" for long-text fields
+      - "singleLineText" for short-text fields
+
+    Requires the personal access token to have `schema.bases:write` scope on
+    this base. Idempotent: returns the existing field unchanged (HTTP 422
+    "DUPLICATE_OR_EMPTY_FIELD_NAME") if the field already exists.
+    """
+    url = f"{AIRTABLE_API_URL}/meta/bases/{AIRTABLE_BASE_ID}/tables/{TABLE_ID}/fields"
+    body = {"name": name, "type": field_type}
+    if description:
+        body["description"] = description
+    if options:
+        body["options"] = options
+    resp = requests.post(url, headers=_headers(), json=body, timeout=30)
+    if resp.status_code == 422 and "DUPLICATE_OR_EMPTY_FIELD_NAME" in resp.text:
+        return {"already_exists": True, "name": name}
+    if resp.status_code not in (200, 201):
+        raise RuntimeError(f"Airtable create_field failed ({resp.status_code}): {resp.text}")
+    return resp.json()
+
+
 if __name__ == "__main__":
     missing = check_credentials()
     if missing:

@@ -380,33 +380,45 @@ def dry_run_report(records):
     print("No API calls were made.")
 
 
-def _hook_lösung_beats(record):
-    """Return (hook_text, lösung_text) from Voiceover Segments JSON.
+def _beat_texts(record):
+    """Return {'hook': str, 'lösung': str, 'cta': str} from Voiceover Segments.
 
-    Block 9 helper. Returns ("", "") if the field is missing/empty/unparseable —
-    the caller treats empty as "skip this beat's generation".
+    Used by Block 9 (hook/lösung) and Block 11 (cta). Returns empty strings
+    for missing/unparseable/absent beats — the caller decides whether that's
+    fatal for the specific beat being processed.
     """
+    out = {"hook": "", "lösung": "", "cta": ""}
     raw = (record.get("fields", {}) or {}).get("Voiceover Segments") or ""
     if not raw.strip():
-        return "", ""
+        return out
     try:
         import json as _json
         parsed = _json.loads(raw)
     except (ValueError, TypeError):
-        return "", ""
-    hook = lösung = ""
+        return out
     if isinstance(parsed, list):
         for seg in parsed:
             if isinstance(seg, dict):
                 n = seg.get("name")
+                txt = (seg.get("text") or "").strip()
                 if n == "hook":
-                    hook = (seg.get("text") or "").strip()
+                    out["hook"] = txt
                 elif n in ("lösung", "loesung"):
-                    lösung = (seg.get("text") or "").strip()
+                    out["lösung"] = txt
+                elif n == "cta":
+                    out["cta"] = txt
     elif isinstance(parsed, dict):
-        hook = (parsed.get("hook") or "").strip()
-        lösung = (parsed.get("lösung") or parsed.get("loesung") or "").strip()
-    return hook, lösung
+        out["hook"] = (parsed.get("hook") or "").strip()
+        out["lösung"] = (parsed.get("lösung") or parsed.get("loesung") or "").strip()
+        out["cta"] = (parsed.get("cta") or "").strip()
+    return out
+
+
+def _hook_lösung_beats(record):
+    """Back-compat shim: returns (hook, lösung) tuple. New code should call
+    `_beat_texts` directly."""
+    b = _beat_texts(record)
+    return b["hook"], b["lösung"]
 
 
 def build_hook_prompt(record):
@@ -436,7 +448,7 @@ def build_lösung_prompt(record):
     fields = record.get("fields", {}) or {}
     ad_name = (fields.get("Ad Name") or "Provinzial moment").strip()
     scenario = re.sub(r"\s*\[.*\]\s*$", "", ad_name).strip()
-    _, lösung_text = _hook_lösung_beats(record)
+    lösung_text = _beat_texts(record).get("lösung", "")
     if not lösung_text:
         raise RuntimeError(f"build_lösung_prompt: no lösung text in Voiceover Segments")
     return (
@@ -452,18 +464,54 @@ def build_lösung_prompt(record):
     )
 
 
-def process_beat_frame(record, beat: str):
-    """Generate a single new beat frame (hook OR lösung) and patch Airtable.
+def build_cta_prompt(record):
+    """Image prompt for the dedicated CTA frame (Block 11 beat 15-19s).
 
-    `beat` must be one of {"hook", "lösung"}. Reads Voiceover Segments for the
-    beat text, builds the prompt, submits to Fal Nano Banana Pro using the
-    record's Source Image as the anchor, writes the result to the matching
-    Airtable attachment field, and stores the prompt for traceability.
-
-    Does NOT touch Video Status — these are additive Block 9 fields, not part
-    of the original Pending → Frames Generated → Clip Generated → ... ladder.
+    Per Block 11 spec: a warm conclusion close-up. Different from the Lösung
+    payoff — this is the explicit invitation/resolution at the end of the ad,
+    typically a smile, a Provinzial agent, or a family-at-peace frame.
     """
-    if beat not in ("hook", "lösung"):
+    fields = record.get("fields", {}) or {}
+    ad_name = (fields.get("Ad Name") or "Provinzial moment").strip()
+    scenario = re.sub(r"\s*\[.*\]\s*$", "", ad_name).strip()
+    cta_text = _beat_texts(record).get("cta", "")
+    cta_anchor = (
+        f"Voiceover anchor: \"{cta_text}\". " if cta_text else ""
+    )
+    return (
+        f"Resolution close-up moment for: {scenario}. Warm conclusion. "
+        f"Person looking content, or Provinzial agent smiling warmly, or "
+        f"family at peace. {cta_anchor}"
+        f"Documentary style, natural lighting (warm golden-hour bias), "
+        f"German lifestyle (NRW everyday). "
+        f"Composition: 9:16 vertical, face or upper-body close-up, gentle eye "
+        f"contact or settled gaze, clean bottom-third for caption. "
+        f"{BRAND_ANCHOR} "
+        f"NO text, NO logos, NO graphic overlays — those are composited in post."
+    )
+
+
+# Block 9 + 11 beat dispatch table for process_beat_frame.
+BEAT_FRAME_CONFIG = {
+    "hook":   {"frame_field": "Hook Frame",   "prompt_field": "Hook Prompt",   "fname": "hook.png",     "build_prompt": build_hook_prompt},
+    "lösung": {"frame_field": "Lösung Frame", "prompt_field": "Lösung Prompt", "fname": "loesung.png",  "build_prompt": build_lösung_prompt},
+    "cta":    {"frame_field": "CTA Frame",    "prompt_field": "CTA Prompt",    "fname": "cta.png",      "build_prompt": build_cta_prompt},
+}
+
+
+def process_beat_frame(record, beat: str):
+    """Generate a single new beat frame (hook | lösung | cta) and patch Airtable.
+
+    Reads Voiceover Segments for the beat text, builds the prompt, submits to
+    Fal Nano Banana Pro using the record's Source Image as the anchor, writes
+    the result to the matching Airtable attachment field, and stores the prompt
+    for traceability.
+
+    Does NOT touch Video Status — these are additive Block 9/11 fields, not
+    part of the original Pending → Frames Generated → Clip Generated → ... ladder.
+    """
+    cfg = BEAT_FRAME_CONFIG.get(beat)
+    if cfg is None:
         raise ValueError(f"process_beat_frame: bad beat {beat!r}")
     rec_id = record["id"]
     fields = record.get("fields", {})
@@ -473,12 +521,10 @@ def process_beat_frame(record, beat: str):
         log(f"SKIP {rec_id} ({ad_name}) [{beat}]: no Source Image attachment")
         return "skipped_no_source"
 
-    if beat == "hook":
-        prompt = build_hook_prompt(record)
-        frame_field, prompt_field, fname = "Hook Frame", "Hook Prompt", f"{rec_id}_hook.png"
-    else:
-        prompt = build_lösung_prompt(record)
-        frame_field, prompt_field, fname = "Lösung Frame", "Lösung Prompt", f"{rec_id}_loesung.png"
+    prompt = cfg["build_prompt"](record)
+    frame_field = cfg["frame_field"]
+    prompt_field = cfg["prompt_field"]
+    fname = f"{rec_id}_{cfg['fname']}"
 
     log(f"START {rec_id} ({ad_name}) [{beat}]")
     tmp = download_to_temp(source_url,
@@ -525,6 +571,12 @@ def main(argv=None):
                              "record(s) using the lösung text from Voiceover Segments. "
                              "Writes to the Lösung Frame / Lösung Prompt fields. Does "
                              "not touch the original first/last frames or Video Status.")
+    parser.add_argument("--generate-cta", dest="generate_cta", action="store_true",
+                        help="Block 11: generate the CTA Frame for the targeted "
+                             "record(s). Anchors on the cta text from Voiceover "
+                             "Segments if present, otherwise a generic warm-conclusion "
+                             "prompt. Writes to the CTA Frame / CTA Prompt fields. "
+                             "Does not touch Video Status.")
     parser.add_argument("--confirm", default=None,
                         help="Pass a fire word (e.g. --confirm go) to bypass the "
                              "interactive cost prompt.")
@@ -549,19 +601,21 @@ def main(argv=None):
     if args.limit:
         records = records[: args.limit]
 
-    # ---- Block 9: dedicated hook / lösung beat generation path ----
+    # ---- Block 9/11: dedicated hook / lösung / cta beat generation path ----
     beats = []
     if args.generate_hook:
         beats.append("hook")
     if args.generate_lösung:
         beats.append("lösung")
+    if args.generate_cta:
+        beats.append("cta")
     if beats:
         if not records:
-            log("--generate-hook/--generate-lösung set but no records selected.")
+            log("--generate-hook/--generate-lösung/--generate-cta set but no records selected.")
             return 0
         if args.dry_run:
             print()
-            print(f"DRY RUN — Block 9 beat generation")
+            print(f"DRY RUN — beat frame generation")
             print(f"Beats: {beats}")
             print(f"Records: {len(records)}")
             total_images = len(records) * len(beats)
@@ -570,12 +624,11 @@ def main(argv=None):
                   f"{FAL_IMAGE_ENDPOINT}). No API calls were made.")
             for r in records:
                 f = r.get("fields", {})
-                hook, lösung = _hook_lösung_beats(r)
+                texts = _beat_texts(r)
                 print(f"  - {r['id']}  Index={f.get('Index')!r}")
-                if "hook" in beats:
-                    print(f"      hook text   ({len(hook)} chars): {hook[:120]}{'...' if len(hook) > 120 else ''}")
-                if "lösung" in beats:
-                    print(f"      lösung text ({len(lösung)} chars): {lösung[:120]}{'...' if len(lösung) > 120 else ''}")
+                for b in beats:
+                    t = texts.get(b, "")
+                    print(f"      {b:7s} text ({len(t)} chars): {t[:120]}{'...' if len(t) > 120 else ''}")
             return 0
         total_images = len(records) * len(beats)
         total_usd = total_images * COST_PER_IMAGE_USD
@@ -586,7 +639,7 @@ def main(argv=None):
         else:
             print()
             print("=" * 60)
-            print(f"BLOCK 9 BEAT GENERATION — COST ESTIMATE")
+            print(f"BEAT FRAME GENERATION — COST ESTIMATE")
             print("=" * 60)
             print(f"  Records            : {len(records)}")
             print(f"  Beats per record   : {len(beats)} ({', '.join(beats)})")
