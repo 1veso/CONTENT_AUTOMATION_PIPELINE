@@ -86,22 +86,6 @@ VOICE_FEMALE = {
     "gender": "female",
 }
 
-# Phase 2A tone-mapped voices (shared library, accent=standard DE).
-# Per-record Airtable fields "Voice Tone" / "Voice Override" pick from these;
-# falls back to the odd/even Jones/Clara routing when neither is set.
-VOICES_BY_TONE = {
-    "ernst":   "hUiEHybCSPbXi2EbtGC1",  # Crizz – Conversational & Deep
-    "familie": "0o46iPcQNHBZFpnxxQz5",  # Marion Mitte – Friendly, Warm & Fresh
-    "leicht":  "LB5G0Z4EP98YaEgL654m",  # Laura – Upbeat & Energetic
-    "reif":    "oBVK5gDykyUkoVXUPyCU",  # Altáriel – Storyteller of the Light
-}
-VOICE_META_BY_TONE = {
-    "ernst":   {"name": "Crizz (DE, Conversational & Deep)",       "gender": "male"},
-    "familie": {"name": "Marion Mitte (DE, Friendly, Warm & Fresh)", "gender": "female"},
-    "leicht":  {"name": "Laura (DE, Upbeat & Energetic)",          "gender": "female"},
-    "reif":    {"name": "Altáriel (DE, Storyteller of the Light)", "gender": "female"},
-}
-
 VOICE_SETTINGS = {
     "stability": 0.55,
     "similarity_boost": 0.75,
@@ -124,13 +108,11 @@ FIRE_WORDS = {"go", "fire", "yes", "run it", "run", "ship"}
 # behavior is unchanged when the flag is off (default).
 NARRATIVE_MODE = os.environ.get("R61_NARRATIVE_MODE", "").lower() in ("1", "true", "yes")
 
-# Phase 2A timing: 17s voiced total. Intro 2s + Outro 2s stitched in hf_stitch
-# → 21s final composition. Spec locked in obsidian-brain/pipelines/R61_video_pipeline.md.
 NARRATIVE_SEGMENTS = [
-    ("hook",    0.0,  3.0,  "Aufmerksamkeitsmoment — echter menschlicher Moment, KEINE Markenerwähnung."),
-    ("problem", 3.0,  8.0,  "Das alltägliche Risiko klar und einfach gezeigt."),
-    ("lösung",  8.0, 14.0,  "Die Rolle von Provinzial — wie sie helfen, NICHT was sie verkaufen."),
-    ("cta",    14.0, 17.0,  "Warme Einladung, niemals ein Befehl."),
+    ("hook",   0.0,  3.0,  "Aufmerksamkeitsmoment — echter menschlicher Moment, KEINE Markenerwähnung."),
+    ("problem",3.0,  7.0,  "Das alltägliche Risiko klar und einfach gezeigt."),
+    ("lösung", 7.0, 11.0,  "Die Rolle von Provinzial — wie sie helfen, NICHT was sie verkaufen."),
+    ("cta",   11.0, 15.0,  "Warme Einladung, niemals ein Befehl."),
 ]
 
 # ----------------------------------------------------------- Caption cleaning
@@ -327,10 +309,10 @@ und teilst ihn in genau VIER aufeinanderfolgende Segmente:
 
   1. hook    (0–3s):  Aufmerksamkeitsmoment — echter menschlicher Moment.
                        KEINE Markenerwähnung, KEINE Produktnennung.
-  2. problem (3–8s):  Das alltägliche Risiko klar und einfach gezeigt.
-  3. lösung  (8–14s): Provinzials Rolle — wie sie helfen, NICHT was sie
+  2. problem (3–7s):  Das alltägliche Risiko klar und einfach gezeigt.
+  3. lösung  (7–11s): Provinzials Rolle — wie sie helfen, NICHT was sie
                        verkaufen. Konkret, geerdet.
-  4. cta     (14–17s): Warme Einladung, niemals ein Befehl. Keine
+  4. cta     (11–15s): Warme Einladung, niemals ein Befehl. Keine
                        Dringlichkeit.
 
 REGELN:
@@ -440,36 +422,6 @@ def pick_voice(index):
     except (TypeError, ValueError):
         return VOICE_MALE
     return VOICE_MALE if i % 2 == 1 else VOICE_FEMALE
-
-
-def select_voice_id(record):
-    """Phase 2A: tone-aware voice selection with override + Jones/Clara fallback.
-
-    Resolution order, per Phase 2A spec:
-      1. "Voice Override" set and recognized → VOICES_BY_TONE[override]   (path="override")
-      2. "Voice Tone" set and recognized     → VOICES_BY_TONE[tone]        (path="tone")
-      3. Fallback → odd/even Index → Jones/Clara                           (path="fallback")
-
-    Returns (voice_dict, path_str). voice_dict has keys id/name/gender so it is
-    drop-in compatible with the existing pick_voice(...) consumers.
-    """
-    fields = record.get("fields", {}) or {}
-    override = (fields.get("Voice Override") or "").strip().lower()
-    tone     = (fields.get("Voice Tone")     or "").strip().lower()
-
-    if override and override in VOICES_BY_TONE:
-        meta = VOICE_META_BY_TONE[override]
-        return (
-            {"id": VOICES_BY_TONE[override], "name": meta["name"], "gender": meta["gender"]},
-            "override",
-        )
-    if tone and tone in VOICES_BY_TONE:
-        meta = VOICE_META_BY_TONE[tone]
-        return (
-            {"id": VOICES_BY_TONE[tone], "name": meta["name"], "gender": meta["gender"]},
-            "tone",
-        )
-    return pick_voice(fields.get("Index")), "fallback"
 
 
 # -------------------------------------------------------------- ElevenLabs TTS
@@ -682,7 +634,7 @@ def process_record(record, no_rewrite):
     fields = record.get("fields", {})
     ad_name = fields.get("Ad Name") or "(no name)"
     index = fields.get("Index")
-    voice, voice_path = select_voice_id(record)
+    voice = pick_voice(index)
 
     _, stripped, script, rewrote = build_script(record, no_rewrite)
     if not script:
@@ -690,7 +642,7 @@ def process_record(record, no_rewrite):
         return "skipped_no_script"
 
     log(f"START {rec_id} Index={index} ({ad_name}) "
-        f"voice={voice['name']} [{voice_path}] chars={len(script)} rewrote={rewrote} "
+        f"voice={voice['name']} chars={len(script)} rewrote={rewrote} "
         f"narrative={NARRATIVE_MODE}")
     log(f"  script: {script[:160]}{'...' if len(script) > 160 else ''}")
 
@@ -746,14 +698,11 @@ def dry_run_report(records, no_rewrite):
         f = r.get("fields", {})
         index = f.get("Index")
         ad_name = f.get("Ad Name") or "(no name)"
-        voice, voice_path = select_voice_id(r)
+        voice = pick_voice(index)
         raw, stripped, script, did_rewrite = build_script(r, no_rewrite)
         rows.append({
             "id": r["id"], "index": index, "ad_name": ad_name,
-            "voice": voice, "voice_path": voice_path,
-            "tone": f.get("Voice Tone"), "override": f.get("Voice Override"),
-            "pacing": f.get("Edit Pacing"),
-            "raw": raw, "stripped": stripped,
+            "voice": voice, "raw": raw, "stripped": stripped,
             "script": script, "rewrote": did_rewrite,
         })
         if did_rewrite:
@@ -763,25 +712,12 @@ def dry_run_report(records, no_rewrite):
         else:
             total_chars += len(script)
 
-    if NARRATIVE_MODE:
-        print()
-        print("  Narrative segment plan (R61_NARRATIVE_MODE=1):")
-        total = 0.0
-        for name, s, e, _desc in NARRATIVE_SEGMENTS:
-            print(f"    {name:8s} {s:5.1f}-{e:5.1f}s ({e - s:.1f}s)")
-            total = max(total, e)
-        print(f"    total voiced: {total:.1f}s  (+ intro 2s + outro 2s @ stitch)")
-
     for row in rows:
         print()
         print(f"  - {row['id']}  Index={row['index']!r}  "
               f"Ad Name={row['ad_name']!r}")
-        print(f"      Voice Tone field : {row['tone']!r}  "
-              f"Voice Override field: {row['override']!r}  "
-              f"Edit Pacing: {row['pacing']!r}")
-        print(f"      Selected voice   : {row['voice']['name']} "
-              f"[{row['voice']['gender']}] id={row['voice']['id']} "
-              f"(path={row['voice_path']})")
+        print(f"      Voice            : {row['voice']['name']} "
+              f"[{row['voice']['gender']}]")
         print(f"      Caption raw      ({len(row['raw'])} chars): "
               f"{row['raw'][:140]!r}{'...' if len(row['raw']) > 140 else ''}")
         print(f"      After strip      ({len(row['stripped'])} chars): "
