@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import modal
 
@@ -66,6 +67,8 @@ r57_image = (
 # `r57-secrets` is created by the operator out-of-band (see module docstring).
 r57_secret = modal.Secret.from_name("r57-secrets")
 
+CAMPAIGN_FIELD_NAMES = ("Campaign ID", "campaign_id", "Campaign")
+
 
 # --------------------------------------------------------------- Helper shims
 #
@@ -84,21 +87,110 @@ def _bootstrap_env():
         os.environ["FAL_API_KEY"] = os.environ["FAL_KEY"]
 
 
+def _normalize_record_ids(record_ids: Any) -> list[str] | None:
+    """Accept JSON arrays, single strings, or comma-separated strings."""
+    if not record_ids:
+        return None
+    if isinstance(record_ids, str):
+        return [r.strip() for r in record_ids.split(",") if r.strip()]
+    if isinstance(record_ids, (list, tuple, set)):
+        return [str(r).strip() for r in record_ids if str(r).strip()]
+    return [str(record_ids).strip()]
+
+
+def _airtable_string(value: str) -> str:
+    """Escape a value for a simple Airtable equality formula."""
+    return str(value).replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _record_id_rows(airtable, record_ids: list[str]) -> list[dict]:
+    """Fetch exact Airtable records without scanning the full table."""
+    clauses = [
+        f'RECORD_ID() = "{_airtable_string(rid)}"'
+        for rid in record_ids
+    ]
+    if not clauses:
+        return []
+    formula = clauses[0] if len(clauses) == 1 else f"OR({', '.join(clauses)})"
+    rows = airtable.get_records(formula)
+    rows_by_id = {row.get("id"): row for row in rows}
+    return [rows_by_id[rid] for rid in record_ids if rid in rows_by_id]
+
+
+def _campaign_rows(airtable, campaign_id: str) -> tuple[list[dict], list[str]]:
+    """Fetch rows for a campaign using the known campaign field aliases.
+
+    Airtable formulas fail if a field name does not exist, so try each alias
+    independently. If none exists or none matches, return no rows rather than
+    falling back to a table-wide scan.
+    """
+    rows_by_id: dict[str, dict] = {}
+    errors: list[str] = []
+    escaped = _airtable_string(campaign_id)
+    for field_name in CAMPAIGN_FIELD_NAMES:
+        formula = f'{{{field_name}}} = "{escaped}"'
+        try:
+            for row in airtable.get_records(formula):
+                rid = row.get("id")
+                if rid:
+                    rows_by_id[rid] = row
+        except Exception as e:
+            errors.append(f"{field_name}: {str(e)[:160]}")
+    return list(rows_by_id.values()), errors
+
+
 # ----------------------------------------------------------- Modal functions
 
 @app.function(image=r57_image, secrets=[r57_secret], timeout=60 * 30)
 def generate_images(record_ids: list[str] | None = None,
-                    dry_run: bool = False) -> dict:
-    """Generate R57 images for specific record ids (or all pending)."""
+                    campaign_id: str | None = None,
+                    dry_run: bool = False,
+                    limit: int | None = None) -> dict:
+    """Generate R57 images for a deliberately targeted set of records.
+
+    Safety order:
+      1. explicit record_ids
+      2. explicit campaign_id using known campaign field aliases
+      3. pending images only
+
+    Never process the whole table by default.
+    """
     _bootstrap_env()
     sys.path.insert(0, "/root")
     from tools import image_gen, airtable, notify  # noqa: E402
 
-    rows = airtable.get_records()
-    if record_ids:
-        rows = [r for r in rows if r.get("id") in set(record_ids)]
+    ids = _normalize_record_ids(record_ids)
+    campaign_errors: list[str] = []
+    if ids:
+        rows = _record_id_rows(airtable, ids)
+        target = "record_ids"
+    elif campaign_id:
+        rows, campaign_errors = _campaign_rows(airtable, campaign_id)
+        target = "campaign_id"
+    else:
+        rows = airtable.get_pending_images()
+        target = "pending"
+
+    if limit is not None:
+        limit = max(0, int(limit))
+        rows = rows[:limit]
+
     total = len(rows)
-    summary = {"requested": total, "ok": 0, "failed": 0, "ids": []}
+    summary = {
+        "requested": total,
+        "ok": 0,
+        "failed": 0,
+        "ids": [],
+        "campaign_id": campaign_id,
+        "dry_run": dry_run,
+        "target": target,
+        "limit": limit,
+    }
+    if campaign_errors:
+        summary["campaign_field_errors"] = campaign_errors
+    if campaign_id and not rows and len(campaign_errors) == len(CAMPAIGN_FIELD_NAMES):
+        summary["warning"] = "campaign_id filter requested but no campaign field found."
+
     for r in rows:
         try:
             if not dry_run:
@@ -156,10 +248,17 @@ def schedule_blotato(record_ids: list[str] | None = None,
 @app.function(image=r57_image, secrets=[r57_secret], timeout=60 * 30)
 @modal.fastapi_endpoint(method="POST")
 def generate_images_http(payload: dict) -> dict:
-    """POST {record_ids: [...], dry_run: bool} → generate_images.remote(...)"""
+    """POST targeting payload → generate_images.local(...)."""
     record_ids = payload.get("record_ids") if payload else None
+    campaign_id = payload.get("campaign_id") if payload else None
     dry_run = bool(payload.get("dry_run", False)) if payload else False
-    return generate_images.local(record_ids=record_ids, dry_run=dry_run)
+    limit = payload.get("limit") if payload else None
+    return generate_images.local(
+        record_ids=record_ids,
+        campaign_id=campaign_id,
+        dry_run=dry_run,
+        limit=limit,
+    )
 
 
 @app.function(image=r57_image, secrets=[r57_secret], timeout=60 * 10)
@@ -174,7 +273,9 @@ def schedule_blotato_http(payload: dict) -> dict:
 # ------------------------------------------------------------- Local entry
 
 @app.local_entrypoint()
-def main(record_id: str | None = None, dry_run: bool = True):
+def main(record_id: str | None = None, campaign_id: str | None = None,
+         dry_run: bool = True, limit: int | None = None):
     """Manual smoke-test entry point: `modal run modal_app.py`."""
     ids = [record_id] if record_id else None
-    print(generate_images.remote(record_ids=ids, dry_run=dry_run))
+    print(generate_images.remote(record_ids=ids, campaign_id=campaign_id,
+                                 dry_run=dry_run, limit=limit))
