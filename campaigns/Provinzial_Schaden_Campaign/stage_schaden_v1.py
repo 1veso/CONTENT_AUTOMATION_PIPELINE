@@ -26,6 +26,8 @@ ROOT = Path(__file__).resolve().parents[2]
 CAMPAIGN_DIR = Path(__file__).resolve().parent
 CAMPAIGN_ID = "Schaden_2026_05"
 MANIFEST_PATH = CAMPAIGN_DIR / f"staged_records_{CAMPAIGN_ID}.json"
+R57_AD_PREFIX = "Schaden v1 - R57 -"
+R61_AD_PREFIX = "Schaden v1 - R61 -"
 
 sys.path.insert(0, str(ROOT / "R57_content_engine"))
 from tools import airtable as r57_airtable  # noqa: E402
@@ -136,6 +138,15 @@ def max_index(records):
         except (TypeError, ValueError):
             continue
     return highest
+
+
+def count_ad_prefix(records, prefix):
+    count = 0
+    for record in records:
+        ad_name = record.get("fields", {}).get("Ad Name") or ""
+        if ad_name.startswith(prefix):
+            count += 1
+    return count
 
 
 def slug(text, max_words=7):
@@ -272,6 +283,11 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true", help="Print plan only; no writes.")
     mode.add_argument("--apply", action="store_true", help="Create Airtable rows and manifest.")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Bypass duplicate apply protection. Use only after manual review.",
+    )
     args = parser.parse_args(argv)
     apply = bool(args.apply)
 
@@ -300,6 +316,11 @@ def main(argv=None):
     r61_records = r61_airtable.get_records()
     r57_max = max_index(r57_records)
     r61_max = max_index(r61_records)
+    duplicate_check = {
+        "existing_r57_rows": count_ad_prefix(r57_records, R57_AD_PREFIX),
+        "existing_r61_rows": count_ad_prefix(r61_records, R61_AD_PREFIX),
+        "manifest_exists": MANIFEST_PATH.exists(),
+    }
 
     planned_r57 = build_r57_rows(r57_max + 1, r57_fields)
     planned_r61 = build_r61_rows(r61_max + 1, r61_fields)
@@ -317,6 +338,10 @@ def main(argv=None):
     print(f"R61 current max Index: {r61_max}")
     print(f"Planned R57 rows: {len(planned_r57)}")
     print(f"Planned R61 rows: {len(planned_r61)}")
+    print("Duplicate check:")
+    print(f"  existing staged R57 rows: {duplicate_check['existing_r57_rows']}")
+    print(f"  existing staged R61 rows: {duplicate_check['existing_r61_rows']}")
+    print(f"  manifest exists: {duplicate_check['manifest_exists']}")
     print(f"R57 optional/desired fields missing: {r57_missing or 'none'}")
     print(f"R61 optional/desired fields missing: {r61_missing or 'none'}")
     print(f"Campaign ID field exists: R57={campaign_field_exists['r57']} R61={campaign_field_exists['r61']}")
@@ -329,6 +354,21 @@ def main(argv=None):
     if not apply:
         print("\nDry run only - no Airtable records created.")
         return 0
+
+    duplicates_found = (
+        duplicate_check["existing_r57_rows"] > 0
+        or duplicate_check["existing_r61_rows"] > 0
+        or duplicate_check["manifest_exists"]
+    )
+    if duplicates_found and not args.force:
+        print("\nABORT: existing Schaden v1 staging artifacts found.")
+        print(f"  existing staged R57 rows: {duplicate_check['existing_r57_rows']}")
+        print(f"  existing staged R61 rows: {duplicate_check['existing_r61_rows']}")
+        print(f"  manifest exists: {duplicate_check['manifest_exists']}")
+        print("No Airtable records were created. Re-run with --force only after manual review.")
+        return 2
+    if duplicates_found and args.force:
+        print("\nWARNING: --force set; duplicate protection is bypassed.")
 
     created_r57 = r57_airtable.create_records_batch([row["fields"] for row in planned_r57])
     created_r61 = r61_airtable.create_records_batch([row["fields"] for row in planned_r61])
