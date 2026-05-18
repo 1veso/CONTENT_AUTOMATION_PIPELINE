@@ -28,6 +28,9 @@ _MODEL_DISPLAY_NAMES = {
 # Reverse mapping: Airtable display name -> internal model name
 _AIRTABLE_TO_INTERNAL = {v: k for k, v in _MODEL_DISPLAY_NAMES.items()}
 
+_SCHADEN_V1_AD_PREFIX = "Schaden v1 - R57 -"
+_SCHADEN_V1_PROVIDER = "fal"
+
 
 def _detect_aspect_ratio(prompt):
     """Detect aspect ratio from prompt prefix (e.g., '9:16. ...')."""
@@ -35,6 +38,12 @@ def _detect_aspect_ratio(prompt):
         if prompt.startswith(f"{ratio}.") or prompt.startswith(f"{ratio} "):
             return ratio
     return "9:16"
+
+
+def _is_schaden_v1_record(record):
+    """Return True for the staged Schaden v1 R57 rows."""
+    fields = record.get("fields", {})
+    return fields.get("Ad Name", "").startswith(_SCHADEN_V1_AD_PREFIX)
 
 
 def generate_ugc_image(prompt, reference_paths=None, reference_urls=None,
@@ -100,8 +109,7 @@ def generate_for_record(record, reference_paths=None, reference_urls=None,
     Returns:
         list of result dicts, or None if skipped
     """
-    model = model or config.DEFAULT_IMAGE_MODEL
-    provider_module, provider_name = get_image_provider(model, provider)
+    model, provider_module, provider_name = _resolve_record_model(record, model, provider)
     sync = is_sync(provider_module, "image")
 
     record_id = record["id"]
@@ -183,15 +191,19 @@ def _resolve_record_model(record, fallback_model=None, fallback_provider=None):
     """
     fields = record.get("fields", {})
     airtable_model = fields.get("Image Model")
+    provider_override = fallback_provider
+
+    if provider_override is None and _is_schaden_v1_record(record):
+        provider_override = _SCHADEN_V1_PROVIDER
 
     if airtable_model:
         internal = _AIRTABLE_TO_INTERNAL.get(airtable_model)
         if internal:
-            provider_module, provider_name = get_image_provider(internal, fallback_provider)
+            provider_module, provider_name = get_image_provider(internal, provider_override)
             return internal, provider_module, provider_name
 
     model = fallback_model or config.DEFAULT_IMAGE_MODEL
-    provider_module, provider_name = get_image_provider(model, fallback_provider)
+    provider_module, provider_name = get_image_provider(model, provider_override)
     return model, provider_module, provider_name
 
 
