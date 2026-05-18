@@ -24,6 +24,22 @@ This campaign shows **the moment after** the incident. Not the disaster, not the
 
 ---
 
+## Composition Order — Schaden v1 (R61)
+
+Locked 4-beat structure for Provinzial Schaden v1 short-form video:
+
+1. **Hook problem** — the moment something goes wrong (Wasserrohrbruch, Einbruch, Hagelschaden, etc.). Natural, human, German.
+2. **Intro / brand stamp** — Provinzial green + Flügelgelb wings.
+3. **Solution / explanation + natural CTA** — calm advisor guidance, human reassurance, soft CTA folded in (no pressure).
+4. **Outro / brand exit** — wings logo, brand close.
+
+This is the R61-specific 4-beat variant of the general 5-beat short-form spine (hook problem → intro → solution → CTA → outro). For R61, CTA is folded into solution as a natural closing line.
+
+Source of truth: `obsidian-brain/strategy/Mastermind_Plan_Content_Production_Engine.md`
+Code implementation: `R61_video_pipeline/tools/hf_stitch.py --composition-mode schaden-v1`
+
+---
+
 ## Content mix (30 days × 4 posts/day = 120 posts)
 
 | Type | Pipeline | Count | Format | Channel mix |

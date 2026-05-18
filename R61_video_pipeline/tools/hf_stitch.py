@@ -93,6 +93,8 @@ WATERMARK_PATH = PROJECT_ROOT / "references" / "inputs" / "wings.png"
 
 VO_VOLUME = 0.9
 CLIP_AUDIO_VOLUME = 0.3
+SCHADEN_V1_AD_PREFIX = "Schaden v1 - R61 -"
+SCHADEN_HOOK_SECONDS = 3.0
 
 TARGET_W = 1080
 TARGET_H = 1920
@@ -113,6 +115,12 @@ def log(msg):
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(line + "\n")
+
+
+def is_schaden_v1_record(record):
+    """Return True for staged Schaden v1 R61 rows."""
+    fields = record.get("fields", {})
+    return (fields.get("Ad Name") or "").startswith(SCHADEN_V1_AD_PREFIX)
 
 
 def apply_watermark(input_video_path, output_video_path, segment_kind):
@@ -188,6 +196,31 @@ def extract_last_frame(clip_path: Path, out_path: Path):
         raise RuntimeError("lastframe ffmpeg failed:\n" + (proc.stderr or "")[-2000:])
 
 
+def trim_video_segment(input_path: Path, out_path: Path,
+                       start_s: float, duration_s: float):
+    """Render a precise MP4 segment for structure-locked compositions."""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    if out_path.exists():
+        log(f"  segment exists, skipping ffmpeg -> {out_path.name}")
+        return
+    argv = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-ss", f"{start_s:.3f}",
+        "-t", f"{duration_s:.3f}",
+        "-i", str(input_path),
+        "-map", "0:v:0",
+        "-map", "0:a?",
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "192k", "-ar", str(TARGET_SR), "-ac", "2",
+        str(out_path),
+    ]
+    proc = subprocess.run(argv, capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
+    if proc.returncode != 0:
+        raise RuntimeError("segment ffmpeg failed:\n" + (proc.stderr or "")[-2000:])
+
+
 def stage_workdir(workdir: Path, intro_src: Path, outro_src: Path,
                   clip_src: Path, audio_src: Path, lastframe_src: Path):
     """Copy assets into the per-record workdir alongside index.html."""
@@ -195,6 +228,19 @@ def stage_workdir(workdir: Path, intro_src: Path, outro_src: Path,
     shutil.copyfile(intro_src,     workdir / "intro.mp4")
     shutil.copyfile(outro_src,     workdir / "outro.mp4")
     shutil.copyfile(clip_src,      workdir / "clip.mp4")
+    shutil.copyfile(audio_src,     workdir / "mixed_audio.aac")
+    shutil.copyfile(lastframe_src, workdir / "clip_lastframe.png")
+
+
+def stage_workdir_schaden(workdir: Path, intro_src: Path, outro_src: Path,
+                          hook_src: Path, solution_src: Path,
+                          audio_src: Path, lastframe_src: Path):
+    """Copy assets for Schaden v1: hook -> intro -> solution + CTA -> outro."""
+    workdir.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(intro_src,     workdir / "intro.mp4")
+    shutil.copyfile(outro_src,     workdir / "outro.mp4")
+    shutil.copyfile(hook_src,      workdir / "hook.mp4")
+    shutil.copyfile(solution_src,  workdir / "solution.mp4")
     shutil.copyfile(audio_src,     workdir / "mixed_audio.aac")
     shutil.copyfile(lastframe_src, workdir / "clip_lastframe.png")
 
@@ -317,6 +363,110 @@ def write_composition(workdir: Path, comp_id: str, ad_label: str,
     html = "\n".join(parts)
     (workdir / "index.html").write_text(html, encoding="utf-8")
     return t_total
+
+
+def write_schaden_composition(workdir: Path, comp_id: str, ad_label: str,
+                              hook_dur: float, intro_dur: float,
+                              solution_dur: float, audio_dur: float,
+                              outro_dur: float):
+    """Emit Schaden v1 locked order: hook -> intro -> solution/CTA -> outro."""
+    def to_ms(s): return int(round(s * 1000))
+
+    hook_ms = to_ms(hook_dur)
+    intro_ms = to_ms(intro_dur)
+    solution_ms = to_ms(solution_dur)
+    audio_ms = to_ms(audio_dur)
+    outro_ms = to_ms(outro_dur)
+    frame_buffer_ms = 50
+
+    solution_scene_ms = max(solution_ms, audio_ms) + frame_buffer_ms
+    freeze_ms = solution_scene_ms - solution_ms
+
+    t_hook_end_ms = hook_ms
+    t_intro_end_ms = hook_ms + intro_ms
+    t_solution_end_ms = t_intro_end_ms + solution_ms
+    t_outro_start_ms = t_intro_end_ms + solution_scene_ms
+    t_total_ms = t_outro_start_ms + outro_ms
+
+    def fmt(ms): return f"{ms / 1000:.3f}"
+
+    safe_title = (ad_label or comp_id).replace("<", "&lt;").replace(">", "&gt;")
+    css_id = comp_id
+
+    parts = [
+        '<!doctype html>',
+        '<html lang="de">',
+        '<head>',
+        '  <meta charset="utf-8" />',
+        f'  <title>R61 Schaden v1 - {safe_title}</title>',
+        '  <style>',
+        '    html, body { margin: 0; padding: 0; background: #000; }',
+        f'    #{css_id} {{',
+        '      position: relative;',
+        '      background: #000;',
+        '      overflow: hidden;',
+        '    }',
+        f'    #{css_id} video,',
+        f'    #{css_id} img {{',
+        '      position: absolute;',
+        '      top: 0;',
+        '      left: 0;',
+        '      width: 100%;',
+        '      height: 100%;',
+        '      object-fit: cover;',
+        '    }',
+        '  </style>',
+        '</head>',
+        '<body>',
+        f'  <div id="{css_id}" data-composition-id="{comp_id}"',
+        '    data-start="0"',
+        f'    data-duration="{fmt(t_total_ms)}"',
+        f'    data-width="{TARGET_W}"',
+        f'    data-height="{TARGET_H}">',
+        f'    <!-- Scene 1: Hook problem (0.000 - {fmt(t_hook_end_ms)}) -->',
+        f'    <video id="v-hook" data-start="0" data-duration="{hook_dur:.3f}" '
+        f'data-track-index="0" src="hook.mp4" muted playsinline></video>',
+        f'    <!-- Scene 2: Intro/brand stamp ({fmt(t_hook_end_ms)} - {fmt(t_intro_end_ms)}) -->',
+        f'    <video id="v-intro" data-start="{fmt(t_hook_end_ms)}" '
+        f'data-duration="{intro_dur:.3f}" data-track-index="0" '
+        f'src="intro.mp4" muted playsinline></video>',
+        f'    <!-- Scene 3a: Solution/explanation + natural CTA '
+        f'({fmt(t_intro_end_ms)} - {fmt(t_solution_end_ms)}) -->',
+        f'    <video id="v-solution" data-start="{fmt(t_intro_end_ms)}" '
+        f'data-duration="{solution_dur:.3f}" data-track-index="0" '
+        f'src="solution.mp4" muted playsinline></video>',
+    ]
+    if freeze_ms > 10:
+        parts.extend([
+            f'    <!-- Scene 3b: Hold solution frame while VO finishes '
+            f'({fmt(t_solution_end_ms)} - {fmt(t_outro_start_ms)}) -->',
+            f'    <img id="v-freeze" class="clip" data-start="{fmt(t_solution_end_ms)}" '
+            f'data-duration="{freeze_ms / 1000:.3f}" data-track-index="0" '
+            f'src="clip_lastframe.png" alt="" />',
+        ])
+    parts.extend([
+        f'    <!-- Scene 4: Outro ({fmt(t_outro_start_ms)} - {fmt(t_total_ms)}) -->',
+        f'    <video id="v-outro" data-start="{fmt(t_outro_start_ms)}" '
+        f'data-duration="{outro_dur:.3f}" data-track-index="0" '
+        f'src="outro.mp4" muted playsinline></video>',
+        f'    <!-- Voiceover starts after hook + intro, blended into solution/CTA. -->',
+        f'    <audio id="a-mix" data-start="{fmt(t_intro_end_ms)}" '
+        f'data-duration="{audio_dur:.3f}" data-track-index="1" '
+        f'data-volume="1" src="mixed_audio.aac"></audio>',
+        '    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>',
+        '    <script>',
+        '      window.__timelines = window.__timelines || {};',
+        '      const tl = gsap.timeline({ paused: true });',
+        f'      window.__timelines["{comp_id}"] = tl;',
+        '    </script>',
+        '  </div>',
+        '</body>',
+        '</html>',
+        '',
+    ])
+
+    (workdir / "index.html").write_text("\n".join(parts), encoding="utf-8")
+    return t_total_ms / 1000.0
 
 
 def run_hyperframes(workdir: Path, output_path: Path):
@@ -618,8 +768,16 @@ def burn_captions(input_mp4: Path, ass_file: Path, output_mp4: Path):
         f"({output_mp4.stat().st_size/1e6:.1f} MB)")
 
 
+def resolve_composition_mode(record, requested_mode: str):
+    """Resolve auto into the concrete composition mode for this record."""
+    if requested_mode == "auto":
+        return "schaden-v1" if is_schaden_v1_record(record) else "legacy"
+    return requested_mode
+
+
 def process_record(record, skip_publish=False, force_premix=False,
-                   advance_status=False, add_captions=False):
+                   advance_status=False, add_captions=False,
+                   composition_mode="auto"):
     """End-to-end v2 build for one Airtable record."""
     rec_id = record["id"]
     fields = record.get("fields", {})
@@ -643,29 +801,64 @@ def process_record(record, skip_publish=False, force_premix=False,
         download_attachment(vo_url, vo_local)
         log(f"  downloaded vo → {vo_local.name}")
 
+    intro_dur = probe_duration(INTRO_PATH) or 2.75
+    outro_dur = probe_duration(OUTRO_PATH) or 2.75
+    clip_dur = probe_duration(clip_local) or 5.042
+    resolved_mode = resolve_composition_mode(record, composition_mode)
+    schaden_v1 = resolved_mode == "schaden-v1"
+    voiceover_offset = intro_dur
+
     audio_out = TMP_DIR / f"{index}_mixed_audio.aac"
     lastframe_out = TMP_DIR / f"{index}_clip_lastframe.png"
     if force_premix:
         for p in (audio_out, lastframe_out):
             if p.exists():
                 p.unlink()
-    premix_audio(clip_local, vo_local, audio_out)
-    extract_last_frame(clip_local, lastframe_out)
-    log(f"  premix → {audio_out.name}, lastframe → {lastframe_out.name}")
 
-    intro_dur = probe_duration(INTRO_PATH) or 2.75
-    outro_dur = probe_duration(OUTRO_PATH) or 2.75
-    clip_dur = probe_duration(clip_local) or 5.042
     audio_dur = probe_duration(audio_out) or clip_dur
-    log(f"  durations: intro={intro_dur:.3f}s clip={clip_dur:.3f}s "
-        f"audio={audio_dur:.3f}s outro={outro_dur:.3f}s")
 
     workdir = HF_WORK_DIR / f"{index}"
-    stage_workdir(workdir, INTRO_PATH, OUTRO_PATH, clip_local,
-                  audio_out, lastframe_out)
     comp_id = f"r61-day{index}"
-    total = write_composition(workdir, comp_id, ad_name,
-                              intro_dur, clip_dur, audio_dur, outro_dur)
+    log(f"  composition mode: requested={composition_mode} resolved={resolved_mode}")
+
+    if schaden_v1:
+        hook_dur = min(SCHADEN_HOOK_SECONDS, clip_dur)
+        solution_start = hook_dur
+        solution_dur = clip_dur - hook_dur
+        if solution_dur < 0.05:
+            solution_start = max(0.0, clip_dur - 0.05)
+            solution_dur = min(0.05, clip_dur)
+        hook_clip = TMP_DIR / f"{index}_schaden_hook.mp4"
+        solution_clip = TMP_DIR / f"{index}_schaden_solution.mp4"
+        if force_premix:
+            for p in (hook_clip, solution_clip):
+                if p.exists():
+                    p.unlink()
+        trim_video_segment(clip_local, hook_clip, 0.0, hook_dur)
+        trim_video_segment(clip_local, solution_clip, solution_start, solution_dur)
+        premix_audio(solution_clip, vo_local, audio_out)
+        extract_last_frame(solution_clip, lastframe_out)
+        audio_dur = probe_duration(audio_out) or solution_dur
+        voiceover_offset = hook_dur + intro_dur
+        log(f"  Schaden v1 locked order active: hook -> intro -> solution/CTA -> outro")
+        log(f"  durations: hook={hook_dur:.3f}s intro={intro_dur:.3f}s "
+            f"solution={solution_dur:.3f}s audio={audio_dur:.3f}s "
+            f"outro={outro_dur:.3f}s")
+        stage_workdir_schaden(workdir, INTRO_PATH, OUTRO_PATH, hook_clip,
+                              solution_clip, audio_out, lastframe_out)
+        total = write_schaden_composition(workdir, comp_id, ad_name,
+                                          hook_dur, intro_dur, solution_dur,
+                                          audio_dur, outro_dur)
+    else:
+        premix_audio(clip_local, vo_local, audio_out)
+        extract_last_frame(clip_local, lastframe_out)
+        audio_dur = probe_duration(audio_out) or clip_dur
+        log(f"  durations: intro={intro_dur:.3f}s clip={clip_dur:.3f}s "
+            f"audio={audio_dur:.3f}s outro={outro_dur:.3f}s")
+        stage_workdir(workdir, INTRO_PATH, OUTRO_PATH, clip_local,
+                      audio_out, lastframe_out)
+        total = write_composition(workdir, comp_id, ad_name,
+                                  intro_dur, clip_dur, audio_dur, outro_dur)
     log(f"  composition staged: {workdir}  (total {total:.3f}s)")
 
     # Block 3 opt-in side-features. Both are NO-OPs unless their env flag is
@@ -703,10 +896,10 @@ def process_record(record, skip_publish=False, force_premix=False,
             built = build_ass_subs_from_alignment(
                 aln_json, ass_path,
                 window=(0.0, audio_dur),
-                offset_s=intro_dur,
+                offset_s=voiceover_offset,
             )
         if not built:
-            built = build_ass_subs(vo_script, vo_start=intro_dur,
+            built = build_ass_subs(vo_script, vo_start=voiceover_offset,
                                    vo_dur=audio_dur, out_path=ass_path)
 
         if built:
@@ -790,6 +983,14 @@ def main(argv=None):
                              "r61/final/<tag>/captions/. Original render is "
                              "preserved. Default from R61_ADD_CAPTIONS env "
                              "var (1/true to enable).")
+    parser.add_argument("--composition-mode",
+                        choices=("legacy", "schaden-v1", "auto"),
+                        default="auto",
+                        help="Composition structure. legacy keeps the current "
+                             "intro-first order; schaden-v1 renders hook -> "
+                             "intro -> solution/CTA -> outro; auto selects "
+                             "schaden-v1 for Ad Names starting with "
+                             f"{SCHADEN_V1_AD_PREFIX!r}.")
     args = parser.parse_args(argv)
 
     missing = av.check_credentials()
@@ -828,7 +1029,8 @@ def main(argv=None):
             res = process_record(r, skip_publish=args.skip_publish,
                                  force_premix=args.force_premix,
                                  advance_status=advance_status,
-                                 add_captions=args.add_captions)
+                                 add_captions=args.add_captions,
+                                 composition_mode=args.composition_mode)
         except Exception as e:
             log(f"FAIL {r['id']}: {e}")
             res = "failed"

@@ -41,7 +41,7 @@ These are pre-existing canvas requirements (Phase 6). The canvas will fail at ru
 **Pre-existing gaps from Phase 6 still open:**
 
 - ☐ `telegramTrigger` nodes for R39 / n19 / n29×3 require manual UI re-add and lux_bot binding (TODO stickies on canvas preserve original config).
-- ☐ KIE → Fal swaps still pending in: **n19** (Veo + nano-banana-edit), **n21** (4 sub-workflows: Veo3-fast, nano-banana, Seedream, gpt-image-1).
+- ~~☐ KIE → Fal swaps still pending in: **n19** (Veo + nano-banana-edit), **n21** (4 sub-workflows: Veo3-fast, nano-banana, Seedream, gpt-image-1).~~ **DONE 2026-05-15** — see `convo_log_primary.md` Session 3 and `_index.md:91` (R51 lyria2, n16/n19 veo3/image-to-video, n19 nano-banana-pro/edit, Seedream v4/edit).
 - ☐ Sheets → Airtable swaps pending in: **n19, n21**.
 - ☐ Box → R2 swap pending in: **n19**.
 - ☐ n21 sub-workflows do not yet exist — 5 separate workflows must be created (Combine Clips, 3× Create Image, Create Video) and their IDs patched into the n21 orchestrator's TODO sticky positions.
@@ -94,7 +94,7 @@ curl -X POST https://hello-58046--r61-video-pipeline-blotato-schedule-http.modal
   -H "Content-Type: application/json" -d '{"dry_run": true}'
 ```
 
-**Important:** n8n is **not yet wired to call Modal** (the `WH-Log → WH-Respond` chain currently terminates without an HTTP Request to Modal). See `obsidian-brain/knowledge/n8n_modal_tunnel_blocker.md`. Until that's done, R57 and R61 work happens via Python poller, not Modal HTTP. The Modal endpoints are warm-tested for when the tunnel lands.
+**Important:** ~~n8n is **not yet wired to call Modal** (the `WH-Log → WH-Respond` chain currently terminates without an HTTP Request to Modal). See `obsidian-brain/knowledge/n8n_modal_tunnel_blocker.md`. Until that's done, R57 and R61 work happens via Python poller, not Modal HTTP. The Modal endpoints are warm-tested for when the tunnel lands.~~ **DONE 2026-05-15** — tunnel wired. §T1 R57 fires `generate-images-http` after WH-Respond (fire-and-forget). §T2 R61 routes voiceover/stitch/blotato via Switch on `body.stage`. See `_index.md:90` and `obsidian-brain/knowledge/n8n_modal_tunnel_blocker.md` (wiring-as-built section). Caveat: R57 `schedule_blotato_http` wrapper is broken (missing `tools.blotato_schedule` import) — surfaced by Block 2 dry-runs 2026-05-18, see `convo_log_primary.md` Session 4.
 
 **Modal secrets that must be present** (one-time, persistent in workspace):
 - `r57-secrets` — `FAL_KEY`, `AIRTABLE_API_KEY`, `BLOTATO_API_KEY`, `GOOGLE_API_KEY`
@@ -177,7 +177,7 @@ A row can be **GO** only when every box on its row is ticked.
 
 ## 10. Operator decisions still open (carry over to kickoff conversation)
 
-1. **n8n ↔ Modal tunnel** — keep using current Python poller (R57/R61 pull from Airtable), or wire HTTP Request nodes downstream of `WH-Log` per `n8n_modal_tunnel_blocker.md`? Tunnel lets Blotato scheduling happen end-to-end inside n8n; poller keeps the existing battle-tested path.
+1. ~~**n8n ↔ Modal tunnel** — keep using current Python poller (R57/R61 pull from Airtable), or wire HTTP Request nodes downstream of `WH-Log` per `n8n_modal_tunnel_blocker.md`? Tunnel lets Blotato scheduling happen end-to-end inside n8n; poller keeps the existing battle-tested path.~~ **DONE 2026-05-15** — tunnel chosen + wired. Both paths now exist; R57/R61 active path is via Modal HTTP downstream of WH-Respond (see `_index.md:90`).
 2. **R34/n19/n21 Airtable tables** — create new tables before kickoff, or accept Sheets fallback for v1?
 3. **n21 sub-workflows** — defer entirely (ship 100 posts instead of 120), or block on UI creation?
 4. **Posting hold** — confirm Schaden v1 ships into Blotato as scheduled drafts, not live posts. Operator must say "lift hold for Provinzial Schaden" before any post goes live.

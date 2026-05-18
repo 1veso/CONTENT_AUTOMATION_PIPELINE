@@ -6,6 +6,17 @@ The pipeline is **human-gated** — Blotato never auto-posts, and four stitch/pr
 
 ---
 
+## Composition Modes
+
+**Legacy (v3 renders and prior):** original single-clip composition (see "Workflow" §5 below — `intro → hook clip → raw footage → voiceover → B-roll → outro`).
+
+**Schaden v1 (current Provinzial campaign):** `hook problem → intro → solution/explanation + natural CTA → outro`
+
+Strategic source: `obsidian-brain/strategy/Mastermind_Plan_Content_Production_Engine.md`
+Code: `hf_stitch.py --composition-mode schaden-v1|legacy|auto`
+
+---
+
 ## Workflow
 
 ### 1. First/Last frame generation

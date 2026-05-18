@@ -8,6 +8,51 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 Mastermind Plan installed as strategic source of truth at `obsidian-brain/strategy/Mastermind_Plan_Content_Production_Engine.md`; referenced from `_index.md` (top-level Strategic Source of Truth section) and `CLAUDE.md` (Strategic Reference section).
 
+### Session 4.1 — 2026-05-18 (Blocks 1–3 — verify + normalize)
+
+Block 2 verification complete. R61 Schaden v1 sample (`rec3QiBpC3N3cMZHN`, Wasserrohrbruch um 3 Uhr nachts) verified clean: MP4 metadata good (1080×1920, 20.133s, 30fps, h264+aac, 2.86 MB), composition order matches Mastermind spec (hook problem → intro/brand stamp → solution + CTA → outro), Provinzial yellow captions burned in (verified at t=10s, German word `ruhig.`). Airtable record: all upstream fields populated, Voice Tone = `familie`, alignment JSON parseable (ElevenLabs forced-alignment shape). Final Video field empty by design (`--skip-publish`).
+
+Block 3 doc-normalization: Composition Order section added to CAMPAIGN_BRIEF.md (preferred home, under Strategic angle). Composition Modes section added to PIPELINE.md (legacy vs schaden-v1). Three stale PREFLIGHT items marked DONE 2026-05-15 (KIE→Fal swaps; n8n↔Modal tunnel wired note; §10 open decision #1).
+
+Permission note: `obsidian-brain/clients/` is on the deny list, so the Block 2 verification entry for `campaign_log.md` could not be written by this agent. Operator must append the entry manually outside the deny list, or grant temporary access. Pending content for that entry is captured below under "Block 2 verification — for campaign_log" so the operator has a copy-paste source.
+
+**Folded from EXECUTION_STATUS_SCHADEN_V1.md (orphan status file at repo root, deleted in this block):**
+
+v1 scope = R57 + R61 + R34 only (85 posts). n19 + n21 explicitly deferred.
+
+Dry-run results (2026-05-18, pre-Block 2):
+- R57 `generate_images_http` warmup → PASS (requested=30, ok=30, failed=0 — table holds prior 30-record campaign, not 40 fresh Schaden rows).
+- R57 `schedule_blotato_http` warmup → **FAIL** — Modal wrapper missing `tools.blotato_schedule` import. Patch required before R57 schedule path works end-to-end.
+- R61 chain (sync/frame/video/voiceover/stitch/blotato dry-runs) → all PASS with 0 rows in expected statuses; Schaden rows not yet staged in `tbl1hd8yprLTZia4c`.
+- R61 Modal warmups (voiceover-gen-http, hf-stitch-http, blotato-schedule-http) → all PASS, exit_code=0.
+- R34 → no safe local dry-run path; webhook would write to PipelineRequests + may continue into paid Fal/Blotato. Not fired.
+
+Go/No-Go: R57 NO-GO until schedule wrapper patched + 40 Schaden rows staged; R61 NO-GO until 25 Schaden rows staged; R34 NO-GO until `tbl0IpDJZw0ud45LO` confirmed live + n29 gate confirmed; n19/n21 out of v1 scope.
+
+Next-patch list (operator decisions / agent actions in upcoming blocks):
+1. Patch `R57_content_engine/modal_app.py` schedule_blotato wrapper.
+2. Decide Schaden v1 R57 staging strategy (40 rows, no collision with prior campaign).
+3. Decide R61 index namespace (continue from 30, or campaign-scoped index field).
+4. Verify R34 table `tbl0IpDJZw0ud45LO` binding.
+5. Confirm n29 quality gate active for R61/R34 before Blotato.
+6. Operator cost approval (~$26.60: R57 $1.60 + R61 $10 + R34 $15).
+
+**Block 2 verification — for campaign_log (operator to paste manually under existing Session 4 entry):**
+
+```
+### 2026-05-18 — Block 2 verification of Schaden v1 sample
+
+- Verified MP4: 1080×1920, 20.133s, 30fps, h264+aac, ~2.86 MB.
+- Composition spot-check passed (frames extracted at 0.5/2/4/10/15/18s): hook problem → intro/brand stamp → solution/explanation → outro/brand exit. The t=2s frame is a black cross-fade between hook and intro, not a missing scene.
+- Burned-in Provinzial yellow captions confirmed at t=10s.
+- Airtable record rec3QiBpC3N3cMZHN: all input fields populated; Voice Tone = familie; Voiceover Alignment JSON parseable (keys: characters/words/loss).
+- Final Video field empty (intentional, --skip-publish); Video Status = Voiceover Done.
+- Status: ready for operator visual review.
+- Uncommitted code: hf_stitch.py carries 234 lines of Schaden v1 composition logic; will be committed in Block 4.
+```
+
+Next: commit uncommitted `hf_stitch.py` Schaden v1 changes + this block's doc updates (Block 4), then R34 readiness check (Block 5).
+
 ---
 
 ## Session 3 — 2026-05-15 (credential fan-out round 2 + Sheets→Airtable swap)
