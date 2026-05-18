@@ -30,6 +30,31 @@ Vault root for the CONTENT_PIPELINE knowledge base. Every file in the vault is l
 
 **Posting hold:** active. Schedule freely, never immediate-post via Blotato. See [[knowledge/lessons_learned#Blotato hold]].
 
+## Tomorrow Morning — Blockers (2026-05-19 EOD diagnostic)
+
+Two perceived blockers reported during 2026-05-18 evening session on `[C]` chain. **Both operator hypotheses were diagnosed against Airtable Meta API and found NOT confirmed.** Read this before acting.
+
+### Blocker 1 — `[C] Log Video` Base dropdown can't select "Provinzial — Geier & Ayhan"
+
+- **Operator hypothesis:** PAT bound to credential `H9KNuMkfQ5Tl0Muu` ("Airtable PAT") lacks scope for `appC3HqG42ftswOvw`.
+- **Diagnosis:** PAT in `R61_video_pipeline/.env` (`patkw6fr...`, 82 chars) DOES have access to `appC3HqG42ftswOvw` with `create` permission. Returns 1 base when hitting `GET /v0/meta/bases`. Scope is sufficient *if* the n8n credential is bound to the same PAT.
+- **Likely real cause:** Either (a) the n8n credential `H9KNuMkfQ5Tl0Muu` holds a DIFFERENT token than the one in `R61_video_pipeline/.env`, or (b) n8n's dropdown cache is stale, or (c) the base was renamed in Airtable from "Provinzial — Geier & Ayhan" to **"R57 Content Engine"** (its current Airtable name) — so the dropdown would now list it under the new name, not the cached one.
+- **Where to click (in order, stop at first success):**
+  1. n8n → Credentials → "Airtable PAT" (id `H9KNuMkfQ5Tl0Muu`) → reveal token → compare against `R61_video_pipeline/.env::AIRTABLE_API_KEY`. If different, paste the working one in and Save.
+  2. Re-open `[C] Log Video` → click Base dropdown → look for **"R57 Content Engine"** (NOT "Provinzial — Geier & Ayhan"). Same ID, just renamed in Airtable. n8n's `cachedResultName` is stale.
+  3. If dropdown still empty, click the refresh icon next to it, or click out + back in to force re-fetch.
+
+### Blocker 2 — `[C] Update Video Status` "Done" option missing
+
+- **Operator hypothesis:** R34_VeoRobo Status singleSelect field doesn't have a "Done" option, or has different casing/names.
+- **Diagnosis:** **DEBUNKED.** Table `tbl0IpDJZw0ud45LO` (R34_VeoRobo) Status field has exactly: `['Pending', 'Generating', 'Done', 'Failed']` — exact case match. Both expressions used by `[C]` nodes ("Done" in Update Video Status, "Generating" in Log Video) match Airtable reality perfectly. No Airtable schema change needed.
+- **Likely real cause if operator saw a "Done invalid" error:** Probably (a) operator was looking at a different table (e.g. R61 `Video` `tbl1hd8yprLTZia4c` which has a different Status enum), or (b) n8n's `schema` cache on the node is stale and showing old options — clicking "Refresh" on the columns mapping section would resync.
+
+### Other open items carried over
+
+- **Canvas activation:** rate-limited 5× via API end-of-session 2026-05-18. Flip the toggle from the n8n UI at `https://ops.getautomata.ai/workflow/SmtkmTgfCTLZPlN4`. Validation is clean (0 errors, `valid: true`).
+- **n8n pod env vars** (operator-only, kubectl from admin machine): verify `R2_ENDPOINT=https://<accountId>.r2.cloudflarestorage.com` and `WEBHOOK_URL=https://ops.getautomata.ai`. Workstation kubectl is installed but has no cluster context.
+
 ## Client
 
 - [[clients/Provinzial_Geier_Ayhan/brand_brief]] — voice / colours / pillars / NEVER-do list

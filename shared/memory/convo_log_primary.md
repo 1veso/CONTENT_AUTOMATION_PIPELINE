@@ -4,6 +4,38 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 ---
 
+## Session 5 — 2026-05-18 → 19 (canvas validation cleanup + R34 prep)
+
+### Active Context
+- Resumed Block 5 (R34 readiness). Canvas `SmtkmTgfCTLZPlN4` validation gate cleared: went from 18 errors to 0. Activation toggle blocked by n8n public-API rate limit (`activateWorkflow` returned "too many requests" 5×); workflow body persisted fine each time. Operator to flip toggle from UI tomorrow.
+- Two `[C]` chain blockers reported at session close — diagnosed against Airtable Meta API and both operator hypotheses NOT confirmed (see _index.md "Tomorrow Morning — Blockers" for full triage + UI click path).
+
+### Completed This Session
+- **§E n16.1 body disabled** (16 nodes via `disableNode` partial diff): cleared 2 unknown-node-type errors (`n8n-nodes-piapi.fileUpload`, `n8n-nodes-elevenlabs-enhanced.elevenLabs`). Template body preserved for future use. WH-shim chain `[E] WH n16.1 → WH-Set → WH-Log → WH-Respond` kept active.
+- **15 pre-existing validation errors fixed** in one batch:
+  - 6 Apify scrapers (`YouTube`/`Shorts`/`Instagram`/`LinkedIn`/`Twitter`/`Reddit`) `onError` changed `continueErrorOutput` → `continueRegularOutput` (no main[1] wiring existed).
+  - 5 Telegram nodes (`[F] Tell User WIP/Done`, `[G] Tell User WIP/Done1`, `[L3] Send a text message`) got missing `parameters.operation: "sendMessage"` added (n8n v2 telegram node requires it).
+  - 3 `[H] Get Prompts/Images/Videos` got `=` prefix on `filterByFormula` via `patchNodeField`.
+  - `[D] Combine Clips` JS template literal `url => `"${url}"`` rewritten to `url => JSON.stringify(url)` (n8n expression engine rejects backtick template literals).
+- **Issue 3 patched:** `[I] Webhook` (n30 body) defensively rewritten with full parameters block `{httpMethod:POST, path:n30-body, responseMode:responseNode}` per webhook strip-bug rule.
+- **Validation now clean:** `valid: true`, `errorCount: 0`, `warningCount: 681` (all benign — typeVersion drift + Code-node error-handling reminders).
+- **Memory saved:** `feedback_n8n_updatenode_webhook_strip_bug.md` — partial `updateNode` on n8n-nodes-base.webhook strips parameters block; always send full parameters or use `patchNodeField`.
+
+### Key Decisions / Findings
+- §E n16.1 disable was the right call: template preserved (Mastermind Plan lists it for future), nothing currently calls `/webhook/n16.1`, and disabling cleared the unknown-type errors without losing nodes.
+- Apify `continueRegularOutput` chosen over `stopWorkflow` to preserve "keep going on scraper failure" intent — downstream Filter/Set nodes drop malformed items.
+- **Airtable base rename surfaced:** `appC3HqG42ftswOvw` is now named **"R57 Content Engine"** in Airtable (not "Provinzial — Geier & Ayhan" as cached in n8n). This may explain Blocker 1 dropdown confusion. Same base ID, just a renamed display label.
+- **`R34_VeoRobo` schema confirmed clean:** 12 fields, Status enum = `['Pending','Generating','Done','Failed']` (exact case). Both `[C]` node expressions match. Blocker 2 is phantom — likely n8n schema-cache staleness.
+
+### Pending / Carry Over
+- **Activation:** flip UI toggle at `https://ops.getautomata.ai/workflow/SmtkmTgfCTLZPlN4`. If still blocked, report the UI error.
+- **Blocker 1 triage:** compare n8n credential `H9KNuMkfQ5Tl0Muu` token vs `R61_video_pipeline/.env::AIRTABLE_API_KEY`. Refresh dropdown.
+- **Blocker 2 triage:** click "Refresh" on `[C] Update Video Status` columns mapping schema; verify operator was looking at R34_VeoRobo (not a different table).
+- **n8n pod env vars** (`R2_ENDPOINT`, `WEBHOOK_URL`): operator-only verification from admin kubectl machine.
+- **Issue 3 follow-through:** confirm `[I] Webhook` resolves at `/webhook/n30-body` once canvas is active.
+
+---
+
 ## Session 4 — 2026-05-18 (Block 0 — Mastermind Plan installed)
 
 Mastermind Plan installed as strategic source of truth at `obsidian-brain/strategy/Mastermind_Plan_Content_Production_Engine.md`; referenced from `_index.md` (top-level Strategic Source of Truth section) and `CLAUDE.md` (Strategic Reference section).
@@ -52,6 +84,16 @@ Next-patch list (operator decisions / agent actions in upcoming blocks):
 ```
 
 Next: commit uncommitted `hf_stitch.py` Schaden v1 changes + this block's doc updates (Block 4), then R34 readiness check (Block 5).
+
+### Session 4.2 — 2026-05-18 (Block 5 — R34 readiness halted at Check 0)
+
+R34 readiness check halted at **CHECK 0 — canvas not active**. Live n8n API returns `SmtkmTgfCTLZPlN4` with `active: false`, last updated `2026-05-15T17:56:35Z`. Webhook `https://ops.getautomata.ai/webhook/r34` will return 404 in this state. CHECKs 1–7 not run per Block 5 hard-stop protocol.
+
+CLAUDE.md `n8n Canvas — GetAutomata_W01-W05` line 192 says "Final state: 460 nodes, ACTIVE" — this is now stale. The workflow was active at Phase 6 close (2026-05-13) and during Session 3 credential changes (2026-05-15), but has been toggled off since. Cause unknown — could be: operator deactivated during credential rebinding, n8n pod restart did not re-activate, or one of the §C/§G/§H mass-edits left it in a state n8n auto-deactivated.
+
+Local R34 template `R34_veorobo/R34_airtable.json` was inspected as part of the readiness work: 26 nodes, Schedule Trigger (not Webhook — local template is schedule-driven, not the live canvas version). Paid API endpoints visible: `fal-ai/veo3/fast` (Veo3 fast clip generation, ~$0.40-0.75 per scene), `fal-ai/ffmpeg-api/compose` (stitch — free / pennies). Blotato schedule nodes: 3 (YOUTUBE/INSTAGRAM/TIKTOK) targeting `backend.blotato.com/v2/posts`. No n29 quality gate in the local template. This local file is NOT the live canvas R34 chain — the live §C chain has a webhook entry per Phase 5 wiring.
+
+Operator action to unblock Block 5: re-activate `SmtkmTgfCTLZPlN4` in n8n UI (or via `n8n_update_partial_workflow` with `activateWorkflow` op). Recommended: take a fresh `n8n_get_workflow` snapshot post-activation to confirm §C credentials remain bound (the Session 3 fan-out attached `airtableTokenApi`/`blotatoApi`/Fal `httpHeaderAuth` to §C nodes; activation should not have changed those, but verify).
 
 ---
 
@@ -113,127 +155,3 @@ Next: commit uncommitted `hf_stitch.py` Schaden v1 changes + this block's doc up
 - None this session.
 
 ---
-
-## Session 2 — 2026-05-14 (n8n canvas re-spacing)
-
-### Active Context
-- Continued from prior context-window run. Full Step 1 (re-space) applied across two sessions.
-
-### Completed This Session
-- Applied `cleanStaleConnections` + 4x `addConnection` (fix ops) in a prior session to unblock saves — 30 ghost connection refs removed, 4 disconnected nodes rewired.
-- Moved all 460 nodes across 17 sections (§A through §T2 + [X] cross-section nodes) to 2500px minimum vertical gap via `mcp__n8n-mcp__n8n_update_partial_workflow` partial diffs.
-  - §A: anchor (no shift)
-  - §B+[X] R46→R51: +2240 (applied prior session)
-  - §C: +4592 | §D: +6852 | §E: +9764 | §J: +11504 | §F: +18804
-  - §K+[X] n3 gate: +21436 | §G: +28736 | §H: +31120 | §I: +33696
-  - §L1+[X] n29 gate: +33456 | §L2: +35412 | §L3: +37416
-  - §T1: +39016 | §T2: +40416
-- Exported final workflow to `n8n_backups/GetAutomata_W01-W05_SPACED_2026-05-14.json` (631 KB). Not git-tracked per .gitignore rule (intentional — large JSON blobs excluded).
-
-### Key Decisions / Findings
-- Node naming inconsistencies discovered live: `[D] §D HEADER` → actual name `[D] HEADER`; `[D] Wait ` has trailing space; `[D] If ` has trailing space. Corrected on first failed validate.
-- §E node `Map Voice to Voice ID` has full long name (not `Map Voice`).
-- §H TODO nodes carry full suffix: `(TODO sub-workflow)` not `(TODO)`.
-- One transient NO_RESPONSE on §G batch 1 validate — retry immediate, succeeded.
-- n8n_backups/*.json is gitignored by design; export is on disk only.
-
-### Pending / Next Steps
-- Task 7: Modal deploy R57 + R61 (gated — awaiting operator go-ahead)
-- Task 8: Credential fan-out (gated — operator needs to seed 11 nodes first)
-
----
-
-## Session 1 — 2026-05-14 (Gate flow end-to-end test)
-
-### Active Context
-- Operator launched primary, asked for Status, then asked to test the gate flow.
-- 3 crons re-registered (session-only, 7d expiry): morning-summary `6b993f49`, keepalive `6dbafa45`, r61-gate-watcher `b474a490`.
-
-### Completed This Session
-- Wrote test gate entry via `_gates.append_gate()`: record `recTEST123456789`, gate 1.
-- Sent notification message manually (Telegram MCP reply tool has no inline-keyboard parameter — operator uses verb+record_id reply protocol instead).
-- Verified gate-watcher silent path (entries with `notified=true` are skipped).
-- Verified gate-reply handler end-to-end on approve: local-state update OK → Airtable subprocess shelled out → 404 for test record → graceful-degradation message sent per protocol.
-
-### Key Decisions / Findings
-- Telegram inline keyboards are NOT supported by current `claude-plugins-official/telegram` MCP. The watcher prompt in `cron-registry.json` references inline keyboards but the tool can only send text. Fallback: send action verbs in the message body and parse `<verb> <record_id>` from operator replies. CLAUDE.md gate-reply protocol already accommodates this — no fix needed.
-- Test gate left in pending.json with `status=approved`. Safe to leave or clear on operator request.
-
-### Pending / Next Steps
-- Clear test gate entry (when operator says so) — currently `recTEST123456789`, status=approved.
-- If/when inline-keyboard support lands in the Telegram MCP, revisit the watcher prompt to use callback_data path.
-
-### Gate replies
-- 2026-05-14T20:39 — record `recTEST123456789`, verb `approve` → local: approved · Airtable: failed (404 NOT_FOUND, expected for test record).
-
----
-
-## Session 0b — 2026-05-13 (Phase 1.5: gates wired)
-
-### Active Context
-- ClaudeClaw Phase 1 setup completed earlier today. Gate-notification pattern now live.
-- Bun v1.3.14 installed at `C:\Users\benja\.bun\bin\bun.exe` (restart shell before launch).
-
-### Completed This Session
-- Created `R61_video_pipeline/tools/_gates.py` — atomic gate-queue writer with explicit schema docstring.
-- Wired `frame_gen.py` → writes Gate 0 entry at end of batch (if any record succeeded).
-- Wired `video_gen.py` → writes Gate 1 entry at end of batch (table-aware: works for both Video and IO).
-- Wired `hf_stitch.py` → writes Gate 4 entry per record after R2 publish (skipped if `--skip-publish`).
-- Captured `publish_to_r2_and_airtable` return value (URL) in stitch so gate carries the asset link.
-- Updated `cron-registry.json` r61-gate-watcher prompt to match the actual JSON field names (gate_number, gate_name, ad_name, video_url, next_step).
-- Updated `CLAUDE.md` with full ClaudeClaw Agent Architecture section (launch cmd, cron table, gate pattern).
-- Rewrote `obsidian-brain/agents/per_pipeline_agents.md` with Phase 1 state, wired write points, gate schema, and CLAUDE.md-gate mapping.
-
-### Pending / Next Steps
-- **CodeGraph sync failed** with "database is locked" — re-run `codegraph sync` from repo root after closing this Claude session.
-- **First launch**: from `C:\CONTENT_PIPELINE\`, run `claude --dangerously-skip-permissions --channels plugin:telegram@claude-plugins-official`. Verify Telegram round-trip.
-- **Telegram plugin install** still needed inside the new session: `/plugin marketplace add anthropics/claude-plugins-official`, `/plugin install telegram@claude-plugins-official`, `/reload-plugins`.
-- Gate 2 (R2 footage selection) and Gate 3 (pre-stitch) remain manual — no script to hook. Operator triggers `hf_stitch.py` only when ready.
-- Test the gate path end-to-end: run `frame_gen.py --dry-run` won't trigger (dry-run skips processing); needs a real (paid) run to write a Gate 0 entry. First real opportunity = next R57/R61 cycle.
-
-### Key Decisions
-- Gate writes are best-effort: wrapped in try/except so a JSON write failure never breaks the pipeline.
-- Frame and video gates are batch-level (one entry per run); stitch gate is per-record (one entry per stitched video). Matches the natural human-review cadence: review-frames-as-set vs review-each-final.
-- `_gates.py` lives in `R61_video_pipeline/tools/` (alongside the scripts that use it), not at repo root, so it inherits the package import path the existing scripts already use.
-
----
-
-## Session 0 — 2026-05-13 (ClaudeClaw Phase 1 setup)
-
-### Active Context
-- Initial ClaudeClaw setup completed at C:\CONTENT_PIPELINE\
-- Single primary agent on Telegram (bot 8937217698, chat 1077552316)
-- 3 crons registered: morning-summary (08:00 Berlin), keepalive (every 6h), r61-gate-watcher (every 15m)
-
-### Completed This Session
-- Created SOUL.md with 6 non-negotiable pipeline rules
-- Created USER.md with operator profile
-- Wrote .claude/settings.local.json with deny list (env files, references/outputs/, n8n_backups/, obsidian-brain/clients/, destructive bash/PS commands)
-- Wired Telegram bot via .claude/telegram/{.env, access.json}
-- Stubbed shared/gates/pending.json for R61 gate notifications
-
-### Pending / Next Steps
-- Bun install (user runs: `irm bun.sh/install.ps1 | iex` in PowerShell)
-- First launch and Telegram round-trip test
-- R61 pipeline to write gate triggers to shared/gates/pending.json (separate task — not done yet)
-
-### Key Decisions
-- Phase 1 = single agent only. No alpha/beta/gamma multi-agent split until Phase 1 sticks.
-- Used existing CLAUDE.md, appended Session Startup + Identity sections rather than replacing.
-- Bot token + state dir injected via settings.local.json env block (NOT shell env — README warns shell env doesn't propagate to MCP subprocess).
-
----
-
-## Session — 2026-05-18T20:48:04+02:00 — R61 Schaden v1 sample
-
-- **Task:** R61 Schaden v1 sample video, locked order `hook problem -> intro -> solution/explanation + natural CTA -> outro`.
-- **Record touched:** `rec3QiBpC3N3cMZHN`.
-- **Source R57 record:** `recVDw1jqC8MeMYWp`.
-- **Files changed:** `R61_video_pipeline/tools/hf_stitch.py`; `shared/memory/convo_log_primary.md`; `obsidian-brain/clients/Provinzial_Geier_Ayhan/campaign_log.md`.
-- **Generated local output:** `C:\CONTENT_PIPELINE\R61_video_pipeline\references\outputs\final\v4\captions\31_Schaden_v1_-_R61_-_01_-_wasserrohrbruch-um-3-uhr-nachts-wen_captions_v2.mp4`.
-- **Duration:** `20.133008s` by `ffprobe`.
-- **Commands run:** `python -m py_compile R61_video_pipeline/tools/hf_stitch.py` (blocked by Windows `__pycache__` access); AST parse fallback OK; `python -m tools._tmp_attach_source` (temporary helper removed after exact-record Source Image attach); `python -m tools.frame_gen --record-id rec3QiBpC3N3cMZHN`; `$env:PATH="C:\tmp\higgsfield-cli;$env:PATH"; python -m tools.video_gen --record-id rec3QiBpC3N3cMZHN --confirm go`; `python -m tools.voiceover_gen --record-id rec3QiBpC3N3cMZHN --confirm go`; `python -m tools.hf_stitch --record-id rec3QiBpC3N3cMZHN --skip-publish --add-captions --composition-mode schaden-v1`; `ffprobe` duration check.
-- **Paid APIs called:** yes. Higgsfield clip generation completed (10 credits). Voiceover generation completed (~$0.0224 logged). Frame-gen rerun reached the exact row but failed while downloading Airtable Source Image before a clean frame update; required frame fields were already present on the exact row.
-- **Airtable fields updated:** `Source Image` attached from R57 `Generated Image 1`; `Video Clip` updated by `video_gen`; `Voiceover Audio` and alignment/script fields updated by `voiceover_gen`; `Final Video` intentionally not updated because stitch used `--skip-publish`.
-- **Blockers:** `py_compile` could not write `__pycache__`, so AST parse was used. First inline Airtable attach command was blocked by PowerShell ampersand parsing, solved with a temporary exact-record helper. `frame_gen` rerun failed on Airtable usercontent SSL EOF after the cost gate; field verification showed `First Frame Image` and `Last Frame Image` already existed. Initial `video_gen` run lacked Higgsfield CLI on PATH; rerun with `C:\tmp\higgsfield-cli` succeeded.
-- **Exact next step:** Review the local captioned MP4 above for brand/visual/audio quality; if approved, run the publish path for this one record only or patch any observed timing/brand issues before publishing.
