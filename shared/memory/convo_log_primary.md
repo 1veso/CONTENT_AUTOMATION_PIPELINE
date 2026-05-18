@@ -4,6 +4,12 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 ---
 
+## Session 4 — 2026-05-18 (Block 0 — Mastermind Plan installed)
+
+Mastermind Plan installed as strategic source of truth at `obsidian-brain/strategy/Mastermind_Plan_Content_Production_Engine.md`; referenced from `_index.md` (top-level Strategic Source of Truth section) and `CLAUDE.md` (Strategic Reference section).
+
+---
+
 ## Session 3 — 2026-05-15 (credential fan-out round 2 + Sheets→Airtable swap)
 
 ### Active Context
@@ -170,3 +176,19 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 - Phase 1 = single agent only. No alpha/beta/gamma multi-agent split until Phase 1 sticks.
 - Used existing CLAUDE.md, appended Session Startup + Identity sections rather than replacing.
 - Bot token + state dir injected via settings.local.json env block (NOT shell env — README warns shell env doesn't propagate to MCP subprocess).
+
+---
+
+## Session — 2026-05-18T20:48:04+02:00 — R61 Schaden v1 sample
+
+- **Task:** R61 Schaden v1 sample video, locked order `hook problem -> intro -> solution/explanation + natural CTA -> outro`.
+- **Record touched:** `rec3QiBpC3N3cMZHN`.
+- **Source R57 record:** `recVDw1jqC8MeMYWp`.
+- **Files changed:** `R61_video_pipeline/tools/hf_stitch.py`; `shared/memory/convo_log_primary.md`; `obsidian-brain/clients/Provinzial_Geier_Ayhan/campaign_log.md`.
+- **Generated local output:** `C:\CONTENT_PIPELINE\R61_video_pipeline\references\outputs\final\v4\captions\31_Schaden_v1_-_R61_-_01_-_wasserrohrbruch-um-3-uhr-nachts-wen_captions_v2.mp4`.
+- **Duration:** `20.133008s` by `ffprobe`.
+- **Commands run:** `python -m py_compile R61_video_pipeline/tools/hf_stitch.py` (blocked by Windows `__pycache__` access); AST parse fallback OK; `python -m tools._tmp_attach_source` (temporary helper removed after exact-record Source Image attach); `python -m tools.frame_gen --record-id rec3QiBpC3N3cMZHN`; `$env:PATH="C:\tmp\higgsfield-cli;$env:PATH"; python -m tools.video_gen --record-id rec3QiBpC3N3cMZHN --confirm go`; `python -m tools.voiceover_gen --record-id rec3QiBpC3N3cMZHN --confirm go`; `python -m tools.hf_stitch --record-id rec3QiBpC3N3cMZHN --skip-publish --add-captions --composition-mode schaden-v1`; `ffprobe` duration check.
+- **Paid APIs called:** yes. Higgsfield clip generation completed (10 credits). Voiceover generation completed (~$0.0224 logged). Frame-gen rerun reached the exact row but failed while downloading Airtable Source Image before a clean frame update; required frame fields were already present on the exact row.
+- **Airtable fields updated:** `Source Image` attached from R57 `Generated Image 1`; `Video Clip` updated by `video_gen`; `Voiceover Audio` and alignment/script fields updated by `voiceover_gen`; `Final Video` intentionally not updated because stitch used `--skip-publish`.
+- **Blockers:** `py_compile` could not write `__pycache__`, so AST parse was used. First inline Airtable attach command was blocked by PowerShell ampersand parsing, solved with a temporary exact-record helper. `frame_gen` rerun failed on Airtable usercontent SSL EOF after the cost gate; field verification showed `First Frame Image` and `Last Frame Image` already existed. Initial `video_gen` run lacked Higgsfield CLI on PATH; rerun with `C:\tmp\higgsfield-cli` succeeded.
+- **Exact next step:** Review the local captioned MP4 above for brand/visual/audio quality; if approved, run the publish path for this one record only or patch any observed timing/brand issues before publishing.

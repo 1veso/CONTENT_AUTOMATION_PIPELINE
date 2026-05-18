@@ -2,6 +2,13 @@
 
 Three content pipelines for **Provinzial** (Geier & Ayhan campaign). Shared Airtable base, shared Blotato accounts, all gated by the same posting hold.
 
+## Strategic Reference
+
+For all pipeline wiring, role assignment, and composition decisions, consult:
+  obsidian-brain/strategy/Mastermind_Plan_Content_Production_Engine.md
+
+This is the authoritative operational plan. Repo state aligns to it, not the other way around.
+
 ## Session Startup (ClaudeClaw — Phase 1)
 
 On every new session, complete these steps **before responding to the user**:

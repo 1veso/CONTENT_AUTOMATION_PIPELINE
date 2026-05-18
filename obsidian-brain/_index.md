@@ -1,5 +1,15 @@
 # Obsidian Brain — Master Index
 
+## Strategic Source of Truth
+
+**Mastermind Plan — Content Production Engine** is the authoritative doc for pipeline roles, composition patterns, and the campaign engine architecture.
+
+Path: obsidian-brain/strategy/Mastermind_Plan_Content_Production_Engine.md
+
+Read this BEFORE making any pipeline architecture, wiring, or composition decisions. If repo state conflicts with the Mastermind Plan, the Mastermind Plan wins.
+
+---
+
 Vault root for the CONTENT_PIPELINE knowledge base. Every file in the vault is linked from this page.
 
 **Last updated:** 2026-05-15
