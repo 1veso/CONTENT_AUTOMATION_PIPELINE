@@ -101,6 +101,38 @@ def update_record(record_id, fields):
     return resp.json()
 
 
+def create_record(fields):
+    """Create one row in the R61 Video table."""
+    resp = requests.post(
+        _table_url(),
+        headers=_headers(),
+        json={"fields": fields},
+        timeout=30,
+    )
+    if resp.status_code != 200:
+        raise RuntimeError(f"Airtable create failed ({resp.status_code}): {resp.text}")
+    return resp.json()
+
+
+def create_records_batch(records_fields):
+    """Create rows in Airtable batches of 10."""
+    created = []
+    for i in range(0, len(records_fields), 10):
+        batch = [{"fields": fields} for fields in records_fields[i:i + 10]]
+        resp = requests.post(
+            _table_url(),
+            headers=_headers(),
+            json={"records": batch},
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            raise RuntimeError(
+                f"Airtable batch create failed (batch {i}): {resp.text}"
+            )
+        created.extend(resp.json().get("records", []))
+    return created
+
+
 def get_pending_videos():
     """Records where Video Status = Pending."""
     return get_records(f'{{{STATUS_FIELD}}} = "{STATUS_PENDING}"')
