@@ -211,28 +211,22 @@ def generate_images(record_ids: list[str] | None = None,
 @app.function(image=r57_image, secrets=[r57_secret], timeout=60 * 10)
 def schedule_blotato(record_ids: list[str] | None = None,
                      dry_run: bool = False) -> dict:
-    """Schedule R57 records into Blotato. Always future scheduledTime."""
-    _bootstrap_env()
-    sys.path.insert(0, "/root")
-    # R57's Blotato scheduler lives in the providers package historically.
-    # If the tool name differs in the local repo, this import will fail
-    # loudly inside the Modal container and the operator will know to add
-    # the wrapping module before re-deploy.
-    try:
-        from tools import blotato_schedule as scheduler  # type: ignore
-        from tools import notify  # type: ignore
-    except ImportError as e:
-        return {"status": "error", "reason": f"R57 has no blotato_schedule tool: {e}"}
-    rows = scheduler.get_pending_records()
-    if record_ids:
-        rows = [r for r in rows if r.get("id") in set(record_ids)]
-    total = len(rows)
-    result = scheduler.run_batch(rows, dry_run=dry_run)
-    # Run-level summary — per-record progress lives inside scheduler.run_batch,
-    # which we don't refactor here. Operator sees a single confirmation ping.
-    ok = result.get("scheduled", result.get("ok", 0))
-    notify.notify_progress("R57", "Scheduled", ok, total, "posts", emoji="📅")
-    return result
+    """Disabled for Schaden v1.
+
+    R57 has no schedule-only scheduler module yet. Keep the endpoint alive, but
+    make it impossible to mistake this for a working Blotato scheduling path.
+    """
+    ids = _normalize_record_ids(record_ids) or []
+    return {
+        "status": "disabled",
+        "reason": (
+            "R57 scheduling disabled for Schaden v1; use Airtable visual "
+            "review and central scheduling after approval."
+        ),
+        "safe": True,
+        "dry_run": dry_run,
+        "record_ids": ids,
+    }
 
 
 # ------------------------------------------------------------ HTTP endpoints
@@ -264,7 +258,7 @@ def generate_images_http(payload: dict) -> dict:
 @app.function(image=r57_image, secrets=[r57_secret], timeout=60 * 10)
 @modal.fastapi_endpoint(method="POST")
 def schedule_blotato_http(payload: dict) -> dict:
-    """POST {record_ids: [...], dry_run: bool} → schedule_blotato.remote(...)"""
+    """Scheduling is disabled for Schaden v1; returns a safe disabled status."""
     record_ids = payload.get("record_ids") if payload else None
     dry_run = bool(payload.get("dry_run", False)) if payload else False
     return schedule_blotato.local(record_ids=record_ids, dry_run=dry_run)
