@@ -89,6 +89,7 @@ FINAL_DIR = PROJECT_ROOT / "references" / "outputs" / "final" / VERSION_TAG
 CAPTIONS_DIR = FINAL_DIR / "captions"
 INTRO_PATH = PROJECT_ROOT / "references" / "inputs" / "intro.mp4"
 OUTRO_PATH = PROJECT_ROOT / "references" / "outputs" / "outro.mp4"
+WATERMARK_PATH = PROJECT_ROOT / "references" / "inputs" / "wings.png"
 
 VO_VOLUME = 0.9
 CLIP_AUDIO_VOLUME = 0.3
@@ -99,6 +100,11 @@ TARGET_SR = 48000
 
 CAPTION_CHUNK_MAX_CHARS = 42
 
+# Forced-alignment caption helper assumes a 17s voiced window when no explicit
+# window is passed (matches the Phase 2A narrative timeline). Callers in the
+# current single-clip pipeline pass window=(0, audio_dur) instead.
+NARRATIVE_VOICE_END_S = 17
+
 
 def log(msg):
     ts = dt.datetime.now().isoformat(timespec="seconds")
@@ -107,6 +113,31 @@ def log(msg):
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(line + "\n")
+
+
+def apply_watermark(input_video_path, output_video_path, segment_kind):
+    """Overlay golden wings bottom-right (120x120, 80% opacity, 12px margin).
+
+    Intro and outro carry their own brand treatment (center-positioned logo),
+    so they pass through unchanged. Every other segment kind gets the corner
+    watermark for consistent brand presence. Callable helper — the current
+    single-clip stitch pipeline does not yet invoke it; wiring lives in the
+    future segment-by-segment rendering block.
+    """
+    if segment_kind in {"intro", "outro"}:
+        shutil.copy(input_video_path, output_video_path)
+        return
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", str(input_video_path),
+        "-i", str(WATERMARK_PATH),
+        "-filter_complex",
+        "[1:v]scale=120:120,format=rgba,colorchannelmixer=aa=0.8[wm];"
+        "[0:v][wm]overlay=W-w-12:H-h-12",
+        "-c:a", "copy",
+        str(output_video_path),
+    ]
+    subprocess.run(cmd, check=True, capture_output=True)
 
 
 def premix_audio(clip_path: Path, vo_path: Path, out_path: Path):
@@ -462,6 +493,105 @@ def build_ass_subs(script: str, vo_start: float, vo_dur: float,
     return True
 
 
+def build_ass_subs_from_alignment(alignment_json, out_path: Path,
+                                  window=(0.0, NARRATIVE_VOICE_END_S),
+                                  offset_s: float = 0.0,
+                                  mode: str = "word_by_word"):
+    """Word-by-word ASS captions sourced from forced-alignment timestamps.
+
+    Each non-whitespace word displays from its alignment.start until the next
+    word's start (or its own end + 100 ms for the final word), clamped to
+    `window` (alignment-local seconds). `offset_s` shifts all rendered ASS
+    timestamps — set this to the duration of any pre-roll (e.g., intro card)
+    when the voiceover starts at t=offset_s in the final composition.
+
+    Highlight heuristic — the longest word inside each narrative beat slot
+    (0-3 / 3-8 / 8-14 / 14-17) is recolored Provinzial Flügelgelb (#F5C518).
+    ASS uses BGR ordering, so the override tag is &H18C5F5&.
+
+    Caption style: Inter Bold 52px, white text with a 3px black outline,
+    bottom-centered with MarginV=120 to keep captions inside the brand-safe
+    bottom-third. Returns True if at least one event was written.
+    """
+    if mode != "word_by_word":
+        raise NotImplementedError(f"build_ass_subs_from_alignment: mode={mode!r}")
+    if not alignment_json:
+        log("  captions: no alignment payload; skipping")
+        return False
+    try:
+        data = (json.loads(alignment_json) if isinstance(alignment_json, str)
+                else alignment_json)
+    except json.JSONDecodeError:
+        log("  captions: alignment JSON unparseable; skipping")
+        return False
+    if data.get("alignment_failed"):
+        log("  captions: alignment_failed in payload; skipping")
+        return False
+    words = [w for w in (data.get("words") or [])
+             if (w.get("text") or "").strip()]
+    if not words:
+        log("  captions: no non-whitespace words; skipping")
+        return False
+
+    win_start, win_end = window
+
+    BEATS = [(0, 3), (3, 8), (8, 14), (14, NARRATIVE_VOICE_END_S)]
+    highlight = set()
+    for bs, be in BEATS:
+        in_beat = [(i, w) for i, w in enumerate(words)
+                   if bs <= float(w.get("start", 0)) < be]
+        if in_beat:
+            highlight.add(max(in_beat, key=lambda iw: len(iw[1]["text"].strip()))[0])
+
+    events = []
+    for i, w in enumerate(words):
+        s = float(w["start"])
+        e = float(w["end"])
+        if s >= win_end or e <= win_start:
+            continue
+        next_s = float(words[i + 1]["start"]) if i + 1 < len(words) else e + 0.1
+        disp_start = max(s, win_start)
+        disp_end = min(next_s, win_end)
+        if disp_end <= disp_start:
+            continue
+        raw = (w["text"] or "").strip()
+        safe = raw.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
+        if i in highlight:
+            safe = f"{{\\c&H18C5F5&}}{safe}{{\\c&HFFFFFF&}}"
+        events.append(
+            f"Dialogue: 0,{_ass_time(disp_start + offset_s)},{_ass_time(disp_end + offset_s)},"
+            f"Caption,,0,0,0,,{safe}"
+        )
+
+    if not events:
+        log("  captions: alignment yielded no events in window; skipping")
+        return False
+
+    header = (
+        "[Script Info]\n"
+        "ScriptType: v4.00+\n"
+        f"PlayResX: {TARGET_W}\n"
+        f"PlayResY: {TARGET_H}\n"
+        "WrapStyle: 0\n"
+        "ScaledBorderAndShadow: yes\n\n"
+        "[V4+ Styles]\n"
+        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+        "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+        "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+        "Alignment, MarginL, MarginR, MarginV, Encoding\n"
+        "Style: Caption,Inter,52,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,"
+        "1,0,0,0,100,100,0,0,1,3,0,2,60,60,120,1\n\n"
+        "[Events]\n"
+        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
+        "Effect, Text\n"
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(header + "\n".join(events) + "\n", encoding="utf-8")
+    log(f"  captions ASS (alignment) → {out_path.name} ({len(events)} words, "
+        f"{len(highlight)} highlighted)")
+    return True
+
+
 def burn_captions(input_mp4: Path, ass_file: Path, output_mp4: Path):
     """Run ffmpeg to burn the ASS subs into a copy of the rendered mp4.
 
@@ -558,20 +688,34 @@ def process_record(record, skip_publish=False, force_premix=False,
     publish_key_prefix = ""
     if add_captions:
         vo_script = fields.get("Voiceover Script") or ""
+        aln_json = fields.get("Voiceover Alignment JSON") or ""
         ass_path = workdir / "captions.ass"
         captioned_name = output_path.stem + "_captions.mp4"
         captioned_path = check_output_path(CAPTIONS_DIR / captioned_name)
-        # vo_start = end of intro = t_intro_end inside the composition; here
-        # we recompute it from intro_dur (write_composition uses the same
-        # value rounded to ms).
-        if build_ass_subs(vo_script, vo_start=intro_dur,
-                          vo_dur=audio_dur, out_path=ass_path):
+
+        # Prefer forced-alignment word-by-word captions when the alignment
+        # JSON is present and parseable. Fall back to char-proportional
+        # chunked captions (build_ass_subs) when alignment is absent or has
+        # alignment_failed=true. vo_start = intro_dur — voiceover starts after
+        # the intro card inside the composition.
+        built = False
+        if aln_json:
+            built = build_ass_subs_from_alignment(
+                aln_json, ass_path,
+                window=(0.0, audio_dur),
+                offset_s=intro_dur,
+            )
+        if not built:
+            built = build_ass_subs(vo_script, vo_start=intro_dur,
+                                   vo_dur=audio_dur, out_path=ass_path)
+
+        if built:
             burn_captions(output_path, ass_path, captioned_path)
             publish_path = captioned_path
             publish_key_prefix = "captions/"
             log(f"  publishing captioned variant: {captioned_path.name}")
         else:
-            log(f"  --add-captions set but no Voiceover Script text; "
+            log(f"  --add-captions set but no captions could be built; "
                 f"publishing uncaptioned render")
 
     if skip_publish:
