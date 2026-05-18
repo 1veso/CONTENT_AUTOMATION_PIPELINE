@@ -1,0 +1,333 @@
+{
+  "campaign_id": "Schaden_2026_05",
+  "created_at": "2026-05-18T10:28:35.924734+00:00",
+  "r57": [
+    {
+      "record_id": "recVDw1jqC8MeMYWp",
+      "index": 31,
+      "scenario": "Wasserrohrbruch um 3 Uhr nachts - wen rufst du an?"
+    },
+    {
+      "record_id": "recypJq4Q2N6j8OVw",
+      "index": 32,
+      "scenario": "Nachbar ueberschwemmt - wer zahlt deinen Boden?"
+    },
+    {
+      "record_id": "recHRqkeQbgz1uRXT",
+      "index": 33,
+      "scenario": "Einbruch im Urlaub - was zaehlt wirklich versichert?"
+    },
+    {
+      "record_id": "recErfnIeooWI2fDA",
+      "index": 34,
+      "scenario": "Sturm reisst Dachziegel - ist das Hausrat oder Gebaeude?"
+    },
+    {
+      "record_id": "recj3sYyGvDYVZ8Ub",
+      "index": 35,
+      "scenario": "Glasbruch in der Kueche - kleine Sache, grosse Rechnung"
+    },
+    {
+      "record_id": "rece7KIHZpzqTqgqE",
+      "index": 36,
+      "scenario": "Fahrrad geklaut vor dem Bahnhof - Hausrat versichert?"
+    },
+    {
+      "record_id": "rechVpVyKoEbsxlZm",
+      "index": 37,
+      "scenario": "Brand am Herd - was bezahlt die Versicherung wirklich?"
+    },
+    {
+      "record_id": "recOuDwoPbChbekuY",
+      "index": 38,
+      "scenario": "Schimmel im Bad - Versicherung oder Vermieter?"
+    },
+    {
+      "record_id": "recZ0SBm0l3woFh4J",
+      "index": 39,
+      "scenario": "Laptop vom Tisch gefallen - gilt das?"
+    },
+    {
+      "record_id": "recVrXKWezB0HmXUo",
+      "index": 40,
+      "scenario": "Handy in die Kloschuessel - wann zahlt die Hausrat?"
+    },
+    {
+      "record_id": "recS2X2YXqIUQ0pOd",
+      "index": 41,
+      "scenario": "Auffahrunfall an der Ampel - wer macht den Schaden?"
+    },
+    {
+      "record_id": "recTAQDas7klzEwCw",
+      "index": 42,
+      "scenario": "Marderbiss am Kabel - was muss ich vor Ort machen?"
+    },
+    {
+      "record_id": "recCL4YFkTw7oCv3n",
+      "index": 43,
+      "scenario": "Steinschlag in der Frontscheibe - sofort handeln oder warten?"
+    },
+    {
+      "record_id": "rec5kU9rckQ0qpAvO",
+      "index": 44,
+      "scenario": "Parkrempler ohne Notiz - was tun?"
+    },
+    {
+      "record_id": "recIPzE7VNVZgZ2uC",
+      "index": 45,
+      "scenario": "Hagelschaden - wann sollte ich melden?"
+    },
+    {
+      "record_id": "recbbsRVNrozcFqt9",
+      "index": 46,
+      "scenario": "Vandalismus ueber Nacht - wer hilft sofort?"
+    },
+    {
+      "record_id": "rec8uUxhxHQswfekr",
+      "index": 47,
+      "scenario": "Erste Fahrt mit dem neuen Auto - was muss ich wissen?"
+    },
+    {
+      "record_id": "recuCcZED6Lgn0Jlb",
+      "index": 48,
+      "scenario": "Wildunfall im Dunkeln - Sofort-Checkliste"
+    },
+    {
+      "record_id": "recjIb81iC4ilW6Pz",
+      "index": 49,
+      "scenario": "Reifen kaputt auf der Autobahn - Pannenhilfe oder selbst?"
+    },
+    {
+      "record_id": "rec9rmptRAGfw0kZD",
+      "index": 50,
+      "scenario": "Vollkasko vs Teilkasko - der 30-Sekunden-Test"
+    },
+    {
+      "record_id": "recZ19qMH3xdB1d1i",
+      "index": 51,
+      "scenario": "Kind wirft Ball ins Nachbarauto"
+    },
+    {
+      "record_id": "recwMYQ2lG0I5mtFc",
+      "index": 52,
+      "scenario": "Hund beisst Brieftraeger - was jetzt?"
+    },
+    {
+      "record_id": "recrYjb3Omgp6dCd0",
+      "index": 53,
+      "scenario": "Glas umgekippt im Restaurant - wer zahlt?"
+    },
+    {
+      "record_id": "recvjTUabMn7Tz0Ix",
+      "index": 54,
+      "scenario": "Beim Umzug Moebel beschaedigt - Mitschuld?"
+    },
+    {
+      "record_id": "recTH01CBrSciCL2c",
+      "index": 55,
+      "scenario": "Schluessel verloren - Schliessanlage neu?"
+    },
+    {
+      "record_id": "recM9hXT8w73Crik1",
+      "index": 56,
+      "scenario": "Beim Sport Mitspieler verletzt"
+    },
+    {
+      "record_id": "recZYzCeoWuUH2Ji2",
+      "index": 57,
+      "scenario": "Fahrrad faellt auf parkendes Auto"
+    },
+    {
+      "record_id": "rec7LfEWhq0WQSh7e",
+      "index": 58,
+      "scenario": "Wer traegt was bei einem Mietschaden?"
+    },
+    {
+      "record_id": "recNvUTmWhdIa5VeN",
+      "index": 59,
+      "scenario": "Privathaftpflicht fuer die ganze Familie?"
+    },
+    {
+      "record_id": "recGeJgb02Ceesvw2",
+      "index": 60,
+      "scenario": "Hund im Wald reisst fremdes Wild"
+    },
+    {
+      "record_id": "recsvcjrwCVoPXiIO",
+      "index": 61,
+      "scenario": "Smartphone-Display kaputt - alle Tarife reichen?"
+    },
+    {
+      "record_id": "rectLzFHOY969h9EJ",
+      "index": 62,
+      "scenario": "Laptop bei Diebstahl - Hausrat-Sublimit erklaert"
+    },
+    {
+      "record_id": "recsk3kQxUKVUeyWC",
+      "index": 63,
+      "scenario": "Fotoausruestung auf Reise - extra absichern?"
+    },
+    {
+      "record_id": "recIqjRIeP4fS0UWX",
+      "index": 64,
+      "scenario": "Werkzeug im Keller - versichert?"
+    },
+    {
+      "record_id": "rec6Nw27qIJa8cEch",
+      "index": 65,
+      "scenario": "Schmuck-Tresor - pauschal oder einzeln?"
+    },
+    {
+      "record_id": "recVGWvwkreoDX2Cm",
+      "index": 66,
+      "scenario": "Mein erster Wasserschaden mit 28 - Erfahrungsbericht"
+    },
+    {
+      "record_id": "recF76iWAw3N7HU4v",
+      "index": 67,
+      "scenario": "So lief mein Schaden in 24h - Kunden-POV"
+    },
+    {
+      "record_id": "recav0BIJmZ7eY9Tx",
+      "index": 68,
+      "scenario": "Was ich heute anders versichern wuerde - Lehrer Frank, 48"
+    },
+    {
+      "record_id": "receIZMAg2WFBfZE3",
+      "index": 69,
+      "scenario": "Schaden waehrend der Hochzeitsreise - Anna & Tom"
+    },
+    {
+      "record_id": "reciQspZoaAOH9d0V",
+      "index": 70,
+      "scenario": "Mein Sturmschaden im Februar 2026 - echte Geschichte"
+    }
+  ],
+  "r61": [
+    {
+      "record_id": "rec3QiBpC3N3cMZHN",
+      "index": 31,
+      "scenario": "Wasserrohrbruch um 3 Uhr nachts - wen rufst du an?"
+    },
+    {
+      "record_id": "recEvjBBKsNQ7xtsu",
+      "index": 32,
+      "scenario": "Nachbar ueberschwemmt - wer zahlt deinen Boden?"
+    },
+    {
+      "record_id": "recZnEDiJV4661Eq2",
+      "index": 33,
+      "scenario": "Einbruch im Urlaub - was zaehlt wirklich versichert?"
+    },
+    {
+      "record_id": "recxhNsgRhub8kJfN",
+      "index": 34,
+      "scenario": "Sturm reisst Dachziegel - ist das Hausrat oder Gebaeude?"
+    },
+    {
+      "record_id": "recs57FOSsVApC2nh",
+      "index": 35,
+      "scenario": "Glasbruch in der Kueche - kleine Sache, grosse Rechnung"
+    },
+    {
+      "record_id": "recc9TNP9CflLJOpc",
+      "index": 36,
+      "scenario": "Fahrrad geklaut vor dem Bahnhof - Hausrat versichert?"
+    },
+    {
+      "record_id": "rec9c2dWi41cP2KIP",
+      "index": 37,
+      "scenario": "Brand am Herd - was bezahlt die Versicherung wirklich?"
+    },
+    {
+      "record_id": "recz2DXv6MfqTTP4e",
+      "index": 38,
+      "scenario": "Schimmel im Bad - Versicherung oder Vermieter?"
+    },
+    {
+      "record_id": "reco6iniFmWihNzxM",
+      "index": 39,
+      "scenario": "Laptop vom Tisch gefallen - gilt das?"
+    },
+    {
+      "record_id": "rec6lPZqYIsdWDClN",
+      "index": 40,
+      "scenario": "Handy in die Kloschuessel - wann zahlt die Hausrat?"
+    },
+    {
+      "record_id": "rec3088aiFOb8xaGe",
+      "index": 41,
+      "scenario": "Auffahrunfall an der Ampel - wer macht den Schaden?"
+    },
+    {
+      "record_id": "recEA3W0w3YeEqKRR",
+      "index": 42,
+      "scenario": "Marderbiss am Kabel - was muss ich vor Ort machen?"
+    },
+    {
+      "record_id": "recIFsWGnBS7L9sbf",
+      "index": 43,
+      "scenario": "Steinschlag in der Frontscheibe - sofort handeln oder warten?"
+    },
+    {
+      "record_id": "recw0g13WTIAUVUIl",
+      "index": 44,
+      "scenario": "Parkrempler ohne Notiz - was tun?"
+    },
+    {
+      "record_id": "rectt09ZH26QAWDrJ",
+      "index": 45,
+      "scenario": "Hagelschaden - wann sollte ich melden?"
+    },
+    {
+      "record_id": "recp6QXt6Jkp8XUJr",
+      "index": 46,
+      "scenario": "Vandalismus ueber Nacht - wer hilft sofort?"
+    },
+    {
+      "record_id": "recravJbSH8wc1B8v",
+      "index": 47,
+      "scenario": "Erste Fahrt mit dem neuen Auto - was muss ich wissen?"
+    },
+    {
+      "record_id": "recIrTSd2p0LOLrDg",
+      "index": 48,
+      "scenario": "Wildunfall im Dunkeln - Sofort-Checkliste"
+    },
+    {
+      "record_id": "recaD184F7s8LR4jR",
+      "index": 49,
+      "scenario": "Reifen kaputt auf der Autobahn - Pannenhilfe oder selbst?"
+    },
+    {
+      "record_id": "recBabwu8frhcvl2K",
+      "index": 50,
+      "scenario": "Vollkasko vs Teilkasko - der 30-Sekunden-Test"
+    },
+    {
+      "record_id": "rec1VNNskTGMgSJ1e",
+      "index": 51,
+      "scenario": "Kind wirft Ball ins Nachbarauto"
+    },
+    {
+      "record_id": "recOkHcLc6RSqjzed",
+      "index": 52,
+      "scenario": "Hund beisst Brieftraeger - was jetzt?"
+    },
+    {
+      "record_id": "recc01n1tMzC9aiHv",
+      "index": 53,
+      "scenario": "Glas umgekippt im Restaurant - wer zahlt?"
+    },
+    {
+      "record_id": "recZ5AxNrEnYPHexW",
+      "index": 54,
+      "scenario": "Beim Umzug Moebel beschaedigt - Mitschuld?"
+    },
+    {
+      "record_id": "recuu2pTCKRlHM0uR",
+      "index": 55,
+      "scenario": "Schluessel verloren - Schliessanlage neu?"
+    }
+  ]
+}
