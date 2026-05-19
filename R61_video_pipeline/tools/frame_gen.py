@@ -90,12 +90,12 @@ ACTION_PILLARS = {
 
 BRAND_ANCHOR = (
     "Brand: Provinzial (German regional insurance). Palette anchored on "
-    "Provinzial green #005940 and Flügelgelb #FFD000, with secondary "
+    "Provinzial green #005940 and brand yellow #FFD000, with secondary "
     "Türkisgrün #1D724A and Opalgrün #006646; never the restricted Lachs "
     "#EC672F. Aesthetic: warm, natural light, authentic German everyday "
     "life — real homes, families, communities in NRW. Trustworthy, "
     "grounded, clean. Never staged stock-photo, never flashy, never "
-    "fear-mongering. Bottom-right yellow wings watermark (Goldene Flügel)."
+    "fear-mongering."
 )
 
 
@@ -197,8 +197,7 @@ def build_prompts(record):
         f"frame zero of the clip. {hook_clause}"
         f"{caption_line} {BRAND_ANCHOR} "
         f"Cinematic 9:16 vertical, warm natural color grading toward the "
-        f"green palette, no on-image text, no logos other than the small "
-        f"yellow wings bottom-right."
+        f"green palette, no on-image text, no logos, no brand marks."
     ).strip()
 
     if kind == "lifestyle":
@@ -241,7 +240,7 @@ def build_prompts(record):
         f"Pillar: {pillar or 'general'}. {cta_clause}"
         f"{caption_line} {BRAND_ANCHOR} "
         f"Cinematic 9:16 vertical, same warm grading, no on-image text, "
-        f"yellow wings bottom-right."
+        f"no logos, no brand marks."
     ).strip()
 
     return first, last, pillar
