@@ -638,8 +638,14 @@ def upload_to_r2(local_path, key, content_type="audio/mpeg"):
 # ----------------------------------------------------------- Per-record runner
 
 def build_script(record, no_rewrite):
-    """Return (raw_caption, stripped, final_script, rewrite_used)."""
-    caption = record.get("fields", {}).get("Caption") or ""
+    """Return (raw_caption, stripped, final_script, rewrite_used).
+
+    Reads Voiceover Script as the canonical source (Schaden v1 narrative path)
+    and falls back to Caption (legacy R61 records that pre-date the Voiceover
+    Script field).
+    """
+    fields = record.get("fields", {}) or {}
+    caption = fields.get("Voiceover Script") or fields.get("Caption") or ""
     stripped = clean_caption(caption)
     if not stripped or no_rewrite:
         return caption, stripped, stripped, False
