@@ -118,9 +118,14 @@ def log(msg):
 
 
 def is_schaden_v1_record(record):
-    """Return True for staged Schaden v1 R61 rows."""
+    """Return True for staged Schaden v1 R61 rows.
+
+    Matches the legacy "Schaden v1 - R61 - NN" prefix AND the new
+    "Day NN - Schaden v1 - {scenario}" naming. Anywhere "Schaden v1"
+    appears in the Ad Name flags it as Schaden v1.
+    """
     fields = record.get("fields", {})
-    return (fields.get("Ad Name") or "").startswith(SCHADEN_V1_AD_PREFIX)
+    return "Schaden v1" in (fields.get("Ad Name") or "")
 
 
 def apply_watermark(input_video_path, output_video_path, segment_kind):
