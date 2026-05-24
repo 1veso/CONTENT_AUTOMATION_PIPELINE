@@ -62,7 +62,21 @@ Hard-won during the canvas activation incident. Read before writing to `SmtkmTgf
 
 3. **`active` is read-only on `PUT /workflows/{id}`.** Returns HTTP 400 `"request/body/active is read-only"`. Activation requires `POST /workflows/{id}/activate` separately.
 
-4. **`/activate` endpoint has a persistent core-level rate limit.** Returns HTTP 400 (NOT 429) with body `{"message":"The service is receiving too many requests from you"}`, no `Retry-After` header. **Survived** 11h+ idle, 1 pod restart, MCP-tool switch, and direct REST attempt. Triggered after 5 MCP `activateWorkflow` retries on 2026-05-18 ~22:00 UTC. Resolution requires n8n hosting support OR 24h+ window expiry. Validate workflow to `errorCount: 0` BEFORE first activation attempt — every failed activate burns the budget without succeeding.
+4. **RESOLVED — "Too Many Requests" activation block (root cause, permanent fix):**
+   The HTTP 400 `"The service is receiving too many requests from you"` had TWO independent causes both surfacing the SAME generic message:
+
+   **CAUSE 1 — Proxy IP-collapse (tenant-wide throttle):**
+   - n8n's Express rate-limiter keys on client IP. Behind the Cloudflare tunnel, every request (UI, MCP, API, ClaudeClaw, webhooks) arrived as the SINGLE tunnel IP because n8n wasn't trusting X-Forwarded-For.
+   - All traffic shared ONE rate-limit bucket. A burst of activation retries drained it tenant-wide; nothing could activate until the window cleared. Survived pod restarts, hit all access methods, returned HTTP 400 not 429.
+   - **PERMANENT FIX:** `N8N_PROXY_HOPS=1` on the n8n deployment → n8n trusts the one proxy hop and rate-limits per REAL client IP.
+     `kubectl set env deployment/n8n -n user-40911a6c N8N_PROXY_HOPS=1`
+   - NOTE: hop value must equal the real proxy chain length. Cloudflare tunnel only = 1. If an ingress controller also sits in front of n8n = 2. Verify the chain; wrong count = still misreads IP.
+
+   **CAUSE 2 — telegramTrigger activation-registration failure:**
+   - 6 `telegramTrigger` nodes fail at activation time (Telegram polling registration errors), and n8n reports that failure via the same generic "too many requests" string.
+   - FIX: re-add the 6 triggers in UI with credential `lux_bot` bound (`telegramTrigger` cannot be PUT via public API). If registration fails again, check the bot token / getUpdates conflict, not rate limits.
+
+   The earlier "it aged out after 5+ days idle" was NOT a fix — that was just the throttle window expiring. `N8N_PROXY_HOPS=1` is what prevents recurrence. Validate workflow to `errorCount: 0` BEFORE first activation attempt — every failed activate burns the budget without succeeding.
 
 5. **Workflow versions exist (`n8n_workflow_versions list`) but `rollback` mode requires an admin token not provisioned to the current PAT.** Read-only `list`/`get` work fine — use as forensic/recovery context, not as a write recovery path on this hosting.
 

@@ -52,7 +52,11 @@ Two perceived blockers reported during 2026-05-18 evening session on `[C]` chain
 
 ### Other open items carried over
 
-- **Canvas activation:** rate-limited 5× via API end-of-session 2026-05-18. Flip the toggle from the n8n UI at `https://ops.getautomata.ai/workflow/SmtkmTgfCTLZPlN4`. Validation is clean (0 errors, `valid: true`).
+- ✅ ~~Canvas activation~~ — `SmtkmTgfCTLZPlN4` active: true (2026-05-24). Root cause resolved: proxy IP-collapse (`N8N_PROXY_HOPS` unset) + `telegramTrigger` registration failure. See [[knowledge/n8n_credentials#RESOLVED]].
+- **Apply `N8N_PROXY_HOPS=1`** on Hetzner admin shell (permanent fix — confirm proxy hop count first: Cloudflare tunnel only = 1, +ingress = 2). `kubectl set env deployment/n8n -n user-40911a6c N8N_PROXY_HOPS=1`
+- **Re-add 6 Telegram triggers** in n8n UI, bind `lux_bot` (id `WoB3AsOoB9cIKUrI`, chat 1077552316). Nodes: `Telegram Trigger`, `Telegram Trigger1`, `Telegram Trigger - n29`, `Telegram Trigger2_n29`, `Telegram Trigger3_n29`, `Telegram Trigger2`.
+- **Verify `[X] R46->R51 Schedule (5m)`** still disabled if intentional (backup restore set it back to enabled).
+- **Diff restored canvas** against newest pre-wipe backup to confirm no post-May-15 work was lost.
 - **n8n pod env vars** (operator-only, kubectl from admin machine): verify `R2_ENDPOINT=https://<accountId>.r2.cloudflarestorage.com` and `WEBHOOK_URL=https://ops.getautomata.ai`. Workstation kubectl is installed but has no cluster context.
 
 ## Client

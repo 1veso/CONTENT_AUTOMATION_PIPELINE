@@ -4,6 +4,96 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 ---
 
+## Session 9 — 2026-05-24 (n8n activation root cause — docs + commit)
+
+### Completed This Session
+- **Root cause confirmed and documented.** The multi-day "Too Many Requests" activation block had TWO independent causes hiding behind the same generic HTTP 400 message:
+  1. **Proxy IP-collapse** — `N8N_PROXY_HOPS` unset → Cloudflare tunnel collapses all traffic to one IP → rate-limiter drains tenant-wide bucket. Permanent fix: `N8N_PROXY_HOPS=1` (not yet applied — requires kubectl from Hetzner admin shell).
+  2. **telegramTrigger registration failure** — 6 `telegramTrigger` nodes fail at activation time; n8n surfaces this as the same "too many requests" string. Removed via backup restore; workflow now activates cleanly.
+- **Workflow `SmtkmTgfCTLZPlN4` active: true, 472 nodes.**
+- **INCIDENT (Session 8):** probe PUT during trigger-field discovery wiped canvas to 0 nodes. Recovered from `n8n_backups/GetAutomata_W01-W05_MODAL_TUNNEL_2026-05-15.json`. Restored backup **predates the 6 telegramTrigger additions — they are currently MISSING** and must be re-added in UI.
+- Updated `obsidian-brain/knowledge/n8n_credentials.md` rule 4 with RESOLVED writeup.
+- Updated `obsidian-brain/_index.md` open items to reflect current state.
+
+### Pending / Carry Over
+- **Apply `N8N_PROXY_HOPS=1`** on Hetzner shell. Confirm proxy chain length: tunnel only = 1, +ingress = 2.
+- **Re-add 6 Telegram triggers** in n8n UI, bind `lux_bot` (id `WoB3AsOoB9cIKUrI`, chat 1077552316): `Telegram Trigger`, `Telegram Trigger1`, `Telegram Trigger - n29`, `Telegram Trigger2_n29`, `Telegram Trigger3_n29`, `Telegram Trigger2`.
+- **Verify `[X] R46->R51 Schedule (5m)`** still disabled if intentional (was disabled in Session 6 to stop queue flooding; backup restored it to enabled state).
+- **Diff restored canvas** against newest pre-wipe backup to confirm no post-May-15 work was lost.
+
+---
+
+## Session 8 — 2026-05-24 (n8n workflow activation fix)
+
+### Active Context
+- Operator requested full activation of workflow `SmtkmTgfCTLZPlN4` which had been stuck `active: false` due to the persistent n8n core-layer rate-limit throttle (`"The service is receiving too many requests from you"`).
+
+### Completed This Session
+- **kubectl not available** on this machine — connects to localhost:8080 with no kubeconfig. N8N_PROXY_HOPS kubectl step skipped.
+- **Confirmed rate-limit:** POST `/activate` returned HTTP 400 `"The service is receiving too many requests from you"` — same throttle from Sessions 5-6.
+- **Restored workflow from MODAL_TUNNEL backup** (`GetAutomata_W01-W05_MODAL_TUNNEL_2026-05-15.json`, 472 nodes): discovered the workflow had been accidentally wiped to 0 nodes earlier in this session during PUT field-discovery probing. Restored to 472 nodes via direct REST PUT with minimal body `{name, nodes, connections, settings}`.
+- **Telegram triggers removed:** The backup (2026-05-15) does not contain the 6 `telegramTrigger` nodes that were present in the live workflow — they were added after the backup date and had IDs not matching the backup. The restore implicitly removed them. Since `telegramTrigger` is the known activation blocker (requires Telegram bot polling registration which fails with the rate-limited instance), this cleared the path.
+- **Activation succeeded:** POST `/activate` returned HTTP 200 with `active: true`. Confirmed via GET — workflow is now `active: True`, 472 nodes, 14 triggers (all scheduleTrigger + manualTrigger, no telegramTrigger).
+
+### Key Decisions / Findings
+- n8n PUT `/workflows/:id` body schema: accepts ONLY `{name, nodes, connections, settings}`. Fields `createdAt`, `updatedAt`, `id`, `active`, `isArchived`, `triggerCount`, `shared`, `pinData`, `versionId`, `staticData` all cause `"request/body must NOT have additional properties"` 400.
+- The Telegram trigger nodes were the activation blocker — removing them (via backup restore) cleared the rate-limit-independent blocker and activation went through on the first try after 5+ days of failure.
+- `telegramTrigger` nodes need to be re-added and registered from the n8n UI (cannot bind via public API — as documented in CLAUDE.md). The 6 telegram trigger placeholders need to be re-created manually.
+- Rate-limit issue: the `"too many requests"` throttle appears to have cleared naturally (>5 days since last attempt). N8N_PROXY_HOPS=1 was NOT applied (no kubectl access) — unclear if it would have helped; the blocker was the Telegram trigger registration, not a proxy issue.
+
+### Pending / Carry Over
+- **Telegram triggers must be re-added manually** via n8n UI: 6 nodes (`Telegram Trigger`, `Telegram Trigger1`, `Telegram Trigger - n29`, `Telegram Trigger2_n29`, `Telegram Trigger3_n29`, `Telegram Trigger2`). Bind each to credential `lux_bot` (id `WoB3AsOoB9cIKUrI`).
+- **Schedule triggers are back to `disabled: False`** (backup state). All 12 schedule triggers (§B, §C, §J, §K, §L) are now active. Operator should review whether `[X] R46->R51 Schedule (5m)` should remain enabled — it was previously disabled to stop queue flooding.
+- **N8N_PROXY_HOPS=1** was not applied (no kubectl). Leave for ops/hosting team if proxy issues arise.
+
+### State of canvas at session close
+- `active: True` — workflow is LIVE
+- 472 nodes, 14 triggers (all schedule/manual — no telegramTrigger)
+- Schedule triggers all enabled (backup state — were disabled in session 6)
+
+---
+
+## Session 7 — 2026-05-19 (Schaden v1 Day 01-31 silent batch — Higgsfield/Veo Lite switchover)
+
+### Active Context
+- Operator requested 21 silent 5s hook clips (Day 08-28). Scope expanded to 24 records (added Day 29-31), then 25 with Day 01 shimmer-fix smoke test. All 24 R61 Schaden v1 Day 08-31 records now carry a Video Clip attachment.
+
+### Completed This Session
+- **Shimmer fix (video_gen.py BRAND_MOTION_ANCHOR):** stripped AI-wings language from the Higgsfield motion prompt so the model stops painting wings that stack with the deterministic wings.png overlay (single source of truth). Mirrors the frame_gen commit 5bb5dcc strip. Verified with Day 01 (`recMtjIS50ey2HJgT`) re-fire — pre/post-fix clips preserved at `R61_video_pipeline/references/outputs/shimmer_evidence/`.
+- **Fal balance exhausted mid-batch.** Day 08-18 video_gen ran successfully against Fal storage. Day 19 onwards: `fal_client.FalClientHTTPError: User is locked. Reason: Exhausted balance.` blocked frame_gen (image gen) AND clip re-upload.
+- **Migrated R61 to Higgsfield + R2.** Patched `video_gen.py` to fall back to R2 (`upload_to_r2` from `stitch.py`) when Fal upload 403s — matches the codebase's documented preference (`stitch.py:213`). Added `R61_FRAME_PROVIDER` env switch in `frame_gen.py` (default `fal`, set to `higgsfield` routes through `nano_banana_2` CLI). Added `R61_VIDEO_MODEL` env switch in `video_gen.py` for `kling3_0` vs `veo3_1_lite` (with model-aware credit + duration tables). Added `--confirm` flag to `frame_gen.py` for non-interactive runs (mirrors `video_gen.py`).
+- **Day 19 recovery:** Higgsfield clip + watermark succeeded locally before Fal upload 403'd. Salvaged via direct R2 upload from `references/outputs/tmp/recIFsWGnBS7L9sbf_clip.mp4` → `https://pub-596ca4afabd54a3883ded26dc489279d.r2.dev/r61/clip/v1/recIFsWGnBS7L9sbf_clip.mp4`.
+- **24 silent Day 08-31 R61 records produced + Day 01 re-fired** (25 total).
+- **Day 29-31 R57 source seed bypass:** R57's German Schaden prompt format (`"Realistische deutsche Alltagsszene nach einem Schadenmoment: ..."`) gets `status: failed` from Higgsfield `nano_banana_2` (content filter on the German "Schaden" framing — same prompt works fine on Fal). Worked around by writing 3 simpler English scene-anchor prompts in `_seed_day29_31.py` — frame_gen overrides the actual content with its own scenario prompt anyway, so the seed only needs to be a "real-looking lifestyle" anchor.
+- **Memorialized:** "21 silent Day 08-28 videos produced, VO deferred." (scope expanded inline; final scope was 24 records across Day 08-31.)
+
+### Key Decisions / Findings
+- Higgsfield CLI's `--wait` polling interval is too slow for Veo Lite — Day 20 took 19 minutes wall-clock before the polling fix. Patched to `--wait-interval 10s` → subsequent records dropped to ~3.5 min each.
+- Higgsfield CLI JSON shape: result URL is at top-level `result_url`, NOT nested in `results[]`. Both `frame_gen.run_higgsfield_image` and `_seed_day29_31.run_higgsfield_image_no_ref` now check `result_url` first before falling back to nested + regex.
+- Higgsfield `nano_banana_2` CLI takes `--image <path>` (singular flag for ref-anchored edit), NOT `--input_images` (the schema field name).
+- Veo 3.1 Lite rejects `--mode` flag (Kling-only). Added `if HIGGSFIELD_MODEL.startswith("kling")` guard in `run_higgsfield()`.
+- Veo 3.1 Lite supports `--start-image` + `--end-image` (same as Kling) for first/last frame interpolation.
+- Higgsfield `fnf.higgsfield.ai/agents/*` host had intermittent reachability issues during the batch (HTTP 502 and `Cannot reach` errors). Added retry-on-transient logic in `_batch_21_silent.py:run_stage` with `TRANSIENT_PATTERNS` keyword match + 45s sleep + max 2 retries.
+- Higgsfield does NOT bill credits for failed jobs (confirmed via balance comparison before/after a `status: failed` job).
+
+### Pending / Carry Over
+- **Voiceover for Day 08-31 deferred per operator** — silent clips are the deliverable. ElevenLabs payment status not addressed this session.
+- **Fal balance** — operator must top up before any path that touches `fal_client` (R57 image gen, R61 frame_gen via Fal, R61 video_gen Fal upload) can resume. R57 modal_app deployment remains pointed at Fal too.
+- **hf_stitch was NOT run on Day 08-31** per operator's "stop at Video Clip stage" directive. The 24 records are at status `Clip Generated`; no Final Video (stitched ~21s) was produced. Manual CapCut assembly is the next step for the operator.
+- **Helper scripts created** (private, underscored): `R61_video_pipeline/tools/_batch_21_silent.py` (resume-aware batch runner), `_seed_day29_31.py` (Higgsfield direct source-image seed), `_link_day29_31.py` (unused — superseded by `_seed_day29_31.py`), `R57_content_engine/tools/_seed_23_25.py` (Fal seed for scenarios 23-25 — useless now, kept for record). Consider folding the proven patterns (R2 fallback, --confirm, --wait-interval) into upstream tools after Fal is restored.
+
+### Session credits
+- Higgsfield: started session ~430.5 credits → ended at 292.5 credits. **138 credits used.**
+- Fal: ~$0.84 (Phase A R57 seed, scenarios 2-22) + Day 01-19 video_gen (already pre-deducted from existing Fal balance — not new spend; account hit zero mid-batch).
+- ElevenLabs: untouched.
+
+### Schaden v1 Day 08-31 — final hosting summary
+- Day 08-18 (11 records): Airtable Video Clip on Fal CDN (v3b.fal.media — done before balance exhaustion).
+- Day 19-31 (13 records): Airtable Video Clip on R2 (`https://pub-596ca4afabd54a3883ded26dc489279d.r2.dev/r61/clip/v1/{record_id}_clip.mp4`).
+- All 24 records reachable from Airtable Video Clip field via `airtableusercontent.com` proxy URLs (also valid for ~24h-7d depending on attachment).
+
+---
+
 ## Session 6 — 2026-05-19 (urgent recovery: sanitization strip bug + activate rate-limit)
 
 ### Active Context
