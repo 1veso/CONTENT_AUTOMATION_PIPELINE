@@ -60,3 +60,26 @@ _skill_staging/
 # OS junk
 **/Thumbs.db
 **/.DS_Store
+
+# Media assets — never commit pipeline output or manually-added media
+**/*.mp4
+**/*.mov
+**/*.avi
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.gif
+**/*.webp
+**/*.wav
+**/*.mp3
+**/*.m4a
+
+# Campaign data dumps + batch run logs
+campaigns/**/*.csv
+shared/memory/batch_logs/
+
+# Re-affirm allowed reference/template media (must come AFTER the broad rules above)
+!**/references/outputs/outro.mp4
+!**/references/inputs/*.png
+!R61_video_pipeline/references/inputs/intro.mp4
+!R61_video_pipeline/references/inputs/outro_5s_audio_DEPRECATED.mp4

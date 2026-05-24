@@ -72,3 +72,19 @@ See [[../../knowledge/lessons_learned#Blotato hold]] — schedule only, never im
 - [[content_library]]
 - [[generation_notes]]
 - [[../../pipelines/R61_video_pipeline]]
+
+---
+
+### 2026-05-18T20:48:04+02:00 — R61 Schaden v1 sample
+
+- **Task:** R61 Schaden v1 sample video.
+- **Record touched:** `rec3QiBpC3N3cMZHN`.
+- **Source R57 record:** `recVDw1jqC8MeMYWp`.
+- **Files changed:** `R61_video_pipeline/tools/hf_stitch.py`; `shared/memory/convo_log_primary.md`; `obsidian-brain/clients/Provinzial_Geier_Ayhan/campaign_log.md`.
+- **Commands run:** `python -m py_compile R61_video_pipeline/tools/hf_stitch.py` (Windows `__pycache__` write blocked); AST parse fallback OK; `python -m tools._tmp_attach_source` (temporary helper removed); `python -m tools.frame_gen --record-id rec3QiBpC3N3cMZHN`; `$env:PATH="C:\tmp\higgsfield-cli;$env:PATH"; python -m tools.video_gen --record-id rec3QiBpC3N3cMZHN --confirm go`; `python -m tools.voiceover_gen --record-id rec3QiBpC3N3cMZHN --confirm go`; `python -m tools.hf_stitch --record-id rec3QiBpC3N3cMZHN --skip-publish --add-captions --composition-mode schaden-v1`; `ffprobe` duration check.
+- **Paid APIs called:** yes. Higgsfield clip generation completed; voiceover generation completed. Frame-gen rerun failed while downloading Airtable Source Image before completing a new frame update, but the exact row already had `First Frame Image` and `Last Frame Image`.
+- **Airtable fields updated:** `Source Image` attached from R57 `Generated Image 1`; `Video Clip` updated; `Voiceover Audio` and alignment/script fields updated; `Final Video` not updated due to `--skip-publish`.
+- **Output local MP4 path:** `C:\CONTENT_PIPELINE\R61_video_pipeline\references\outputs\final\v4\captions\31_Schaden_v1_-_R61_-_01_-_wasserrohrbruch-um-3-uhr-nachts-wen_captions_v2.mp4`.
+- **Duration:** `20.133008s`.
+- **Blockers:** `py_compile` blocked by `__pycache__`; AST parse OK. Frame-gen retry hit Airtable usercontent SSL EOF; existing frame fields were present. Initial clip command needed `C:\tmp\higgsfield-cli` on PATH.
+- **Exact next step:** Review the local captioned MP4 for locked structure, Provinzial green/golden-wing brand feel, German audio, and caption sync; then either publish this one R61 record only or revise stitch/asset timing.

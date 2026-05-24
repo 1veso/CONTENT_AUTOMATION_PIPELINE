@@ -42,7 +42,13 @@
       "Bash(pip install *)",
       "Bash(echo \"wings exit=$?\")",
       "Bash(echo \"outro exit=$?\")",
-      "Bash(echo \"env exit=$?\")"
+      "Bash(echo \"env exit=$?\")",
+      "mcp__n8n-mcp__tools_documentation",
+      "PowerShell($env:PYTHONIOENCODING=\"utf-8\"; Set-Location C:\\\\CONTENT_PIPELINE\\\\R61_video_pipeline; python -m tools.hf_stitch --record-id recMtjIS50ey2HJgT --skip-publish --composition-mode auto --add-captions)",
+      "PowerShell(higgsfield *)",
+      "PowerShell(higgsfield generate *)",
+      "PowerShell(higgsfield account *)",
+      "PowerShell(npm uninstall *)"
     ],
     "deny": [
       "Read(**/.env)",

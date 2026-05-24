@@ -67,6 +67,13 @@ FAL_IMAGE_ENDPOINT_FALLBACK = "fal-ai/nano-banana/edit"
 # treating as authoritative for billing.
 COST_PER_IMAGE_USD = 0.04
 
+# Provider switch — defaults to Fal. Set R61_FRAME_PROVIDER=higgsfield to
+# route through the higgsfield CLI's nano_banana_2 (same Nano Banana Pro
+# model, different host). Used when Fal balance is exhausted.
+FRAME_PROVIDER = os.environ.get("R61_FRAME_PROVIDER", "fal").lower()
+HIGGSFIELD_IMAGE_MODEL = "nano_banana_2"  # Higgsfield's Nano Banana Pro
+HIGGSFIELD_WAIT_TIMEOUT = "10m"
+
 FIRE_WORDS = {"go", "fire", "yes", "run it", "run", "ship"}
 
 # Narrative-structure mode (Block 3). When R61_NARRATIVE_MODE=true AND the
@@ -281,6 +288,64 @@ def submit_frame(prompt, reference_url, aspect_ratio="9:16"):
         return fal_client.submit(FAL_IMAGE_ENDPOINT_FALLBACK, arguments=arguments)
 
 
+def run_higgsfield_image(prompt, reference_local_path, aspect_ratio="9:16"):
+    """Submit one Nano Banana Pro edit job via the higgsfield CLI.
+
+    Returns the result image URL. The CLI auto-uploads the local reference
+    file and blocks until terminal status when --wait is set.
+    """
+    import subprocess
+    import json as _json
+    cmd = [
+        "higgsfield", "generate", "create", HIGGSFIELD_IMAGE_MODEL,
+        "--prompt", prompt,
+        "--image", str(reference_local_path),
+        "--aspect_ratio", aspect_ratio,
+        "--resolution", "1k",
+        "--wait",
+        "--wait-timeout", HIGGSFIELD_WAIT_TIMEOUT,
+        "--json",
+    ]
+    log(f"  $ higgsfield generate create {HIGGSFIELD_IMAGE_MODEL} "
+        f"--aspect_ratio {aspect_ratio} --resolution 1k "
+        f"--image <ref>")
+    proc = subprocess.run(
+        cmd, capture_output=True, text=True,
+        encoding="utf-8", errors="replace",
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"higgsfield image CLI failed (exit {proc.returncode}): "
+            f"{proc.stderr.strip() or proc.stdout.strip()}"
+        )
+    try:
+        payload = _json.loads(proc.stdout)
+    except Exception as e:
+        raise RuntimeError(
+            f"higgsfield JSON parse failed: {e}; "
+            f"stdout head: {proc.stdout[:400]}"
+        )
+    # Walk payload. Higgsfield returns the result URL at top-level
+    # `result_url` for nano_banana_2 jobs. Fall back to nested results[].url
+    # for other models, then a regex last-resort scan.
+    jobs = payload if isinstance(payload, list) else [payload]
+    for job in jobs:
+        if job.get("result_url"):
+            return job["result_url"]
+        for result in (job.get("results") or []):
+            url = result.get("url") or result.get("raw_url")
+            if url and url.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+                return url
+    # Last-resort regex scan across the whole payload
+    flat = _json.dumps(jobs)
+    m = re.search(r'https?://[^"\s]+\.(?:png|jpg|jpeg|webp)', flat)
+    if m:
+        return m.group(0)
+    raise RuntimeError(
+        "higgsfield image job completed but no image URL found in result"
+    )
+
+
 def extract_image_url(result):
     images = (result or {}).get("images") or []
     if not images:
@@ -322,22 +387,27 @@ def process_record(record):
 
     log(f"START {rec_id} ({ad_name}) pillar='{pillar}' kind={pillar_kind(pillar)}")
 
-    # Mirror the Airtable-hosted source image into Fal storage so the edit
-    # endpoint sees a stable, allowed CDN host.
+    # Download the Airtable-hosted source image to a local temp file. Fal
+    # path also uploads to Fal storage; Higgsfield path uses the local path
+    # directly (CLI auto-uploads).
     tmp = download_to_temp(source_url, suffix=Path(urlparse(source_url).path).suffix or ".png")
     try:
-        fal_ref_url = upload_to_fal(tmp)
+        if FRAME_PROVIDER == "higgsfield":
+            log(f"  provider=higgsfield model={HIGGSFIELD_IMAGE_MODEL}")
+            first_url = run_higgsfield_image(first_prompt, tmp)
+            last_url = run_higgsfield_image(last_prompt, tmp)
+        else:
+            fal_ref_url = upload_to_fal(tmp)
+            h_first = submit_frame(first_prompt, fal_ref_url)
+            h_last = submit_frame(last_prompt, fal_ref_url)
+            first_url = extract_image_url(h_first.get())
+            last_url = extract_image_url(h_last.get())
     finally:
         try:
             tmp.unlink()
         except OSError:
             pass
 
-    h_first = submit_frame(first_prompt, fal_ref_url)
-    h_last = submit_frame(last_prompt, fal_ref_url)
-
-    first_url = extract_image_url(h_first.get())
-    last_url = extract_image_url(h_last.get())
     if not first_url or not last_url:
         log(f"FAIL {rec_id} ({ad_name}): missing result URL")
         return "failed"
@@ -390,6 +460,11 @@ def main(argv=None):
                              "bypassing the Video Status = Pending filter. "
                              "Useful for re-running a specific record after "
                              "prompt changes.")
+    parser.add_argument("--confirm", default=None,
+                        help="Pass a fire word (e.g. --confirm go) to bypass "
+                             "the interactive cost prompt. Required for "
+                             "non-interactive runs since stdin pipes are "
+                             "unreliable on Windows.")
     args = parser.parse_args(argv)
 
     missing = av.check_credentials()
@@ -419,9 +494,20 @@ def main(argv=None):
         log("No pending records — nothing to do.")
         return 0
 
-    if not confirm_cost(len(records)):
-        log("Aborted at cost gate — no API calls made.")
-        return 1
+    if args.confirm is not None:
+        if args.confirm.strip().lower() not in FIRE_WORDS:
+            print(f"--confirm value {args.confirm!r} is not a fire word. "
+                  f"Allowed: {sorted(FIRE_WORDS)}", file=sys.stderr)
+            return 1
+        total_images = len(records) * 2
+        total_usd = total_images * COST_PER_IMAGE_USD
+        log(f"Cost gate bypassed via --confirm {args.confirm!r}. "
+            f"Approved: {len(records)} record(s) x 2 images = "
+            f"{total_images} images (~${total_usd:.2f}).")
+    else:
+        if not confirm_cost(len(records)):
+            log("Aborted at cost gate — no API calls made.")
+            return 1
 
     log(f"Confirmed. Processing {len(records)} record(s).")
     summary = {"ok": 0, "failed": 0, "skipped_no_source": 0}

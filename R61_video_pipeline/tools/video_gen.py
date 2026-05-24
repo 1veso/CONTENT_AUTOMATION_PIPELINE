@@ -53,21 +53,34 @@ if os.getenv("FAL_KEY") is None and os.getenv("FAL_API_KEY"):
 
 from tools import airtable_video as av  # noqa: E402
 from tools import _gates  # noqa: E402
+from tools.hf_stitch import apply_watermark  # noqa: E402
 
 LOG_PATH = PROJECT_ROOT / "references" / "outputs" / "video_gen_run.log"
 TMP_DIR = PROJECT_ROOT / "references" / "outputs" / "tmp"
 
 # Higgsfield model + settings (brand-aligned: 9:16, short cinematic motion).
-HIGGSFIELD_MODEL = "kling3_0"
-DEFAULT_DURATION_S = 5    # 4-6s per task spec; 5s sits in the middle.
+# Model selectable via R61_VIDEO_MODEL env var. Defaults to kling3_0 (the
+# baseline used for Day 01-19). veo3_1_lite is cheaper (1 credit/sec linear)
+# but only supports durations 4/6/8 — pick 6s to approximate the 5s baseline.
+HIGGSFIELD_MODEL = os.environ.get("R61_VIDEO_MODEL", "kling3_0")
 ASPECT_RATIO = "9:16"
 WAIT_TIMEOUT = "20m"      # CLI default is 10m; bump for slow renders.
 
+# Per-model defaults. Kling 3.0 uses 5s; Veo 3.1 Lite only allows 4/6/8.
+_MODEL_DURATION_DEFAULTS = {
+    "kling3_0": 5,
+    "veo3_1_lite": 6,
+}
+DEFAULT_DURATION_S = _MODEL_DURATION_DEFAULTS.get(HIGGSFIELD_MODEL, 5)
+
 # Higgsfield bills via subscription credits (no USD/call). Per
 # `higgsfield generate cost kling3_0 --prompt test --aspect_ratio 9:16
-# --duration N`: 3s=6 credits, 5s=10 credits, scales with duration.
-CREDITS_BY_DURATION = {3: 6, 5: 10, 10: 20}
-DEFAULT_COST_PER_CLIP_CREDITS = 10
+# --duration N`: kling3_0 3s=6, 5s=10, 10s=20. veo3_1_lite is 1 credit/sec.
+CREDITS_BY_DURATION = {
+    "kling3_0": {3: 6, 5: 10, 10: 20},
+    "veo3_1_lite": {4: 4, 6: 6, 8: 8},
+}.get(HIGGSFIELD_MODEL, {3: 6, 5: 10, 10: 20})
+DEFAULT_COST_PER_CLIP_CREDITS = CREDITS_BY_DURATION.get(DEFAULT_DURATION_S, 10)
 
 FIRE_WORDS = {"go", "fire", "yes", "run it", "run", "ship"}
 
@@ -111,11 +124,12 @@ BRAND_MOTION_ANCHOR = (
     "Provinzial brand video: warm, authentic German everyday life. Calm "
     "cinematic motion only — soft real-world movement, never flashy, never "
     "snappy zooms, never whip pans, never dramatic VFX. Color stays anchored "
-    "on Provinzial green #005940 and Flügelgelb #FFD000, warm natural "
+    "on Provinzial green #005940 and brand yellow #FFD000, warm natural "
     "lighting. The single beat between the first and last frame plays out "
     "naturally and grounded, like a real moment captured on a 35mm lens. "
-    "No on-image text, no logos other than the small yellow wings watermark "
-    "bottom-right (which stays static)."
+    "No on-image text, no logos, no brand marks of any kind — the brand "
+    "mark is added later as a fixed overlay and must not be painted into "
+    "the motion."
 )
 
 
@@ -246,11 +260,14 @@ def run_higgsfield(prompt, start_image_path, end_image_path, duration_s=DEFAULT_
         "--end-image", str(end_image_path),
         "--aspect_ratio", ASPECT_RATIO,
         "--duration", str(duration_s),
-        "--mode", os.environ.get("HF_MODE", "std"),
-        "--wait",
-        "--wait-timeout", WAIT_TIMEOUT,
-        "--json",
     ]
+    # --mode is a Kling-only param (pro/std/4k). Veo rejects it as Unknown.
+    if HIGGSFIELD_MODEL.startswith("kling"):
+        cmd += ["--mode", os.environ.get("HF_MODE", "std")]
+    # Poll fast — CLI default is too slow for Veo (job completes in ~3-5min
+    # but default polling can take 18+ minutes to detect).
+    cmd += ["--wait", "--wait-timeout", WAIT_TIMEOUT,
+            "--wait-interval", "10s", "--json"]
     log(f"  $ higgsfield generate create {HIGGSFIELD_MODEL} "
         f"--aspect_ratio {ASPECT_RATIO} --duration {duration_s} "
         f"--start-image <first> --end-image <last>")
@@ -398,11 +415,25 @@ def process_record(record, table_cfg, output_path=None, duration_s=DEFAULT_DURAT
     video_url = run_higgsfield(prompt, first_local, last_local, duration_s=duration_s)
     log(f"  higgsfield returned {video_url}")
 
-    # Re-host on Fal storage so Airtable has a stable CDN.
-    clip_local = TMP_DIR / f"{rec_id}_clip.mp4"
+    # Re-host so Airtable has a stable CDN.
+    clip_local = TMP_DIR / f"{rec_id}_clip_raw.mp4"
     download_attachment(video_url, clip_local)
-    fal_url = upload_to_fal(clip_local)
-    log(f"  re-hosted on Fal -> {fal_url}")
+    # Burn brand watermark (transparent golden wings PNG, bottom-right, 120x120
+    # @ 80% opacity, 12px margin) into the clip before it lands in Airtable.
+    # This is the canonical brand mark — never AI-generated.
+    clip_local_wm = TMP_DIR / f"{rec_id}_clip.mp4"
+    apply_watermark(clip_local, clip_local_wm, segment_kind="clip")
+    log(f"  watermark overlaid -> {clip_local_wm.name}")
+    try:
+        fal_url = upload_to_fal(clip_local_wm)
+        clip_url = fal_url
+        log(f"  re-hosted on Fal -> {fal_url}")
+    except Exception as e:
+        log(f"  Fal upload failed ({e}); falling back to R2 per stitch.py:213 note")
+        from tools.stitch import upload_to_r2
+        r2_key = f"r61/clip/v1/{rec_id}_clip.mp4"
+        clip_url = upload_to_r2(clip_local_wm, r2_key, content_type="video/mp4")
+        log(f"  re-hosted on R2 -> {clip_url}")
 
     # If --output requested, copy the local clip to that path before cleanup.
     # Use check_output_path so a second run never overwrites the first
@@ -411,7 +442,7 @@ def process_record(record, table_cfg, output_path=None, duration_s=DEFAULT_DURAT
         from tools.path_utils import check_output_path  # local import keeps this branch cold-imported
         out = check_output_path(Path(output_path))
         out.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(clip_local, out)
+        shutil.copyfile(clip_local_wm, out)
         if out != Path(output_path):
             log(f"  version-incremented -> {out.name} (prior preserved)")
         log(f"  saved local copy -> {out}")
@@ -419,14 +450,14 @@ def process_record(record, table_cfg, output_path=None, duration_s=DEFAULT_DURAT
     _airtable_update(
         table_cfg, rec_id,
         {
-            table_cfg["clip_field"]: [{"url": fal_url, "filename": f"{rec_id}_clip.mp4"}],
+            table_cfg["clip_field"]: [{"url": clip_url, "filename": f"{rec_id}_clip.mp4"}],
             table_cfg["status_field"]: table_cfg["clip_generated"],
         },
     )
     log(f"DONE  {rec_id} ({label}) status -> {table_cfg['clip_generated']}")
 
     # Tidy temp artifacts on success.
-    for p in (first_local, last_local, clip_local):
+    for p in (first_local, last_local, clip_local, clip_local_wm):
         try:
             p.unlink()
         except OSError:
