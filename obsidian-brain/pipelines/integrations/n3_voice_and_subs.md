@@ -42,3 +42,7 @@ Blotato leg is paused until hold lifts. See [[../../knowledge/lessons_learned]].
 - **Section:** §K @ canvas Y=[12340, 13440]
 - **Webhook trigger:** `https://ops.getautomata.ai/webhook/n3` (writes to `PipelineRequests` table `tblLtTpXwFOpzDX4K`)
 - **Notes:** Sheets -> Airtable swap TODO. Two Fal cred entries still need consolidation.
+
+## Telegram launch
+
+Command `/n3` via `lux_bot` → `[Telegram Router]` Switch (canvas `SmtkmTgfCTLZPlN4`) → `[K] Create New Idea` (id `66985906-2529-42e8-bb38-0586b3666cf1`). Parallel to webhook/schedule trigger; both stay live. See [[../../knowledge/webhook_registry#Telegram bot commands]].

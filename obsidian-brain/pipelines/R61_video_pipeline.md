@@ -114,3 +114,7 @@ Idx 20 (Sunrise Landstraße) initially picked as Kfz proxy, then swapped out for
 - [[../clients/Provinzial_Geier_Ayhan/generation_notes]]
 - [[../frameworks/video_ads_framework]]
 - [[../agents/per_pipeline_agents]]
+
+## Telegram launch
+
+Command `/r61` via `lux_bot` → `[Telegram Router]` Switch (canvas `SmtkmTgfCTLZPlN4`) → `[T2] HTTP-Switch R61` (id `aec4765f-8d05-4b3f-817a-7f46d3a52a06`). Parallel to webhook/schedule trigger; both stay live. See [[../knowledge/webhook_registry#Telegram bot commands]].

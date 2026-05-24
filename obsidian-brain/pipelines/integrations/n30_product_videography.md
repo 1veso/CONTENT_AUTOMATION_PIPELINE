@@ -41,3 +41,7 @@ Most useful if Provinzial commissions product-style spots for specific coverage 
 - **Section:** §I @ canvas Y=[9940, 11140]
 - **Webhook trigger:** `https://ops.getautomata.ai/webhook/n30` (writes to `PipelineRequests` table `tblLtTpXwFOpzDX4K`)
 - **Notes:** googleGemini -> TODO sticky. switch v3.4 capped to v3.2. KIE Veo TODO swap to Fal.
+
+## Telegram launch
+
+Command `/n30` via `lux_bot` → `[Telegram Router]` Switch (canvas `SmtkmTgfCTLZPlN4`) → `[I] Get Project` (id `cd4102fd-38bd-4f92-93f4-2210ff545a88`). Parallel to webhook/schedule trigger; both stay live. See [[../../knowledge/webhook_registry#Telegram bot commands]].

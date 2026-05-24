@@ -39,3 +39,7 @@ RoboNuggets 3-scene Veo template — chains three Veo 3 generations into a singl
 - **Section:** §C @ canvas Y=[2740, 3840]
 - **Webhook trigger:** `https://ops.getautomata.ai/webhook/r34` (writes to `PipelineRequests` table `tblLtTpXwFOpzDX4K`)
 - **Notes:** KIE-stripped, Sheets-stripped per source. Ready once Fal+Airtable+Blotato creds bound.
+
+## Telegram launch
+
+Command `/r34` via `lux_bot` → `[Telegram Router]` Switch (canvas `SmtkmTgfCTLZPlN4`) → `[C] Elements AI Agent` (id `5463cc23-a3c6-4f16-a1dd-2176cb42ceb6`). Parallel to webhook/schedule trigger; both stay live. See [[../knowledge/webhook_registry#Telegram bot commands]].

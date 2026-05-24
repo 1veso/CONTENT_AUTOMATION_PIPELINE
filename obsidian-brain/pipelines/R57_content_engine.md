@@ -42,3 +42,7 @@ None — pure Python via `tools/` (no n8n workflow JSON). Sibling templates in [
 - [[../clients/Provinzial_Geier_Ayhan/content_library]]
 - [[../frameworks/video_ads_framework]]
 - [[../agents/per_pipeline_agents]]
+
+## Telegram launch
+
+Command `/r57` via `lux_bot` → `[Telegram Router]` Switch (canvas `SmtkmTgfCTLZPlN4`) → `[T1] HTTP-Modal R57 gen` (id `81465e19-2d48-4e34-8de3-7d4b9f2ea8c3`). Parallel to webhook/schedule trigger; both stay live. See [[../knowledge/webhook_registry#Telegram bot commands]].

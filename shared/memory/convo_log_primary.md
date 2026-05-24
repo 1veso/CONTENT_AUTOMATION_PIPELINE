@@ -4,6 +4,73 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 ---
 
+## Session 11 — 2026-05-24 (6 Telegram routes added, deferred-routes sticky, vault docs)
+
+### Completed This Session
+- **Backup created:** `n8n_backups/SmtkmTgfCTLZPlN4_BEFORE_6_ROUTES_2026-05-24.json` — 473 nodes, active=True. Recovery point for all Part 1/2 changes.
+- **Switch rules extended (Part 1):** `[Telegram Router]` updated from 5 → 11 rules via `updateNode` partial diff (dot-notation `parameters.rules.values`, no full-PUT). Six new commands added:
+  - `/r34` → `[C] Elements AI Agent` (`5463cc23-a3c6-4f16-a1dd-2176cb42ceb6`)
+  - `/n161` → `[E] AI Agent` (`21e74203-2678-40f6-b749-bf160ddf4979`)
+  - `/n30` → `[I] Get Project` (`cd4102fd-38bd-4f92-93f4-2210ff545a88`)
+  - `/n3` → `[K] Create New Idea` (`66985906-2529-42e8-bb38-0586b3666cf1`)
+  - `/r57` → `[T1] HTTP-Modal R57 gen` (`81465e19-2d48-4e34-8de3-7d4b9f2ea8c3`)
+  - `/r61` → `[T2] HTTP-Switch R61` (`aec4765f-8d05-4b3f-817a-7f46d3a52a06`)
+- **Connections wired (Part 1):** 6 `addConnection` ops (case=5 through case=10) in one batch. All confirmed via direct REST GET.
+- **Sticky note added (Part 2):** `daaddd6a-f88f-4acc-b7e2-4a9334ed073d` at [-1400, 30500], 500×350, color=7. Documents 5 deferred sections (§A R46, §B R51, §J n31, §D n16, §H n21) + R55 N/A reason.
+- **Final canvas state:** 474 nodes. errorCount=37 (baseline, unchanged). warningCount=782 (unchanged). Workflow active=True throughout — never deactivated.
+- **Partial diff call budget used:** 3 calls, 8 total ops (under 20-op/call ceiling).
+- **Vault docs updated (Part 3):**
+  - `obsidian-brain/knowledge/webhook_registry.md` — new `## Telegram bot commands` section with 11-command table, routing mechanism, deferred routes subsection.
+  - `shared/memory/convo_log_primary.md` — this entry.
+  - `obsidian-brain/pipelines/R34_veorobo.md` — Telegram launch section appended.
+  - `obsidian-brain/pipelines/integrations/n16.1_auto_subtitled_videos.md` — Telegram launch section appended.
+  - `obsidian-brain/pipelines/integrations/n30_product_videography.md` — Telegram launch section appended.
+  - `obsidian-brain/pipelines/integrations/n3_voice_and_subs.md` — Telegram launch section appended.
+  - `obsidian-brain/pipelines/R57_content_engine.md` — Telegram launch section appended.
+  - `obsidian-brain/pipelines/R61_video_pipeline.md` — Telegram launch section appended.
+- **Git commit + push:** docs-only commit (non-doc files excluded).
+
+### Key Decisions
+- `updateNode` with `updates: {"parameters.rules.values": [...]}` is the correct partial-diff format for Switch rules — NOT `parameters` key directly, NOT `patchNodeField` with array.
+- `patchNodeField` only accepts string find/replace — cannot patch arrays with it.
+- No sanitization strip occurred: [F]/[G] Telegram ops and [I] webhook path verified intact against backup baseline.
+
+### Pending / Carry Over
+- **OPERATOR MUST (UI only):** Connect `Telegram Trigger` output → `[Telegram Router]` input (from Session 10 carry-over — still required before any `/cmd` routing works).
+- **Deferred Telegram routes:** §A R46, §B R51, §J n31, §D n16, §H n21 — wire when those sections get dispatcher/param-prompt nodes.
+- **Apply `N8N_PROXY_HOPS=1`** on Hetzner shell (carried from Session 9).
+- **Cleanup:** `shared/_update_switch.py` — temp file, never executed, should be deleted (violates CLAUDE.md "no throwaway scripts").
+
+---
+
+## Session 10 — 2026-05-24 (Telegram trigger conflict fix — Switch router + reference patches)
+
+### Completed This Session
+- **Backup created:** `n8n_backups/SmtkmTgfCTLZPlN4_BEFORE_TG_SWITCH_2026-05-24.json` — 472 nodes confirmed.
+- **Reference catalog (Step 1):** 3 parameter fields needed patching across 2 nodes:
+  - `[L1] Send a video` (cf15a7f5) — `parameters.chatId`: `$('Telegram Trigger1')` → `$('Telegram Trigger')`
+  - `[L2] LinkedIn` (48897ac3) — `parameters.postContentText`: `$('Telegram Trigger2')` → `$('Telegram Trigger')`
+  - `[L2] Twitter` (168c88b4) — `parameters.postContentText`: `$('Telegram Trigger3')` → `$('Telegram Trigger')`
+- **Patches applied (Step 2):** 3 `patchNodeField` ops in one batch. Sanitization check confirmed: webhook paths and Telegram operations unchanged from baseline.
+- **Switch node added (Step 3):** `[Telegram Router]` (n8n-nodes-base.switch v3.2) at position [-1400, 30000], id `a7787a22-718b-426d-a294-3f048ba8b326`. 5 rules: r39, n19, sora, ytlong, ytshort.
+- **Connections wired (Step 4):** 6 connection entries total — case=0→[F] Set Bot ID, case=1→[G] Set Bot ID, case=2→[L1] Create Sora2, case=3→[L2] LinkedIn, case=3→[L2] Twitter, case=4→[L3] Send a text message.
+- **Final state:** 473 nodes. errorCount=37 (all pre-existing, unchanged). Webhook paths intact. Telegram operations intact.
+- **Note:** 6 "old ref" hits in scan are in TODO sticky notes ([L1]/[L2]/[L2] Telegram Trigger placeholders) — documentation nodes, not executable refs. No functional impact.
+
+### Pending / Carry Over
+- **OPERATOR MUST (UI only — cannot be done via API):**
+  1. Open https://ops.getautomata.ai/workflow/SmtkmTgfCTLZPlN4
+  2. Add ONE Telegram Trigger node, name EXACTLY `Telegram Trigger`
+  3. Bind credential `lux_bot` (id `WoB3AsOoB9cIKUrI`)
+  4. Updates to listen to: `message` AND `callback_query`
+  5. Connect Telegram Trigger output → `[Telegram Router]` input
+  6. Save → Activate
+- **Apply `N8N_PROXY_HOPS=1`** on Hetzner shell (carried from Session 9).
+- **Verify `[X] R46->R51 Schedule (5m)`** still disabled if intentional.
+- **Diff restored canvas** against newest pre-wipe backup (carried from Session 9).
+
+---
+
 ## Session 9 — 2026-05-24 (n8n activation root cause — docs + commit)
 
 ### Completed This Session

@@ -47,6 +47,37 @@ The respond is immediate; pipeline body work happens after. Operator wires the b
 
 (`created_at` was requested but Airtable Meta API rejects createdTime field creation; add manually in UI if needed, or use Airtable record `createdTime` automatic field.)
 
+## Telegram bot commands (lux_bot → [Telegram Router] Switch)
+
+**Routing mechanism:** One `telegramTrigger` node (`lux_bot`, credential id `WoB3AsOoB9cIKUrI`) feeds `[Telegram Router]` Switch (id `a7787a22-718b-426d-a294-3f048ba8b326`, canvas position `[-1400, 30000]`). The Switch has 11 output branches wired as of 2026-05-24. Each rule uses `startsWith` on `{{ ($json.message?.caption || $json.message?.text || '').trim() }}` (case-sensitive). Parallel to webhook/schedule triggers — both stay live.
+
+| Command | Section | Head node | Notes |
+|---|---|---|---|
+| `/r39` | §F | `[F] Generate Images` | R39 Bulk Images; idx 0 |
+| `/n19` | §G | `[G] Webhook Trigger` | n19 Ultimate Video Ads; idx 1 |
+| `/sora` | §L1 | `[L1] Sora Trigger` | n29 TikTok→Sora; idx 2 |
+| `/ytlong` | §L2 | `[L2] YT Long Trigger` | n29 YT Long→LI/X; idx 3 |
+| `/ytshort` | §L3 | `[L3] YT Short Trigger` | n29 YT Short→Script; idx 4 |
+| `/r34` | §C | `[C] Elements AI Agent` (id `5463cc23-a3c6-4f16-a1dd-2176cb42ceb6`) | R34 VeoRobo; added 2026-05-24 |
+| `/n161` | §E | `[E] AI Agent` (id `21e74203-2678-40f6-b749-bf160ddf4979`) | n16.1 Auto Subtitles; added 2026-05-24 |
+| `/n30` | §I | `[I] Get Project` (id `cd4102fd-38bd-4f92-93f4-2210ff545a88`) | n30 Product Videography; added 2026-05-24 |
+| `/n3` | §K | `[K] Create New Idea` (id `66985906-2529-42e8-bb38-0586b3666cf1`) | n3 Voice & Subs; added 2026-05-24 |
+| `/r57` | §T1 | `[T1] HTTP-Modal R57 gen` (id `81465e19-2d48-4e34-8de3-7d4b9f2ea8c3`) | R57 Content Engine; added 2026-05-24 |
+| `/r61` | §T2 | `[T2] HTTP-Switch R61` (id `aec4765f-8d05-4b3f-817a-7f46d3a52a06`) | R61 Video Pipeline; added 2026-05-24 |
+
+### Deferred Telegram routes
+
+Sticky note on canvas at `[-1400, 30500]` (id `daaddd6a-f88f-4acc-b7e2-4a9334ed073d`) documents the remaining sections not yet wired to Telegram:
+
+| Section | Pipeline | Reason deferred |
+|---|---|---|
+| §A | R46 Extract | Entry node is Apify Poll ×8 — no single head node; needs a dispatcher Set node first |
+| §B | R51 Creative Cloner | Entry branches on `source_url` type; needs a params-prompt node before handing off |
+| §J | n31 Precision Camera | Low-priority; §I (`/n30`) covers the primary camera-motion use case |
+| §D | n16 Narrative Chaining | Overlaps with `/n161`; add only if operators need the base extend-video flow directly |
+| §H | n21 Ultimate UGC | 5 sub-workflows still TODO; wire after sub-workflow completion |
+| R55 | Vizard Clipper | Standalone Modal app with its own Telegram bot; does not share lux_bot |
+
 ## Phase 5 cross-pipeline wiring deployed
 
 - **R46 → R51 auto-clone**: Schedule (5min) + Airtable search (TikTok days_on_air > 7, clone_status empty) + sticky pointing to R51 entry. Operator wires `Find winners` → R51 main flow.
