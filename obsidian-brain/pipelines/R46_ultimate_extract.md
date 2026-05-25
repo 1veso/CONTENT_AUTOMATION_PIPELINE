@@ -41,3 +41,4 @@ Could be paired with [[R55_clipper]] output to extract claim/scene structure fro
 - **Section:** §A @ canvas Y=[0, 1140]
 - **Webhook trigger:** `https://ops.getautomata.ai/webhook/r46` (writes to `PipelineRequests` table `tblLtTpXwFOpzDX4K`)
 - **Notes:** Apify scrapers + 8 Airtable sinks (TikTok, YT Longs/Shorts, IG, LinkedIn, Twitter, Reddit, Meta_Ads).
+- **2026-05-25 (S15) validation fix:** the 6 Apify scraper nodes (`YouTube`, `YouTube Shorts`, `Instagram`, `LinkedIn`, `Twitter`, `Reddit`, type `@apify/n8n-nodes-apify.apify`) had `onError:"continueErrorOutput"` with no error-output wire → 6 validation errors. Set `onError:"stopWorkflow"` on all 6 (REST verbatim PUT). If error-branch handling is wanted later, instead wire `main[1]` and revert to `continueErrorOutput`.

@@ -44,3 +44,4 @@ Per project convention KIE is ripped out. When activating n21, swap each KIE sub
 - **Section:** §H @ canvas Y=[8740, 9940]
 - **Webhook trigger:** `https://ops.getautomata.ai/webhook/n21` (writes to `PipelineRequests` table `tblLtTpXwFOpzDX4K`)
 - **Notes:** 5 executeWorkflow calls TODO stickies (sub-workflow ids missing). KIE swaps required in subs.
+- **2026-05-25 (S15) validation fix:** `[H] Get Prompts/Images/Videos` (airtable `73b89853`/`beff3ecc`/`2c7933ef`) had `filterByFormula` mixing literal text with `{{ }}` but no leading `=` → 3 errors. Prefixed each with `=` so the expression evaluates (REST verbatim PUT). **NOT deleted** — these are wired into the §H chain (`[H] Store *`→Get→`[H] Switch/Filter/Aggregate`) and §H is a callable sub-workflow (`[H] Execute` trigger), not dead code. An earlier "orphaned, delete them" plan was wrong; connection-check caught it.

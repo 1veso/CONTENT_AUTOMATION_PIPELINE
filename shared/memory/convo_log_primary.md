@@ -4,6 +4,35 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 ---
 
+## Session 15 — 2026-05-25 (Cleaned up 13 fixable validation errors — errorCount 15 → 2; only the 2 [E] phantoms remain)
+
+### Completed This Session
+- **Cleared 13 of the 15 validation errors** on `SmtkmTgfCTLZPlN4` via a single **direct REST verbatim PUT** (NOT MCP partial diff). errorCount **15 → 2**. The 2 survivors are exactly the permanent `[E] ElevenLabs` / `[E] File Upload` community-node n8n-mcp false-positives (left untouched by design — see S14).
+- **Backup:** `n8n_backups/SmtkmTgfCTLZPlN4_PRE-errfix_2026-05-25_152226.json` (382,264 bytes, 475 nodes) via REST GET. Payload built from it, edits asserted against prior state, then PUT.
+- **5 fixes (12 nodes):**
+  1. **FIX1 — `[J] Bottom Left`** (n31, httpRequest `b110e3ad`): added `parameters.nodeCredentialType="httpHeaderAuth"` (authentication was `predefinedCredentialType` with the Fal.ai `httpHeaderAuth` cred bound but the type field empty → "Credential Type cannot be empty").
+  2. **FIX2 — `[D] Combine Clips`** (n16, httpRequest `2fe44093`): rewrote `jsonBody` template literal `` `"${url}"` `` → concatenation `'"' + url + '"'` inside the `$json.sceneURL.map(...)`. Cleared both template-literal error rows. No `${`/backtick residue.
+  3. **FIX3 — `[E] Webhook`** (n16.1, webhook `06e9bfa6`, responseMode=responseNode): set node-level `onError="continueRegularOutput"`.
+  4. **FIX4 (REVISED) — `[H] Get Prompts/Images/Videos`** (n21 §H, airtable `73b89853`/`beff3ecc`/`2c7933ef`): **did NOT delete.** Operator's "orphaned" premise was false — all 3 are wired (`[H] Store *`→Get→`[H] Switch/Filter/Aggregate`; Get Prompts traces up to the `[H] Execute` sub-workflow trigger). Fixed the real error instead: prefixed each `filterByFormula` with `=` so the mixed literal+`{{ }}` evaluates. Operator approved the swap via AskUserQuestion. Node count stays 475.
+  5. **FIX5 — 6 R46 Apify nodes** (`YouTube`, `YouTube Shorts`, `Instagram`, `LinkedIn`, `Twitter`, `Reddit`; type `@apify/n8n-nodes-apify.apify`): `onError` `continueErrorOutput` → `stopWorkflow` (they had no error-output wire).
+
+### Verification
+- PUT **HTTP 200**, `active=True`.
+- **Strip-check PASS:** PRE=(475, 19 wh-path, 6 tg-op) == POST=(475, 19, 6). **0 added / 0 removed; exactly 12 nodes changed, all intended, 0 unexpected.** Strip-bug did not fire (verbatim round-trip).
+- Re-validate: **errorCount 2** (`[E] ElevenLabs`, `[E] File Upload` only), warningCount 711 (unchanged).
+
+### Key Decisions
+- **FIX4 = fix-not-delete.** Deleting wired nodes on a false "orphaned" premise would have severed 3 §H chains and broken the n21 sub-workflow. Caught by checking incoming/outgoing connections + upstream-trigger reachability before touching anything. Non-destructive `=`-prefix achieves the same errorCount drop. Respects the operator's own "confirm nothing references them first" guard.
+- Single atomic PUT for all 5 fixes (12 nodes) rather than 5 separate writes — one strip-risk surface, one verify.
+
+### Pending / Carry Over
+- **errorCount floor is 2** — the 2 `[E]` community-node phantoms are permanent in n8n-mcp validation (it can't see community packages). A truly "clean" split would require dropping them from the validated set, not fixing the canvas. Ignore them.
+- (Carried from S13) Before wiring the 16 section webhooks to live external callers: re-add `httpMethod:POST` + `responseMode:responseNode` + `onError:continueRegularOutput` via REST verbatim PUT.
+- (S12) R46→R51 auto-clone parked. (S11) connect `Telegram Trigger`→`[Telegram Router]` in UI; apply `N8N_PROXY_HOPS=1`.
+- §H n21 is a callable sub-workflow (`[H] Execute` trigger), not dead — leave intact.
+
+---
+
 ## Session 14 — 2026-05-25 (Diagnosed the 2 `[E]` "Unknown node type" errors — n8n-mcp false-positives, NOT host install)
 
 ### Completed This Session

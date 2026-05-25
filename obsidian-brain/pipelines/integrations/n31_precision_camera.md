@@ -39,3 +39,4 @@ Camera-move grammar from n31 should be folded into [[../R61_video_pipeline]]'s `
 - **Section:** §J @ canvas Y=[11140, 12340]
 - **Webhook trigger:** `https://ops.getautomata.ai/webhook/n31` (writes to `PipelineRequests` table `tblLtTpXwFOpzDX4K`)
 - **Notes:** Cleanest pipeline. WaveSpeed nano-banana + kling 2.5 turbo, no swaps required.
+- **2026-05-25 (S15) validation fix:** `[J] Bottom Left` (httpRequest `b110e3ad`, WaveSpeed nano-banana-pro/edit) used `authentication:"predefinedCredentialType"` with the Fal.ai `httpHeaderAuth` cred bound but `nodeCredentialType` empty → "Credential Type cannot be empty". Set `parameters.nodeCredentialType:"httpHeaderAuth"` (REST verbatim PUT).

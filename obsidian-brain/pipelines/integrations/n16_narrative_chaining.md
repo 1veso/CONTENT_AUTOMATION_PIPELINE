@@ -38,3 +38,4 @@ Direct alternative to Higgsfield first/last-frame in [[../R61_video_pipeline]] w
 - **Section:** §D @ canvas Y=[3940, 5140]
 - **Webhook trigger:** `https://ops.getautomata.ai/webhook/n16` (writes to `PipelineRequests` table `tblLtTpXwFOpzDX4K`)
 - **Notes:** KIE Veo TODO swap to fal-ai/veo3-fast. Sheets TODO swap.
+- **2026-05-25 (S15) validation fix:** `[D] Combine Clips` (httpRequest `2fe44093`) `jsonBody` used a JS template literal `` `"${url}"` `` inside `$json.sceneURL.map(...)`, which n8n expressions reject. Rewrote as string concatenation `'"' + url + '"'` (same output, validates). REST verbatim PUT.
