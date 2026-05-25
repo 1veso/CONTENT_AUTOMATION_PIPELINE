@@ -4,6 +4,27 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 ---
 
+## Session 13 — 2026-05-25 (Restored 22 MCP-strip-bug errors — 17 webhook paths + 5 Telegram ops)
+
+### Completed This Session
+- **Triaged the 37 baseline validation errors** (read-only) → 22 were the known MCP strip-bug class (17 wiped webhook `parameters`, 5 wiped Telegram `operation`/`resource`); 6 per-pipeline config bugs; 6 soft Apify error-output; 3 parked §H dead code.
+- **Restored the 22 strip errors** on `SmtkmTgfCTLZPlN4` via **direct REST verbatim PUT** (NOT MCP partial diff — that's the sanitizer that strips). Source of truth: `webhook_registry.md` (16 section paths) + 2026-05-13 pre-strip backup (internal `[I] Webhook` GUID `78302243-...`, and confirmed Telegram params otherwise intact).
+  - Webhook paths set (path only): `[A] WH R46`=r46, `[B]`=r51, `[C]`=r34, `[D]`=n16, `[E]`=n16-1, `[F]`=r39, `[G]`=n19, `[H]`=n21, `[I] WH n30`=n30, `[J]`=n31, `[K]`=n3, `[L1]`=n29-sora, `[L2]`=n29-long, `[L3] WH n29-short`=n29-short, `[T1]`=r57, `[T2]`=r61, `[I] Webhook`=78302243-a5e1-4e38-b0da-3bcdbc0b15b9.
+  - Telegram `operation:sendMessage` + `resource:message` on: `[F] Tell User WIP`, `[F] Tell User Done`, `[G] Tell User WIP`, `[G] Tell User Done1`, `[L3] Send a text message`.
+- **Backup:** `n8n_backups/SmtkmTgfCTLZPlN4_PRE-webhook-restore_2026-05-25.json` (381,775 bytes, 475 nodes).
+- **Verification:** PUT 200, `active=True`, 475 nodes. webhook-with-path 2→**19**; telegram-with-op 1→**6** (+5). **Gold-standard strip check via before/after param-signature diff: exactly 22 nodes changed, 0 unexpected, 0 added/removed → PASS.** Validation `errorCount` **37 → 15** (warningCount 711 unchanged). The 15 remaining = the non-strip triage buckets (2 community pkgs + 1 credType + 6 Apify soft + 2 Combine Clips + 3 §H parked + 1 `[E] Webhook` onError).
+
+### Key Decisions
+- **path-only on webhooks** (deliberate): originals also had `httpMethod:POST` + `responseMode:responseNode`, but restoring responseNode re-introduces ~16 `responseNode-requires-onError` errors → would defeat the 37→15 target. Webhooks are dormant (not wired to live callers), so path-only = clean canvas now; flagged POST/responseNode/onError for when they're wired live.
+- Corrected `webhook_registry.md` strip-warning: the old "re-arm via partial-diff" advice was backwards (partial diff is the stripper); REST verbatim PUT is the safe path.
+
+### Pending / Carry Over
+- **Before wiring webhooks to live external callers:** re-add `httpMethod:POST` + `responseMode:responseNode` + `onError:continueRegularOutput` (via REST verbatim PUT) on the 16 section webhooks.
+- **Remaining 15 validation errors** (non-strip) for a fully clean split: 2 missing community pkgs (`n8n-nodes-elevenlabs-enhanced`, `n8n-nodes-piapi` — host install), `[J] Bottom Left` nodeCredentialType, `[D] Combine Clips` template-literal expr, `[E] Webhook` onError; 6 Apify soft; 3 §H parked (drop on split).
+- (Carried from S12) R46→R51 auto-clone parked; (S11) connect `Telegram Trigger`→`[Telegram Router]` in UI; apply `N8N_PROXY_HOPS=1`; delete temp `shared/_update_switch.py`.
+
+---
+
 ## Session 12 — 2026-05-25 (R51 clone_status Airtable error fixed — auto-clone branch disabled)
 
 ### Completed This Session
