@@ -4,6 +4,31 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 ---
 
+## Session 14 — 2026-05-25 (Diagnosed the 2 `[E]` "Unknown node type" errors — n8n-mcp false-positives, NOT host install)
+
+### Completed This Session
+- **Diagnosed the 2 community-node errors** (`[E] ElevenLabs`, `[E] File Upload`) from the remaining-15 errorCount on `SmtkmTgfCTLZPlN4`. Operator suspected "unknown node type" was mislabeled — **confirmed: it is.**
+  - `[E] ElevenLabs` = `n8n-nodes-elevenlabs-enhanced.elevenLabs` v1, credential `elevenLabsApi` (id `3LrGYbduS5r1Hdqb`) bound. → verdict **(c)** installed + bound; validator false-positive.
+  - `[E] File Upload` = `n8n-nodes-piapi.fileUpload` v1, no cred / no params (parked template stub). → verdict **(c)** installed; validator false-positive.
+- **Host-package proof WITHOUT shell access** (kubectl/SSH unavailable — `id_getautomata` key rejected for all users via tunnel + direct IP; no local kubeconfig; infra doc namespace is `n8n` not the operator's `user-40911a6c`). Used the **credential-type registry** instead, which is more authoritative than `ls node_modules` (proves *loaded*, not just present):
+  - `GET /credentials/schema/elevenLabsApi` → **200** (field `xiApiKey`) ⟹ `n8n-nodes-elevenlabs-enhanced` loaded.
+  - `GET /credentials/schema/piAPIApi` → **200** (field `apiKey`) ⟹ `n8n-nodes-piapi` loaded.
+  - Controls: `httpHeaderAuth`→200 (core), `bogusFakeApi123`→404. Registry trustworthy.
+- **Root cause:** `n8n_validate_workflow` validates against n8n-mcp's *bundled static node DB*, which omits community packages → every community node reads as "Unknown node type." Live host has both packages loaded; the nodes are valid on the real canvas.
+
+### Key Decisions
+- **No canvas change made** (operator chose "leave as-is + document" via AskUserQuestion). errorCount stays **15**; the 2 `[E]` entries do NOT clear — by design, because no canvas edit makes n8n-mcp recognize a community node it doesn't bundle. The only count-dropping options (swap→HTTP Request, or delete) change behavior / damage the parked §E template → declined (DECISION GUARD).
+- **Correction to Session 13 carry-over:** S13 listed these 2 as "missing community pkgs — host install." **Wrong** — both already installed/loaded. No host install needed. Removed from the "host install" bucket.
+- No backup / strip-check needed this session: **zero PUTs issued** (read-only diagnosis only). Baseline intact: 475 nodes / 19 webhook·path / 6 telegram·op.
+
+### Pending / Carry Over
+- **Remaining 15 errors** now correctly bucketed: **2 = n8n-mcp community-node false-positives** (`[E] ElevenLabs`, `[E] File Upload` — permanent in MCP validation, ignore); `[J] Bottom Left` nodeCredentialType; `[D] Combine Clips` template-literal expr (×2); `[H] Get Prompts/Images/Videos` filterByFormula `=` prefix (×3); 6 Apify/YouTube `onError` connection; `[E] Webhook` responseNode-onError.
+- **Runtime (not canvas):** if n16.1 §E is ever run live, check ElevenLabs **credit balance** at elevenlabs.io.
+- **n16.1 §E is a parked template** (`https://YOUR_URL/...` placeholder endpoints, File Upload unconfigured). Wiring it live = separate build task; won't drop MCP errorCount regardless.
+- (Carried from S13) Before wiring webhooks to live callers: re-add `httpMethod:POST`+`responseMode:responseNode`+`onError:continueRegularOutput` on the 16 section webhooks. (S12) R46→R51 auto-clone parked. (S11) connect `Telegram Trigger`→`[Telegram Router]` in UI; apply `N8N_PROXY_HOPS=1`.
+
+---
+
 ## Session 13 — 2026-05-25 (Restored 22 MCP-strip-bug errors — 17 webhook paths + 5 Telegram ops)
 
 ### Completed This Session
