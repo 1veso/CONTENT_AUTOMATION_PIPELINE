@@ -4,6 +4,30 @@ Rolling handoff log for the primary agent. New sessions prepend above older ones
 
 ---
 
+## Session 12 — 2026-05-25 (R51 clone_status Airtable error fixed — auto-clone branch disabled)
+
+### Completed This Session
+- **Diagnosed live error** `INVALID_FILTER_BY_FORMULA: Unknown field names: clone_status` (firing ~every 5 min on workflow `SmtkmTgfCTLZPlN4`).
+  - Source node: `[X] R46->R51 Find winners` (Airtable *search*, id `743deb09-c011-4159-8f3b-d8ea1b9bb0d2`), formula `AND({days_on_air} > 7, {clone_status} = '')` → TikTok table `tblrc4ILrLINc6rVy` (base `appC3HqG42ftswOvw`).
+  - Fed by `[X] R46->R51 Schedule (5m)` (scheduleTrigger, id `d5733f86-86ad-45b5-a747-a695f7c1377b`).
+  - **Cause = case (a): field missing entirely.** Pulled live Airtable schema via meta API: TikTok (and all 8 R46 platform tables) have NO `clone_status` and no rename candidate. Branch is also a dead-end (no downstream) + `[X]`-parked (sticky: "Wire output to R51… TODO"). Parked-but-live = doomed query every tick.
+- **Backup:** `n8n_backups/SmtkmTgfCTLZPlN4_PRE-clone_status-fix_2026-05-25.json` (381,743 bytes, 475 nodes) via REST GET.
+- **Operator decision (AskUserQuestion):** disable the 2 parked nodes; use **direct REST verbatim round-trip**, NOT n8n-mcp partial diff.
+- **Fix applied:** REST GET → set `disabled:true` on the 2 `[X]` nodes only → PUT `{name,nodes,connections,settings}` byte-identical otherwise. PUT 200, `active=True`, 475 nodes. `clone_status` formula preserved (parked, not deleted).
+- **Verification:** strip-detection baseline intact post-PUT (475 nodes / 19 webhook·2 path / 7 telegram·1 op — zero regression); validate errorCount=**37** (baseline, unchanged); last error exec id 723 @ 09:20:03Z (pre-edit 09:22:45Z) — 09:25 tick did not fire.
+- **Docs:** `obsidian-brain/pipelines/R51_creative_cloner.md` + this log. Commit + push.
+
+### Key Decisions
+- Did NOT auto-create the `clone_status` Airtable field (CLAUDE.md: no schema changes without intent; and the branch dead-ends so a field alone would just make a silent no-op). Disabling the parked branch is the correct, reversible fix that matches the `[X]` intent.
+- Chose REST verbatim PUT over MCP partial diff: tool docs confirm ANY partial update re-sanitizes ALL 475 nodes — the documented webhook/Telegram strip-bug path. Verbatim round-trip bypasses the sanitizer (no field loss possible since we resend the exact body).
+
+### Pending / Carry Over
+- **R46→R51 auto-clone is now OFF (parked).** To enable later: (1) add `clone_status` field to the watched R46 table(s); (2) wire `[X] R46->R51 Find winners` → R51 entry / `POST /webhook/r51`; (3) confirm Airtable PAT; (4) re-enable both `[X]` nodes; (5) write back `clone_status` on processed rows or it re-selects the same winners each tick. Full steps in R51 doc.
+- (Carried from S11) **OPERATOR MUST (UI only):** connect `Telegram Trigger` → `[Telegram Router]`.
+- (Carried) Apply `N8N_PROXY_HOPS=1` on Hetzner shell; delete temp `shared/_update_switch.py`.
+
+---
+
 ## Session 11 — 2026-05-24 (6 Telegram routes added, deferred-routes sticky, vault docs)
 
 ### Completed This Session
